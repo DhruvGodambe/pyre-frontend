@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — Deep Research Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080504;
+  --s1:      #0D0A07;
+  --s2:      #110E0A;
+  --brand:   #C9A96E;
+  --warm:    #B8894A;
+  --gold:    #E8C88A;
+  --red:     #FF4D00;
+  --amber:   #FF8C00;
+  --t1:      #EDE8E0;
+  --t2:      #B8A88A;
+  --t3:      #7A6A52;
+  --line:    rgba(201,169,110,0.12);
+  --linef:   rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg:      'DM Sans', sans-serif;
+  --mono:    'Fira Code', monospace;
+  --max:     960px;
+  --px:      clamp(20px,5vw,64px);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--sg);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,5,4,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--px);
+  display: flex; align-items: center; gap: 32px;
+  height: 52px;
+}
+nav a { text-decoration: none; color: var(--t3); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 500; transition: color .2s; }
+nav a:hover { color: var(--brand); }
+nav a.home { color: var(--brand); font-family: var(--display); font-size: 17px; letter-spacing: .04em; font-weight: 600; text-transform: none; margin-right: auto; }
+
+/* ── HERO ── */
+.hero {
+  padding: clamp(56px,10vw,96px) var(--px) clamp(40px,6vw,64px);
+  border-bottom: 1px solid var(--line);
+  max-width: calc(var(--max) + var(--px)*2);
+  margin: 0 auto;
+}
+.hero-label {
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--brand); font-weight: 500; margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: var(--display); font-size: clamp(36px,6vw,64px);
+  font-weight: 300; line-height: 1.1; color: var(--t1);
+  margin-bottom: 24px;
+}
+.hero h1 em { font-style: italic; color: var(--gold); }
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 24px;
+  font-family: var(--mono); font-size: 11px; color: var(--t3);
+  letter-spacing: .05em; margin-bottom: 28px;
+}
+.hero-meta span { display: flex; align-items: center; gap: 8px; }
+.hero-meta span::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
+.hero-summary {
+  font-size: 15px; color: var(--t2); line-height: 1.7;
+  max-width: 680px; border-left: 2px solid var(--brand);
+  padding-left: 20px;
+}
+
+/* ── LAYOUT ── */
+.wrapper {
+  max-width: calc(var(--max) + var(--px)*2);
+  margin: 0 auto;
+  padding: 0 var(--px);
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0 56px;
+  align-items: start;
+}
+@media (max-width: 740px) { .wrapper { grid-template-columns: 1fr; } }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: sticky; top: 68px;
+  padding: 40px 0;
+}
+.sidebar-title {
+  font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--t3); font-weight: 600; margin-bottom: 16px;
+}
+.toc { list-style: none; }
+.toc li { margin-bottom: 2px; }
+.toc a {
+  font-size: 12px; color: var(--t3); text-decoration: none;
+  display: block; padding: 5px 10px;
+  border-left: 2px solid transparent;
+  transition: all .2s; line-height: 1.4;
+}
+.toc a:hover { color: var(--t1); border-left-color: var(--brand); }
+.toc a.active { color: var(--brand); border-left-color: var(--brand); }
+.toc .sub a { font-size: 11px; padding-left: 20px; }
+@media (max-width: 740px) { .sidebar { display: none; } }
+
+/* ── CONTENT ── */
+.content { padding: 40px 0 100px; }
+
+.section { margin-bottom: 64px; scroll-margin-top: 72px; }
+
+.section-header {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 28px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.section-num {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--brand); letter-spacing: .1em; flex-shrink: 0;
+}
+.section-title {
+  font-family: var(--display); font-size: clamp(22px,3.5vw,32px);
+  font-weight: 400; color: var(--t1); line-height: 1.2;
+}
+
+/* ── CARDS ── */
+.cards { display: grid; gap: 16px; }
+.cards.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 580px) { .cards.two { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--s1); border: 1px solid var(--line);
+  border-radius: 6px; padding: 24px;
+}
+.card-severity {
+  font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 12px;
+}
+.card-severity.critical { color: #FF4D00; }
+.card-severity.high     { color: var(--amber); }
+.card-severity.medium   { color: var(--brand); }
+
+.card-title {
+  font-family: var(--display); font-size: 19px; font-weight: 500;
+  color: var(--t1); margin-bottom: 8px; line-height: 1.3;
+}
+.card-confidence {
+  font-family: var(--mono); font-size: 10px; color: var(--t3);
+  letter-spacing: .05em; margin-bottom: 12px;
+}
+.card-body { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+.card-body p + p { margin-top: 10px; }
+
+.callout {
+  background: rgba(255,77,0,0.06); border: 1px solid rgba(255,77,0,0.2);
+  border-left: 3px solid #FF4D00;
+  padding: 14px 18px; border-radius: 4px;
+  font-size: 13px; color: #FF9070; font-weight: 500;
+  margin-top: 14px; line-height: 1.5;
+}
+.callout.amber {
+  background: rgba(255,140,0,0.06); border-color: rgba(255,140,0,0.2);
+  border-left-color: var(--amber); color: #FFB85A;
+}
+.callout.gold {
+  background: rgba(201,169,110,0.06); border-color: rgba(201,169,110,0.2);
+  border-left-color: var(--brand); color: var(--brand);
+}
+
+.fix-block {
+  background: rgba(201,169,110,0.04); border: 1px solid var(--line);
+  border-left: 3px solid var(--brand);
+  padding: 14px 18px; border-radius: 4px;
+  font-size: 13px; color: var(--t2); margin-top: 14px; line-height: 1.6;
+}
+.fix-block strong { color: var(--brand); font-weight: 600; }
+
+/* ── CODE BLOCK ── */
+pre {
+  background: #0A0806; border: 1px solid var(--line);
+  border-radius: 6px; padding: 20px;
+  font-family: var(--mono); font-size: 12px;
+  color: #C8B89A; overflow-x: auto; margin-top: 14px;
+  line-height: 1.6;
+}
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; margin-top: 8px; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--t3); font-weight: 600; text-align: left;
+  padding: 10px 14px; border-bottom: 1px solid var(--linef);
+}
+td {
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+  color: var(--t2); vertical-align: top; line-height: 1.5;
+}
+td:first-child { color: var(--t1); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+.badge.yes   { background: rgba(201,169,110,0.12); color: var(--brand); }
+.badge.maybe { background: rgba(255,140,0,0.1); color: var(--amber); }
+.badge.no    { background: rgba(255,77,0,0.1); color: #FF7050; }
+
+/* ── STAT ROW ── */
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  margin-bottom: 32px;
+}
+.stat {
+  background: var(--s1); padding: 20px;
+}
+.stat-value {
+  font-family: var(--display); font-size: 32px; font-weight: 300;
+  color: var(--gold); line-height: 1;
+}
+.stat-label {
+  font-size: 11px; color: var(--t3); letter-spacing: .08em;
+  text-transform: uppercase; margin-top: 6px;
+}
+
+/* ── SCENARIO BLOCKS ── */
+.scenarios { display: grid; gap: 16px; grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 640px) { .scenarios { grid-template-columns: 1fr; } }
+
+.scenario {
+  background: var(--s1); border: 1px solid var(--line);
+  border-radius: 6px; padding: 22px;
+}
+.scenario-label {
+  font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 8px;
+}
+.scenario-label.grow  { color: var(--brand); }
+.scenario-label.flat  { color: var(--amber); }
+.scenario-label.crash { color: #FF4D00; }
+.scenario-name {
+  font-family: var(--display); font-size: 18px;
+  color: var(--t1); margin-bottom: 12px;
+}
+.scenario-body { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+
+/* ── MANIFESTO ── */
+.manifesto {
+  background: var(--s1); border: 1px solid var(--linef);
+  border-radius: 8px; padding: clamp(28px,5vw,48px);
+  position: relative; overflow: hidden;
+}
+.manifesto::before {
+  content: '"';
+  position: absolute; top: -20px; left: 24px;
+  font-family: var(--display); font-size: 160px;
+  color: rgba(201,169,110,0.06); line-height: 1;
+  pointer-events: none;
+}
+.manifesto p {
+  font-family: var(--display); font-size: clamp(15px,2.2vw,19px);
+  font-style: italic; color: var(--t2); line-height: 1.75;
+  margin-bottom: 16px; position: relative;
+}
+.manifesto p:last-child { margin-bottom: 0; }
+
+/* ── LIST ── */
+.ordered-list { padding-left: 0; list-style: none; counter-reset: item; }
+.ordered-list li {
+  counter-increment: item;
+  display: grid; grid-template-columns: 28px 1fr; gap: 12px;
+  margin-bottom: 12px; align-items: start;
+  font-size: 13.5px; color: var(--t2); line-height: 1.6;
+}
+.ordered-list li::before {
+  content: counter(item);
+  font-family: var(--mono); font-size: 11px;
+  color: var(--brand); font-weight: 600;
+  padding-top: 2px;
+}
+.ordered-list strong { color: var(--t1); font-weight: 500; }
+
+.bullet-list { list-style: none; padding-left: 0; }
+.bullet-list li {
+  padding: 8px 0 8px 20px; position: relative;
+  font-size: 13.5px; color: var(--t2); line-height: 1.6;
+  border-bottom: 1px solid var(--line);
+}
+.bullet-list li:last-child { border-bottom: none; }
+.bullet-list li::before {
+  content: '—'; position: absolute; left: 0;
+  color: var(--brand); font-weight: 600;
+}
+.bullet-list strong { color: var(--t1); }
+
+/* ── RISK TABLE ── */
+td.risk-high   { color: #FF7050; }
+td.risk-med    { color: var(--amber); }
+td.risk-low    { color: var(--brand); }
+
+/* ── SOURCES ── */
+.sources {
+  font-size: 11px; color: var(--t3); line-height: 1.7;
+  border-top: 1px solid var(--line); padding-top: 24px;
+  margin-top: 40px;
+}
+.sources strong { color: var(--t2); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="home">PYRE</a>
+  <a href="index.html">Home</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="research.html">Research</a>
+</nav>
+
+<!-- HERO -->
+<div style="max-width: calc(960px + 128px); margin: 0 auto; padding: 0 clamp(20px,5vw,64px);">
+  <div class="hero" style="padding-left:0;padding-right:0;">
+    <div class="hero-label">Deep Research Report · 2026-06-01</div>
+    <h1>PYRE — <em>Full Technical</em><br>Security &amp; Sustainability Analysis</h1>
+    <div class="hero-meta">
+      <span>111 agents deployed</span>
+      <span>28 sources reviewed</span>
+      <span>25 claims adversarially verified</span>
+      <span>11 confirmed · 14 killed</span>
+    </div>
+    <p class="hero-summary">A comprehensive pre-launch audit of PYRE's failure modes, V4 hook opportunities, contract architecture, sustainability across three volume scenarios, and the minimum steps required before any code ships.</p>
+  </div>
+</div>
+
+<!-- STATS -->
+<div style="max-width: calc(960px + 128px); margin: 0 auto; padding: 0 clamp(20px,5vw,64px) 0;">
+  <div class="stats">
+    <div class="stat"><div class="stat-value">6</div><div class="stat-label">Critical / High Failure Modes</div></div>
+<div class="stat"><div class="stat-value">16 wk</div><div class="stat-label">Minimum Responsible Timeline</div></div>
+    <div class="stat"><div class="stat-value">$200k</div><div class="stat-label">Minimum Daily Volume for Viability</div></div>
+    <div class="stat"><div class="stat-value">5</div><div class="stat-label">Immutable Contracts at Launch</div></div>
+    <div class="stat"><div class="stat-value">1B</div><div class="stat-label">Hard Cap $PYRE Supply</div></div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="wrapper">
+
+  <!-- SIDEBAR TOC -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Contents</div>
+    <ul class="toc">
+      <li><a href="#failures">Failure Modes</a></li>
+      <li class="sub"><ul class="toc">
+        <li><a href="#f1">1. Pool Key Spoofing</a></li>
+        <li><a href="#f2">2. Death Spiral</a></li>
+        <li><a href="#f3">3. Dynamic Fee Flag</a></li>
+        <li><a href="#f4">4. Reentrancy</a></li>
+        <li><a href="#f5">5. Chainlink Liveness</a></li>
+        <li><a href="#f6">6. LP Lock</a></li>
+      </ul></li>
+      <li><a href="#decisions">Open Decisions</a></li>
+      <li><a href="#hooks">V4 Hook Opportunities</a></li>
+      <li><a href="#history">Historical Failures</a></li>
+      <li><a href="#scenarios">Sustainability Scenarios</a></li>
+      <li><a href="#architecture">Contract Architecture</a></li>
+      <li><a href="#launch">Launch Sequence</a></li>
+      <li><a href="#manifesto">Manifesto</a></li>
+      <li><a href="#community">Community Mechanics</a></li>
+    </ul>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- SECTION 1: FAILURE MODES -->
+    <section class="section" id="failures">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Ranked Failure Modes by Severity</h2>
+      </div>
+
+      <div class="cards">
+
+        <div class="card" id="f1">
+          <div class="card-severity critical">Critical — Fix Before Any Code Ships</div>
+          <div class="card-title">1. Pool Key Spoofing → Unlimited $PYRE Minting + ETH Drain</div>
+          <div class="card-confidence">Confidence: HIGH · Source: Certora C-01 (Doppler audit 2024), confirmed by Cyfrin</div>
+          <div class="card-body">
+            <p>PyreHook.sol mints $PYRE and routes ETH on every qualifying buy. An attacker calls <code style="font-family:var(--mono);font-size:11px;color:var(--brand)">PoolManager.initialize()</code> with a malicious PoolKey referencing your hook address using fake tokens. This triggers unauthorized $PYRE minting (inflating supply to hard cap in one transaction) and drains the yield pool ETH. Requires zero permissions — only a public initialize call.</p>
+            <div class="callout">This is the exact attack that drained Doppler. It is trivially preventable.</div>
+            <div class="fix-block"><strong>Mitigation:</strong> Store the canonical PoolKey hash in PyreHook constructor. Add 3 lines at the top of every callback: <code style="font-family:var(--mono);font-size:11px">require(keccak256(abi.encode(key)) == CANONICAL_POOL_KEY_HASH, "invalid pool")</code>. Must exist before the first internal review, let alone audit.</div>
+          </div>
+        </div>
+
+        <div class="card" id="f2">
+          <div class="card-severity critical">Critical — Fix Before Any Code Ships</div>
+          <div class="card-title">2. No Circuit Breaker → IRON/TITAN-Class Intraday Death Spiral</div>
+          <div class="card-confidence">Confidence: HIGH · Source: Federal Reserve FEDS Notes, June 2022</div>
+          <div class="card-body">
+            <p>TITAN went from $60 to $0.000000035 in hours. PYRE's halvings operate on 83-day timescales. The 7-day drip protects stakers but does NOT protect liquid holders from selling. At 60% staking, 40% of supply is liquid. If 10% of that sells in one hour, reflexive price decline signals the rest to sell. The cascade outpaces every mechanism in PYRE's design.</p>
+            <div class="callout">This is the single most important thing PYRE is missing.</div>
+            <div class="fix-block"><strong>Mitigation:</strong> Encode an immutable circuit breaker in PyreHook.sol. When rolling 1-hour sell volume exceeds 5% of liquid supply, pause new sells for 24 hours (buys, staking, and burns continue). Parameters set as immutable constants at deployment — no governance, no admin key, no way to change.</div>
+          </div>
+        </div>
+
+        <div class="card" id="f3">
+          <div class="card-severity critical">Critical — Fix Before Any Code Ships</div>
+          <div class="card-title">3. DYNAMIC_FEE_FLAG Not Set at Launch → Permanent Static Fees</div>
+          <div class="card-confidence">Confidence: HIGH · Source: Uniswap official docs</div>
+          <div class="card-body">
+            <p>The dynamic fee capability of a pool is determined at pool creation and is immutable. The <code style="font-family:var(--mono);font-size:11px;color:var(--brand)">DYNAMIC_FEE_FLAG</code> (0x800000) is encoded in the PoolKey's <code style="font-family:var(--mono);font-size:11px">uint24 fee</code> field. If not set at initialization, PYRE cannot ever implement staking-ratio-responsive fees — not via upgrade, not via migration, only via full redeployment.</p>
+            <div class="callout">This is a one-shot decision. Missing it is a permanent capability loss.</div>
+          </div>
+        </div>
+
+        <div class="card" id="f4">
+          <div class="card-severity high">High — Fix Before Audit</div>
+          <div class="card-title">4. ETH Transfers in afterSwap → Reentrancy</div>
+          <div class="card-confidence">Confidence: MEDIUM · Source: Cyfrin, Bunni V2 H-04, Pashov Audit Group</div>
+          <div class="card-body">
+            <p>afterSwap does three things: mint $PYRE, route 80% ETH to yield pool, route 20% ETH to team treasury. Each ETH transfer is a reentrancy entry point. Additionally: a missing <code style="font-family:var(--mono);font-size:11px">receive()</code> in PyreHook.sol causes a DoS when dust balances are redirected from router contracts.</p>
+            <div class="fix-block"><strong>Mitigation:</strong> (1) Add <code style="font-family:var(--mono);font-size:11px">receive()</code> to PyreHook.sol unconditionally. (2) Checks-effects-interactions in afterSwap — update all state before any ETH transfers. (3) ReentrancyGuard on afterSwap specifically.</div>
+          </div>
+        </div>
+
+        <div class="card" id="f5">
+          <div class="card-severity high">High — Fix Before Audit</div>
+          <div class="card-title">5. Chainlink Epoch Liveness Dependency</div>
+          <div class="card-confidence">Confidence: HIGH · Source: Chainlink official docs, confirmed formula</div>
+          <div class="card-body">
+            <p>If the Chainlink upkeep LINK balance runs dry, epoch triggers stop. S(t) becomes stale. <code style="font-family:var(--mono);font-size:11px">balanceOf()</code> returns incorrect values. Budget: ~440–1,314 LINK/year at $15/LINK (~$6,600–$19,700/year), doubling at 60 gwei gas.</p>
+            <div class="fix-block"><strong>Recommendation:</strong> Lazy epoch evaluation as the primary mechanism. Chainlink becomes optional gas optimization — not a correctness requirement. Every user interaction computes epochs elapsed since last checkpoint on-demand. Eliminates Chainlink as single point of failure.</div>
+          </div>
+        </div>
+
+        <div class="card" id="f6">
+          <div class="card-severity high">High — Fix Before Audit</div>
+          <div class="card-title">6. Unhandled Reverts Lock Burned LP Positions Permanently</div>
+          <div class="card-confidence">Confidence: HIGH · Source: Cyfrin, CertiK, Uniswap v4-core issue #561</div>
+          <div class="card-body">
+            <p>Verbatim Cyfrin: "Unhandled reverts in either the <code style="font-family:var(--mono);font-size:11px">beforeRemoveLiquidity()</code> or <code style="font-family:var(--mono);font-size:11px">afterRemoveLiquidity()</code> hook can result in LP funds being permanently locked."</p>
+            <div class="callout amber">PYRE's hook must not revert on any code path for burned LP positions. Every conditional must have a safe fallback that does nothing rather than reverts.</div>
+          </div>
+        </div>
+
+      </div><!-- /cards -->
+    </section>
+
+    <!-- SECTION 2: OPEN DECISIONS -->
+    <section class="section" id="decisions">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Concrete Answers to Every Open Decision</h2>
+      </div>
+
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-title">KOL Lock Structure</div>
+          <div class="card-body">KOLs must be force-staked, not just hold-locked. Force-staking means tokens are in PyreStaking.sol for the lock duration. Recommended: 90-day force-stake minimum with a 30-day drip window after. Must be smart-contract enforced, not voluntary. Any KOL token not in the staking contract at launch is a liability.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Yield Accumulator Architecture</div>
+          <div class="card-body">
+            <p>Use two separate Synthetix-style reward-per-token accumulators — one for stakers, one for Fire Spirit holders. Not a single shared pool. O(1) implementation required — any loop-based distribution fails above ~200 holders in a single transaction.</p>
+            <pre>uint256 rewardPerTokenStored;
+mapping(address => uint256) userRewardPerTokenPaid;
+
+function earned(address account) public view returns (uint256) {
+    return (userWeight(account) *
+        (rewardPerTokenStored - userRewardPerTokenPaid[account]))
+        / 1e18 + rewards[account];
+}</pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Fire Spirit Transferability</div>
+          <div class="card-body">The current design (inherits visual stage, resets burn accumulation) is correct. Creates a prestige/PFP secondary market, not a yield-farming secondary market. New holders buy the identity, not the burn history — they must earn yield weight themselves. Key message: <em style="color:var(--t1)">"Buying a Fire Spirit gives you the visual identity, not the burn history."</em></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Stage Multiplier Balance</div>
+          <div class="card-body">Add a soft cap. Each individual Fire Spirit's yield weight is capped at the 99th percentile staker's weight × the stage multiplier. Prevents a single Stage 4 Spirit from capturing 30% of yield pool in a low-adoption environment while preserving the whale-incentive mechanic at scale.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">V4 Fee Capture for Burned LP</div>
+          <div class="card-body">
+            <p>No known production V4 deployments of this pattern. Required: Create a PyreLPBurner.sol contract that holds permanently burned LP positions and delegates fee collection authority to PyreHook.sol. In <code style="font-family:var(--mono);font-size:11px">afterSwap</code>, call <code style="font-family:var(--mono);font-size:11px">positionManager.collect()</code> on the burned position from within the hook.</p>
+            <div class="callout amber">Highest-risk open technical question in PYRE's architecture. Warrants a dedicated spike before audit begins.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: V4 HOOK OPPORTUNITIES -->
+    <section class="section" id="hooks">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2 class="section-title">V4 Hook Opportunities — Ranked by Impact × Feasibility</h2>
+      </div>
+
+      <div class="callout gold" style="margin-bottom:24px;">Single highest-leverage V4 addition impossible in V2/V3: Staking-ratio-responsive fee curve. V4's DYNAMIC_FEE_FLAG with beforeSwap override enables fees that decrease when the protocol is healthy and increase when stressed. No prior protocol has built this combination.</div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hook Mechanic</th>
+              <th>Worth Building</th>
+              <th>Complexity</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Dynamic fees via staking ratio</td>
+              <td><span class="badge yes">Launch Critical</span></td>
+              <td>2/5</td>
+              <td>Only possible in V4. Lower fees at &gt;65% staking, higher at &lt;45%.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Circuit breaker hook (beforeSwap sell pause)</td>
+              <td><span class="badge yes">Launch Critical</span></td>
+              <td>3/5</td>
+              <td>Pauses sells &gt;5% liquid supply/hour for 24h.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Anti-dump cooldown (beforeSwap)</td>
+              <td><span class="badge yes">Launch</span></td>
+              <td>3/5</td>
+              <td>Wallet that initiated drip in last 24h pays higher fee.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Hook-owned liquidity (protocol-owned floor)</td>
+              <td><span class="badge yes">Post-Launch</span></td>
+              <td>3/5</td>
+              <td>Hook accumulates portion of fees as internal LP.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Hook-gated LP provision</td>
+              <td><span class="badge maybe">Maybe</span></td>
+              <td>2/5</td>
+              <td>Only Fire Spirit holders or stakers can add liquidity. Thins order book at low adoption.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Position-level decay</td>
+              <td><span class="badge no">No</span></td>
+              <td>5/5</td>
+              <td>Massive rewrite complexity for minimal gain.</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>Cross-hook composability</td>
+              <td><span class="badge no">Post-Launch Only</span></td>
+              <td>5/5</td>
+              <td>Post-launch exploration only.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: HISTORICAL FAILURES -->
+    <section class="section" id="history">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Historical Analysis of Deflationary Protocol Failures</h2>
+      </div>
+
+      <ul class="bullet-list" style="margin-bottom:28px;">
+        <li><strong>TITAN/IRON (June 2021)</strong> — $60 to ~$0 in hours. Federal Reserve confirmed reflexive bank-run dynamics. Partial collateral → price decline → algorithmic minting → supply increase → further price decline → $0.</li>
+        <li><strong>LUNA/UST (May 2022)</strong> — $40B destroyed. Same reflexive mechanism at larger scale.</li>
+        <li><strong>OHM/OlympusDAO</strong> — 4,000%+ APY attracted mercenary capital. When APY compressed, coordinated exit drove OHM from $1,300 to $13. High APY without identity or exit cost attracts exactly the participants who will destroy the protocol at compression.</li>
+        <li><strong>AMPL</strong> — Technical survivor but adoption failure. Supply compression without clear UX narrative. "My wallet shows less tokens every morning" is not compelling.</li>
+        <li><strong>ESD / DSD / BASED</strong> — Insufficient demand floor + reflexive mechanics with no identity layer.</li>
+      </ul>
+
+      <div class="cards two" style="margin-bottom:28px;">
+        <div class="card">
+          <div class="card-severity" style="color:var(--brand);">Where PYRE Is Genuinely Novel</div>
+          <ul class="bullet-list">
+            <li>Hook-only minting with no premint — unprecedented among serious protocols</li>
+            <li>Burn-to-mint evolving NFT identity tied to commitment depth, not price</li>
+            <li>V4 dynamic fees responsive to protocol state</li>
+            <li>Permanently burned LP as commitment signal with ongoing fee redirection</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-severity critical">Where PYRE Retreads Failed Ground</div>
+          <ul class="bullet-list">
+            <li>Aggressive decay without a demand floor</li>
+            <li>Yield requiring sustained trading volume (circular dependency)</li>
+            <li>KOL-driven initial demand spikes that vanish</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SCENARIOS -->
+    <section class="section" id="scenarios">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2 class="section-title">Sustainability Model — 3 Scenarios (12-Month Horizon)</h2>
+      </div>
+
+      <div class="callout gold" style="margin-bottom:24px;">Minimum viable volume: ~$200k daily ($73M annual). Team receives ~$1.3M/year. Stakers receive ~$11,500/day ETH. Self-sustaining above this threshold.</div>
+
+      <div class="scenarios">
+        <div class="scenario">
+          <div class="scenario-label grow">Scenario A</div>
+          <div class="scenario-name">Volume Grows</div>
+          <div class="scenario-body">Months 1–3 at $300k daily: Team ~$5,400/day. Staking climbs to 60–70%. Fire Spirit burn incentive strong. Months 4–6: First halving. Minting halves, per-staker yield begins compressing. Months 7–12: Era 1 decay. Identity layer becomes the retention mechanic.</div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-label flat">Scenario B</div>
+          <div class="scenario-name">Volume Plateaus</div>
+          <div class="scenario-body">Flat $500k/day. Per-staker yield compresses as more stakers enter. After Era 1 halving, yield compresses further. Staking ratio begins declining. If drops below 55%, liquid supply increases → slow compression spiral begins. Decay floor eventually stabilizes.</div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-label crash">Scenario C</div>
+          <div class="scenario-name">Volume Collapses</div>
+          <div class="scenario-body">$20k daily: Team revenue $360/day — not viable. Stakers begin dripping. Without a demand floor, slow-motion death spiral. Decay floor eventually halts supply compression but with negligible yield the protocol becomes a ghost chain.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: CONTRACT ARCHITECTURE -->
+    <section class="section" id="architecture">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <h2 class="section-title">Contract Architecture &amp; Gas Optimization</h2>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Hook Callback Gas Budget</div>
+          <div class="card-body">V4 has no hard limit but practical composability requires &lt;~100,000 gas per callback. PYRE's afterSwap (mint + 2 ETH transfers + S(t) update + yield accumulator update) likely costs 80,000–130,000 gas — at the edge. <strong style="color:var(--brand)">Optimization:</strong> defer yield accumulator checkpoint to a separate <code style="font-family:var(--mono);font-size:11px">sync()</code> call triggered lazily. Hook does only: mint $PYRE + route ETH.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">On-Chain SVG Gas</div>
+          <div class="card-body">Use SSTORE2 for all SVG components (~200 gas/32 bytes read vs. ~20,000 gas SSTORE). Compress with Solady's LibZip. Realistic <code style="font-family:var(--mono);font-size:11px">tokenURI()</code> gas with optimizations: 50,000–80,000 gas (Stage 1–2), 100,000–150,000 gas (Stage 3–4).</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Contract Upgrade Strategy</div>
+          <div class="card-body">Five immutable contracts with no proxy is correct. Immutability is a core trust signal for PYRE's narrative. Migration path for critical post-launch bugs: deploy patched contracts → publish migration UI → incentivize migration with 30-day bonus → old contracts continue operating (decay self-selects migration).</div>
+        </div>
+        <div class="card">
+          <div class="card-title">MEV Exposure</div>
+          <div class="card-body">Hook-only minting creates predictable MEV on every buy. Mitigations: (1) Recommend Flashbots Protect for large buys in UI. (2) Anti-dump cooldown adds friction to sandwich attacks. (3) Hook-owned liquidity creates a price floor reducing sandwich profitability.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 8: LAUNCH SEQUENCE -->
+    <section class="section" id="launch">
+      <div class="section-header">
+        <span class="section-num">08</span>
+        <h2 class="section-title">Launch Sequence Recommendation</h2>
+      </div>
+
+      <ol class="ordered-list" style="margin-bottom:28px;">
+        <li>Deploy all 5 contracts on mainnet fork. Run 30-day simulation at pessimistic / expected / optimistic volumes. Confirm BASE_RATE, S(t) math, yield accumulator.</li>
+        <li>PyreHook.sol audit complete + all criticals resolved.</li>
+        <li>Deploy PyreHook.sol on mainnet. <strong>Verify DYNAMIC_FEE_FLAG is set in PoolKey. This cannot be changed.</strong></li>
+        <li>Initialize Uniswap V4 pool with DYNAMIC_FEE_FLAG set.</li>
+        <li>Deploy remaining 4 contracts. Verify cross-contract integrations on mainnet.</li>
+        <li>Open PyreStaking.sol for deposits (no tokens yet — pre-positioning step).</li>
+        <li>Seed ETH liquidity: minimum $500k, recommended $1M. Use Flashbots Protect for seeding transaction.</li>
+        <li>Enable KOL force-staking. KOL tokens issued directly into PyreStaking.sol via smart contract-enforced 90-day lock.</li>
+        <li><strong>Enable buys.</strong> Use private mempool (Flashbots Protect) for first block.</li>
+        <li>24-hour grace period before decay activates.</li>
+        <li>After 24 hours: decay activates.</li>
+      </ol>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Risk</th><th>Probability</th><th>Response</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Snipe attack at genesis block</td><td class="risk-high">High</td><td>Flashbots Protect for first 10 blocks. Consider whitelist-only first 15 minutes.</td></tr>
+            <tr><td>Staking contract bug post-launch</td><td class="risk-med">Medium</td><td>24/7 monitoring. Admin pause on staking contract for first 72 hours only. Remove pause after 72 hours.</td></tr>
+            <tr><td>KOL dump before community staking reaches 45%</td><td class="risk-high">High</td><td>KOL tokens must be force-staked. No exceptions. Most likely failure mode.</td></tr>
+            <tr><td>Chainlink epoch trigger fails at launch</td><td class="risk-low">Low (with lazy eval)</td><td>Verify lazy evaluation is primary mechanism before launch.</td></tr>
+            <tr><td>Circuit breaker false positive on buy spike</td><td class="risk-med">Medium</td><td>Pre-announce circuit breaker logic publicly. Pause is transparent on-chain.</td></tr>
+            <tr><td>Pool key spoofing attack</td><td class="risk-low">Low if mitigated</td><td>Run pool key validation test on mainnet fork against simulated malicious pool before launch.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 9: MANIFESTO -->
+    <section class="section" id="manifesto">
+      <div class="section-header">
+        <span class="section-num">09</span>
+        <h2 class="section-title">The Manifesto</h2>
+      </div>
+
+      <div class="manifesto">
+        <p>"Most protocols ask what you want to gain. PYRE asks what you are willing to burn.</p>
+        <p>There is no free entry. There is no safe position. Every token you hold liquid is consumed — not by inflation, not by dilution, but by time itself. The fire does not care about your conviction. It measures your commitment by what survives.</p>
+        <p>Staking is not a yield strategy. It is the only way to stop the burning. The Fire Spirit is not a reward. It is a record of what you destroyed to prove you understood. Stage 4 is not achievable by buying more. It is achievable only by burning what you had.</p>
+        <p>This is not a bet on price appreciation. This is a protocol built on the physics of scarcity — where every second outside the fire costs you, where every unstake is a seven-day reckoning, where the only profit is survival. The yield is real ETH from real trades, not promises. The decay is deflationary, not inflationary. The rules are encoded in contracts that no one — including us — can change.</p>
+        <p>PYRE runs on Ethereum because Ethereum is the only chain where the rules cannot change. PYRE uses Uniswap V4 because V4 is the only infrastructure where the protocol itself becomes the market maker, where fees respond to commitment in real time, where the hook is the ritual and the ritual is the law.</p>
+        <p>You were not promised safety. You were offered transformation. The cost is real. The fire does not negotiate."</p>
+      </div>
+    </section>
+
+    <!-- SECTION 10: COMMUNITY MECHANICS -->
+    <section class="section" id="community">
+      <div class="section-header">
+        <span class="section-num">10</span>
+        <h2 class="section-title">Non-Financial Community Mechanics</h2>
+      </div>
+
+      <div class="cards two">
+        <div class="card">
+          <div class="card-title">The Burn Leaderboard</div>
+          <div class="card-body">On-chain all-time burn accumulation ranking. Purely commemorative identity statement — not a yield mechanic.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Watcher Ranks</div>
+          <div class="card-body">Dashboard-visible recognition for wallets that have never sold — "The Unburned," "The Patient," etc. Identity layer that survives yield compression.</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- OPEN QUESTIONS -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-num">12</span>
+        <h2 class="section-title">Open Questions That Remain Unresolved</h2>
+      </div>
+
+      <ol class="ordered-list">
+        <li><strong>afterSwap gas budget</strong> — Has PYRE's afterSwap logic been benchmarked on a mainnet fork with realistic swap volumes? Must confirm before audit — if it exceeds ~100k gas, composability with aggregators breaks.</li>
+        <li><strong>Burned LP fee collection</strong> — The V4 mechanism for redirecting ongoing swap fees from permanently burned LP positions to the yield pool has no known production deployments. Requires a dedicated technical spike before audit begins.</li>
+        <li><strong>Fire Spirit yield compression threshold</strong> — At what Stage 4 holder count does per-Spirit yield compress below the ETH cost of burning 300k PYRE? If reached, Stage 4 burns become economically irrational.</li>
+        <li><strong>Circuit breaker front-running</strong> — If the sell-pause threshold is on-chain and queryable, rational actors may front-run the pause resumption — placing large sell orders immediately when pause ends, potentially worsening the spiral.</li>
+      </ol>
+    </section>
+
+    <!-- SOURCES -->
+    <div class="sources">
+      <strong>Sources:</strong> Certora Doppler Security Assessment Report (2024) · Cyfrin Uniswap V4 Hooks Security Deep Dive · OpenZeppelin UniV4 Hooks v1.1.0-rc-1 Audit · Uniswap V4 Official Documentation · Federal Reserve FEDS Notes on Algorithmic Stablecoin Runs (June 2022) · NBER Working Paper w33640 "The Tokenomics of Staking" (April 2025) · Chainlink Automation Economics Documentation · WilmerHale SEC Howey Framework Client Alert (March 2026)
+    </div>
+
+  </main>
+</div>
+
+<script>
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.toc a');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const match = document.querySelector(`.toc a[href="#${e.target.id}"]`);
+      if (match) match.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

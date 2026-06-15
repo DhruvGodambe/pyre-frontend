@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — The Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080504; --s1: #0D0A07; --s2: #110E0A;
+  --brand: #C9A96E; --gold: #E8C88A; --warm: #B8894A;
+  --ember: #FF6B1A; --flame: #FF8C00; --forge: #E85D04; --pyre: #DC2F02;
+  --t1: #EDE8E0; --t2: #B8A88A; --t3: #7A6A52;
+  --line: rgba(201,169,110,0.12); --linef: rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg: 'DM Sans', sans-serif; --mono: 'Fira Code', monospace;
+  --max: 780px; --px: clamp(20px,5vw,48px);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--t1); font-family: var(--sg); font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,5,4,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--px); display: flex; align-items: center; height: 52px; gap: 32px;
+}
+.nav-home { font-family: var(--display); font-size: 17px; font-weight: 600; color: var(--brand); letter-spacing: .04em; text-decoration: none; margin-right: auto; }
+.nav-links { display: flex; gap: 0; }
+.nav-links a { text-decoration: none; color: var(--t3); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; padding: 0 14px; height: 52px; display: flex; align-items: center; border-left: 1px solid var(--line); transition: color .2s; white-space: nowrap; }
+.nav-links a:hover { color: var(--brand); }
+
+/* HERO */
+.hero { padding: clamp(72px,12vw,120px) var(--px) clamp(48px,7vw,80px); border-bottom: 1px solid var(--line); max-width: calc(var(--max) + var(--px)*2); margin: 0 auto; }
+.hero-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--brand); margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+.hero-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--brand); }
+.hero h1 { font-family: var(--display); font-size: clamp(44px,7vw,80px); font-weight: 300; line-height: 1.05; color: var(--t1); margin-bottom: 32px; }
+.hero h1 em { font-style: italic; color: var(--gold); }
+.hero-lead { font-size: clamp(16px,2vw,19px); color: var(--t2); line-height: 1.7; max-width: 580px; }
+
+/* CONTENT */
+.content { max-width: calc(var(--max) + var(--px)*2); margin: 0 auto; }
+.chapter { padding: clamp(48px,7vw,72px) var(--px); border-bottom: 1px solid var(--line); }
+.chapter:last-child { border-bottom: none; }
+.chapter-num { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--t3); margin-bottom: 12px; }
+.chapter h2 { font-family: var(--display); font-size: clamp(30px,4.5vw,48px); font-weight: 300; line-height: 1.1; color: var(--t1); margin-bottom: 28px; }
+.chapter h2 em { font-style: italic; color: var(--gold); }
+.chapter p { color: var(--t2); margin-bottom: 20px; font-size: 16px; line-height: 1.75; }
+.chapter p:last-child { margin-bottom: 0; }
+.chapter p strong { color: var(--t1); font-weight: 500; }
+
+/* CALLOUT */
+.callout { background: rgba(201,169,110,0.05); border-left: 2px solid var(--brand); padding: 20px 24px; margin: 28px 0; }
+.callout p { color: var(--t2); font-size: 15px; margin: 0; }
+.callout p strong { color: var(--gold); }
+
+/* STAT GRID */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 28px 0; }
+.stat-cell { background: var(--s1); padding: 20px 24px; }
+.stat-cell-num { font-family: var(--display); font-size: 32px; font-weight: 300; color: var(--brand); display: block; line-height: 1; margin-bottom: 6px; }
+.stat-cell-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); display: block; }
+
+/* STAGE TABLE */
+.stage-grid { display: flex; flex-direction: column; border: 1px solid var(--line); margin: 28px 0; }
+.stage-row { display: grid; grid-template-columns: 100px 1fr 1fr 80px; border-bottom: 1px solid var(--line); }
+.stage-row:last-child { border-bottom: none; }
+.stage-row.header { background: var(--s1); }
+.stage-cell { padding: 14px 18px; font-size: 13px; display: flex; align-items: center; }
+.stage-row.header .stage-cell { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); }
+.stage-name { font-family: var(--display); font-size: 16px; font-weight: 500; }
+.stage-row:nth-child(2) .stage-name { color: #8B8B9C; }
+.stage-row:nth-child(3) .stage-name { color: var(--ember); }
+.stage-row:nth-child(4) .stage-name { color: var(--flame); }
+.stage-row:nth-child(5) .stage-name { color: var(--forge); }
+.stage-row:nth-child(6) .stage-name { color: var(--pyre); }
+.stage-cell.mono { font-family: var(--mono); font-size: 12px; color: var(--t2); }
+.multiplier { font-family: var(--mono); font-size: 13px; color: var(--brand); font-weight: 500; }
+
+/* ERA TABLE */
+.era-grid { display: flex; flex-direction: column; border: 1px solid var(--line); margin: 28px 0; }
+.era-row { display: grid; grid-template-columns: 60px 1fr 1fr; border-bottom: 1px solid var(--line); }
+.era-row:last-child { border-bottom: none; }
+.era-row.header { background: var(--s1); }
+.era-cell { padding: 12px 18px; font-size: 13px; color: var(--t2); display: flex; align-items: center; }
+.era-row.header .era-cell { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); }
+.era-cell.mono { font-family: var(--mono); font-size: 12px; }
+
+/* DIVIDER */
+.divider { display: flex; align-items: center; gap: 16px; margin: 32px 0; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.divider span { font-family: var(--mono); font-size: 11px; color: var(--t3); letter-spacing: .1em; white-space: nowrap; }
+
+/* FOOTER */
+footer { border-top: 1px solid var(--line); padding: 24px var(--px); max-width: calc(var(--max)+var(--px)*2); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+footer span { font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .08em; }
+.back-link { font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; text-decoration: none; transition: color .2s; }
+.back-link:hover { color: var(--brand); }
+
+@media (max-width: 600px) {
+  .stage-row { grid-template-columns: 80px 1fr 1fr 60px; }
+  .stage-cell { padding: 12px 12px; font-size: 12px; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="village.html" class="nav-home">PYRE</a>
+  <div class="nav-links">
+    <a href="#what">What is PYRE</a>
+    <a href="#decay">Decay</a>
+    <a href="#staking">Staking</a>
+    <a href="#burning">Burning</a>
+    <a href="#spirits">Fire Spirits</a>
+    <a href="#yield">Yield</a>
+    <a href="#immolated">The Immolated</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-eyebrow">Protocol Documentation</div>
+  <h1>Not a token<br>you <em>hold.</em><br>A token you<br><em>become.</em></h1>
+  <p class="hero-lead">
+    PYRE is a DeFi protocol built on a single belief — that conviction should be rewarded permanently, and indifference should have a cost. Everything that follows is a consequence of that idea.
+  </p>
+</div>
+
+<div class="content">
+
+  <!-- WHAT IS PYRE -->
+  <div class="chapter" id="what">
+    <div class="chapter-num">01</div>
+    <h2>What <em>PYRE</em> is</h2>
+    <p>Most tokens are designed to reward holding. Buy, wait, sell when it's high enough. The protocol inflates, the team distributes, and everyone pretends the dilution isn't happening. PYRE was built on the belief that this model is dishonest.</p>
+    <p>PYRE is a token with <strong>built-in decay</strong> — liquid tokens lose value every hour. Stopping the decay requires commitment. Transcending it entirely requires burning. Both paths are rewarded. Neither is optional.</p>
+    <p>There are no VCs. No pre-mine. No team allocation on a vesting cliff. The protocol launched with equal access for everyone — the only advantage available is arriving before the price rises.</p>
+
+    <div class="callout">
+      <p><strong>The core idea:</strong> Stake to survive the decay. Burn to transcend it entirely. Every token that burns becomes a permanent yield position, held by a Fire Spirit NFT that earns forever.</p>
+    </div>
+  </div>
+
+  <!-- DECAY -->
+  <div class="chapter" id="decay">
+    <div class="chapter-num">02</div>
+    <h2>The <em>Decay</em> Mechanic</h2>
+    <p>Every liquid $PYRE token — tokens sitting in a wallet, not staked, not burned — loses value at a fixed rate every hour. This is called decay. It is calculated and applied on-chain at every epoch (approximately one hour).</p>
+    <p>Decay is not punishment. It is an honest representation of what indifference costs. Every other token in the market also loses value over time through inflation and team distribution — PYRE simply says so out loud.</p>
+
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <span class="stat-cell-num">0.45%</span>
+        <span class="stat-cell-label">Decay per hour — Era 0</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-num">~57%</span>
+        <span class="stat-cell-label">Lost over 7-day drip exit</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-num">0.01%</span>
+        <span class="stat-cell-label">Floor rate — token survives forever</span>
+      </div>
+    </div>
+
+    <p>The decay rate halves every 2,000 epochs — roughly every 83 days. Each halving is called an Era. The rate declines progressively until it reaches a permanent floor of 0.01% per hour, at which point $PYRE survives indefinitely.</p>
+
+    <div class="era-grid">
+      <div class="era-row header">
+        <div class="era-cell">Era</div>
+        <div class="era-cell">Rate / hour</div>
+        <div class="era-cell">Duration</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">0</div>
+        <div class="era-cell mono">0.45%</div>
+        <div class="era-cell" style="color:var(--t2)">Days 0–83</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">1</div>
+        <div class="era-cell mono">0.22%</div>
+        <div class="era-cell" style="color:var(--t2)">Days 83–166</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">2</div>
+        <div class="era-cell mono">0.11%</div>
+        <div class="era-cell" style="color:var(--t2)">Days 166–249</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">3</div>
+        <div class="era-cell mono">0.06%</div>
+        <div class="era-cell" style="color:var(--t2)">Days 249–332</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">4</div>
+        <div class="era-cell mono">0.03%</div>
+        <div class="era-cell" style="color:var(--t2)">Days 332–415</div>
+      </div>
+      <div class="era-row">
+        <div class="era-cell mono">5+</div>
+        <div class="era-cell mono">0.01%</div>
+        <div class="era-cell" style="color:var(--brand)">Forever — floor rate</div>
+      </div>
+    </div>
+
+    <p><strong>Exiting PYRE</strong> requires a 7-day drip — tokens unlock gradually over seven days. During this period, decay continues and no yield is earned. This creates a meaningful cost for indecision and rewards those who act with conviction.</p>
+  </div>
+
+  <!-- STAKING -->
+  <div class="chapter" id="staking">
+    <div class="chapter-num">03</div>
+    <h2><em>Staking</em> — Survive the Decay</h2>
+    <p>Staking is the first path. When $PYRE is staked, decay stops completely. Staked tokens are protected — they do not lose value over time.</p>
+    <p>In return, stakers earn a proportional share of <strong>all ETH fees generated by every swap</strong> in the PYRE liquidity pool. Every buy and sell on the protocol produces ETH fees that flow continuously to stakers.</p>
+
+    <div class="callout">
+      <p>Staking does not create a visual identity or NFT. It is a purely financial commitment — decay protection and yield share. The Fire Spirit NFT belongs exclusively to those who burn.</p>
+    </div>
+
+    <p>There is no minimum stake and no lock period beyond the 7-day drip required to exit. Stakers can leave at any time — but the drip cost and loss of yield makes long-term commitment the rational choice.</p>
+  </div>
+
+  <!-- BURNING -->
+  <div class="chapter" id="burning">
+    <div class="chapter-num">04</div>
+    <h2><em>Burning</em> — Transcend It</h2>
+    <p>Burning is the second path — and the permanent one. When $PYRE tokens are burned, they are destroyed forever. In return, the burner receives something that cannot be taken away: a <strong>Fire Spirit NFT</strong> that earns yield permanently.</p>
+    <p>Burning is irreversible. There is no unstaking, no exit drip. The decision is final. This permanence is the point — the protocol rewards it accordingly, with yield multipliers that increase as cumulative burns grow.</p>
+    <p>Burns accumulate across transactions. Every token burned by an address adds to that address's cumulative burn total, which determines their Fire Spirit's current stage. Partial burns are saved — nothing is lost.</p>
+
+    <div class="callout">
+      <p><strong>Sell-side fees are burned too.</strong> Every sell on the protocol collects a fee in $PYRE — and 100% of that is permanently burned. Every transaction shrinks supply.</p>
+    </div>
+  </div>
+
+  <!-- FIRE SPIRITS -->
+  <div class="chapter" id="spirits">
+    <div class="chapter-num">05</div>
+    <h2>Fire <em>Spirits</em></h2>
+    <p>A Fire Spirit is an NFT minted automatically when a wallet's cumulative $PYRE burns cross 10,000 tokens. It is generative — the art is computed entirely on-chain from a seed locked at the moment of first mint. Every Fire Spirit's final form is determined at EMBER stage, revealed progressively as the wallet burns more.</p>
+    <p>Fire Spirits evolve through four stages. The art updates in place — same token ID, same NFT, new form. No metadata update transaction required. The art reflects the current stage automatically.</p>
+
+    <div class="stage-grid">
+      <div class="stage-row header">
+        <div class="stage-cell">Stage</div>
+        <div class="stage-cell">Cumulative Burn</div>
+        <div class="stage-cell">Traits Revealed</div>
+        <div class="stage-cell">Yield</div>
+      </div>
+      <div class="stage-row">
+        <div class="stage-cell"><span class="stage-name">EMBER</span></div>
+        <div class="stage-cell mono">10,000 PYRE</div>
+        <div class="stage-cell" style="color:var(--t2); font-size:13px">Silhouette + fire coloration</div>
+        <div class="stage-cell"><span class="multiplier">1×</span></div>
+      </div>
+      <div class="stage-row">
+        <div class="stage-cell"><span class="stage-name">FLAME</span></div>
+        <div class="stage-cell mono">75,000 PYRE</div>
+        <div class="stage-cell" style="color:var(--t2); font-size:13px">1 trait revealed</div>
+        <div class="stage-cell"><span class="multiplier">1.5×</span></div>
+      </div>
+      <div class="stage-row">
+        <div class="stage-cell"><span class="stage-name">FORGE</span></div>
+        <div class="stage-cell mono">150,000 PYRE</div>
+        <div class="stage-cell" style="color:var(--t2); font-size:13px">2 traits revealed</div>
+        <div class="stage-cell"><span class="multiplier">2×</span></div>
+      </div>
+      <div class="stage-row">
+        <div class="stage-cell"><span class="stage-name">PYRE</span></div>
+        <div class="stage-cell mono">300,000 PYRE</div>
+        <div class="stage-cell" style="color:var(--t2); font-size:13px">Full form revealed</div>
+        <div class="stage-cell"><span class="multiplier">3×</span></div>
+      </div>
+    </div>
+
+    <p>The yield multiplier reflects the NFT holder's share of the yield pool relative to other holders. A PYRE-stage Fire Spirit earns three times the yield weight of an EMBER-stage one. Higher stages are more exclusive as price rises — the same threshold costs more, rewarding those who committed earliest.</p>
+    <p><strong>LP burners</strong> — wallets that burn ETH+PYRE liquidity positions rather than raw tokens — earn a +20% weight bonus on top of their stage multiplier, reflecting the deeper commitment of removing liquidity permanently.</p>
+    <p>Fire Spirit yield follows the NFT, not the wallet. When a Fire Spirit is transferred or sold, the accumulated yield settles to the seller automatically, and the new holder begins earning from that point forward.</p>
+  </div>
+
+  <!-- YIELD -->
+  <div class="chapter" id="yield">
+    <div class="chapter-num">06</div>
+    <h2>Where <em>Yield</em> Comes From</h2>
+    <p>PYRE generates yield from a single source: swap fees on every trade through the PYRE liquidity pool. There is no external protocol, no farming strategy, no external dependency. The yield is a direct function of trading volume.</p>
+
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <span class="stat-cell-num">5%</span>
+        <span class="stat-cell-label">Total effective fee per swap</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-num">80%</span>
+        <span class="stat-cell-label">Buy-side ETH → yield pool</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-num">100%</span>
+        <span class="stat-cell-label">Sell-side PYRE → burned</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-cell-num">20%</span>
+        <span class="stat-cell-label">Buy-side ETH → team</span>
+      </div>
+    </div>
+
+    <p>Buy-side fees are collected in ETH. 80% flows to the yield pool, distributed proportionally between stakers and Fire Spirit holders by yield weight. 20% goes to the team. Sell-side fees are collected in $PYRE and burned permanently — every sell reduces supply.</p>
+    <p>Yield is distributed continuously — there is no epoch-based claim, no minimum threshold, no lockup on earned ETH. Stakers and burners earn in real time from every swap that occurs.</p>
+
+    <div class="callout">
+      <p><strong>At $1M daily volume:</strong> the yield pool receives ~$43,200/day in ETH. ~$36,000/day in $PYRE is permanently burned. At $5M TVL staked, that represents ~315% ETH APY.</p>
+    </div>
+  </div>
+
+  <!-- THE IMMOLATED -->
+  <div class="chapter" id="immolated">
+    <div class="chapter-num">07</div>
+    <h2>The <em>Immolated</em></h2>
+    <p>The Immolated is not a tier. It is a title — earned by the wallets that have committed most completely to the fire. It is the rarest identity in the PYRE protocol and it cannot be purchased, only earned.</p>
+    <p>To become Immolated, a wallet must reach <strong>PYRE stage</strong> (300,000 cumulative $PYRE burned) and then burn an additional <strong>10,000 $PYRE</strong> on top of that. Both the LP path and the token path are eligible.</p>
+    <p>The Immolated gain access to a private area of the protocol — the Hall of the Immolated — and carry a visual identity that marks them permanently on the leaderboard and within the Village World.</p>
+
+    <div class="callout">
+      <p>The 10,000 additional burn mirrors the EMBER threshold intentionally — the entry point and the apex are the same number. Symmetry as design.</p>
+    </div>
+
+    <p>There is no hard cap on how many wallets can become Immolated. The threshold is fixed in tokens — as price rises, fewer wallets can reach it. Early participants who burned when price was low will always have an advantage that cannot be replicated later.</p>
+  </div>
+
+</div>
+
+<footer>
+  <a href="village.html" class="back-link">← Return to Village</a>
+  <span>PYRE Protocol Documentation</span>
+</footer>
+
+</body>
+</html>

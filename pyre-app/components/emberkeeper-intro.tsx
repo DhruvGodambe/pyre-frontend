@@ -1,0 +1,558 @@
+"use client";
+
+/* ============================================================================
+   PYRE — Emberkeeper Intro  (the first-time, forced storytelling onboarding)
+   ----------------------------------------------------------------------------
+   The user-facing "Welcome, stranger" sequence shown on a visitor's FIRST visit.
+   A narrated guide — the Emberkeeper — walks the stranger through three acts:
+
+     ACT 1 · Cold open   — the lore: what PYRE is, the fire & the decay, the docs.
+     ACT 2 · The tour    — every building, one narrated beat each, ending at the
+                            Ashen Cup (the rites) to set up the funnel.
+     ACT 3 · The funnel  — introduce the rites, do the FIRST one for real
+                            (Follow @PYRE → completes the real quest), then a
+                            shareable "flex" card with a one-tap pre-filled tweet.
+
+   Why this shape (from the GTM research on crypto game-worlds — Sunflower Land,
+   Pixels — and Telegram funnels — Hamster Kombat):
+     • Forced but feels optional: a muted Skip link + an ENDOWED progress bar
+       (starts part-filled) so finishing feels inevitable, not trapped.
+     • The X / share prompt lands AFTER a first win, never on the cold open.
+     • Resumable: the current step is saved, so a refresh / wallet popup never
+       restarts it.
+     • Mobile-first: full-screen narrated cards (NOT DOM-anchored spotlights,
+       which break across the two shells and off-screen on phones).
+
+   This is NOT the DesignerIntro (that's a mock-only design-preview aid). This is
+   the real product onboarding and shows in every mode. Token-only classes, so it
+   reskins with the rest of the app when the designer's look lands.
+   ========================================================================== */
+
+import { useEffect, useRef, useState } from "react";
+import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
+import { ProgressBar, Button, Field } from "@/components/ui/primitives";
+import { QUEST_CATALOG } from "@/lib/quests/catalog";
+import { useCompleteQuestTask, useReferral } from "@/lib/hooks";
+import { useIdentity } from "@/lib/identity";
+import { useNavigation } from "@/lib/navigation";
+import { useWallet } from "@/lib/wallet";
+import { shortAddress } from "@/lib/format";
+import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
+import { USE_MOCK } from "@/lib/config";
+
+/* localStorage keys — "seen" gates the auto-show; "step" makes it resumable. */
+const SEEN_KEY = "pyre_intro_seen";
+const STEP_KEY = "pyre_intro_step";
+
+/* Endowed-progress head start: the bar is already ~18% full at step one, so the
+   stranger feels they've begun, not that they're staring down a long road. */
+const PROGRESS_HEAD = 0.18;
+
+/* The tour order — narrative flow, NOT registry order. Ends on the Tavern so the
+   tour walks straight into the rites (the funnel). The Gate is excluded: it IS
+   the connect mechanic, introduced in the lore, not toured. */
+const TOUR: BuildingId[] = [
+  "bonfire",
+  "forge",
+  "vault",
+  "observatory",
+  "exchange",
+  "market",
+  "immolated",
+  "tavern",
+];
+
+/* The Emberkeeper's one line per building — "what you can do here", in his voice.
+   Kept separate from the registry `description` (that copy is for the at-the-door
+   preview; this is the guided-tour beat). */
+const TOUR_LINE: Record<BuildingId, string> = {
+  bonfire:
+    "The heart of it all. Every $PYRE fed to the fire feeds this flame. Watch the burn climb, live.",
+  forge:
+    "Where you act. Stake to shield your $PYRE from the decay, or burn it to forge and grow your Fire Spirit.",
+  vault:
+    "Your own hold. Your Fire Spirit, your balances, your standing in the fire. Everything here is yours.",
+  observatory:
+    "The watchtower. Read the whole protocol at a glance: supply, decay, burns, yield. No wallet needed to look.",
+  exchange:
+    "The trading floor. Swap ETH and $PYRE, every fee shown to you honestly. Nothing is hidden in the dark.",
+  market:
+    "The bazaar. Browse and claim the Fire Spirits that other wallets have forged in the flame.",
+  immolated:
+    "The inner order. Reach the Pyre, burn once more, and these doors open to a deeper share of the fire.",
+  tavern:
+    "The Tavern, and the reason you came early. Take up the rites, bring friends to the fire, and climb the leaderboard. The reward is revealed closer to launch.",
+  gate: "",
+};
+
+/* The scene list. Lore → building tour → identity → funnel → referral (which
+   ends by sending the visitor into the Tavern). */
+type Scene =
+  | { kind: "lore"; title: string; body: string; docs?: boolean }
+  | { kind: "building"; id: BuildingId }
+  | { kind: "identity" }
+  | { kind: "funnel" }
+  | { kind: "referral" };
+
+const SCENES: Scene[] = [
+  {
+    kind: "lore",
+    title: "Welcome, stranger.",
+    body:
+      "You've found a village that runs on fire. Not the warm kind. $PYRE is a token built to be burned. Come closer, and I'll show you how it all lives.",
+  },
+  {
+    kind: "lore",
+    title: "The fire & the decay.",
+    body:
+      "Every $PYRE left idle slowly decays away. But what you burn is never lost. It forges a Fire Spirit that is yours, and it grows each time you feed the flame.",
+  },
+  {
+    kind: "lore",
+    title: "How the village works.",
+    body:
+      "Eight places ring the Bonfire, each one a thing you can do. I'll walk you past every door. Want the whole story first? The scrolls are always here.",
+    docs: true,
+  },
+  ...TOUR.map((id): Scene => ({ kind: "building", id })),
+  { kind: "identity" },
+  { kind: "funnel" },
+  { kind: "referral" },
+];
+
+/* The building glyph (placeholder until the designer's exterior art lands). */
+const glyph = (id: BuildingId) =>
+  id === "gate" ? "🏮" : id === "bonfire" ? "🔥" : "🏛";
+
+export function EmberkeeperIntro() {
+  const [ready, setReady] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
+  const complete = useCompleteQuestTask();
+  const { navigate } = useNavigation();
+  const identity = useIdentity();
+
+  // First visit → open at the saved step (resumable). Runs client-side only.
+  useEffect(() => {
+    setReady(true);
+    if (localStorage.getItem(SEEN_KEY)) return;
+    const saved = Number(localStorage.getItem(STEP_KEY) ?? 0);
+    setStep(Number.isFinite(saved) ? Math.min(saved, SCENES.length - 1) : 0);
+    setOpen(true);
+  }, []);
+
+  // Persist the step so a refresh / wallet popup resumes instead of restarting.
+  useEffect(() => {
+    if (open) localStorage.setItem(STEP_KEY, String(step));
+  }, [open, step]);
+
+  if (!ready || !open) {
+    // Mock-only replay control, so the look can be re-tested without clearing
+    // storage. Bottom-centre — clear of the DesignerIntro "?" (bottom-right) and
+    // the Preview switcher (bottom-left). Never ships to the real app.
+    return ready && USE_MOCK ? (
+      <button
+        onClick={() => {
+          setStep(0);
+          setOpen(true);
+        }}
+        className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
+        title="Replay the first-time intro (mock only)"
+      >
+        ↺ Replay intro
+      </button>
+    ) : null;
+  }
+
+  const scene = SCENES[step];
+  const last = step === SCENES.length - 1;
+  const progress = PROGRESS_HEAD + (step / (SCENES.length - 1)) * (1 - PROGRESS_HEAD);
+
+  const next = () => setStep((s) => Math.min(s + 1, SCENES.length - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const finish = () => {
+    localStorage.setItem(SEEN_KEY, "1");
+    localStorage.removeItem(STEP_KEY);
+    setOpen(false);
+  };
+  // The closing hand-off: drop the visitor straight into The Tavern → Rites.
+  const enterRites = () => {
+    navigate({ building: "tavern", tab: "rites" });
+    finish();
+  };
+
+  return (
+    // Forced: the backdrop does NOT dismiss. The only exits are Skip / Enter.
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/92 backdrop-blur-sm">
+      <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-panel bg-surface border border-surface-3/60 shadow-panel">
+        {/* Top bar — endowed progress + a muted, deliberately un-inviting skip. */}
+        <div className="flex items-center gap-3 px-5 pt-4">
+          <div className="flex-1">
+            <ProgressBar value={progress} />
+          </div>
+          {!last && (
+            <button
+              onClick={finish}
+              className="text-text-3 text-xs hover:text-text-2 transition-colors shrink-0"
+            >
+              Skip
+            </button>
+          )}
+        </div>
+
+        {/* Narrator chrome — the Emberkeeper. No face; an ember glyph + a name. */}
+        <div className="flex items-center gap-2 px-5 pt-4">
+          <span className="text-brand text-lg" aria-hidden>
+            ✦
+          </span>
+          <span className="text-text-3 text-[11px] uppercase tracking-[0.25em]">
+            The Emberkeeper
+          </span>
+        </div>
+
+        {/* Scene — re-animates on each step via the `key`. */}
+        <div key={step} className="animate-entry px-5 pb-5 pt-2">
+          {scene.kind === "lore" && (
+            <LoreScene title={scene.title} body={scene.body} docs={scene.docs} />
+          )}
+          {scene.kind === "building" && <BuildingScene id={scene.id} />}
+          {scene.kind === "identity" && <IdentityScene onChose={next} />}
+          {scene.kind === "funnel" && (
+            <FunnelScene
+              onFollow={() => {
+                complete.mutate("follow");
+                next();
+              }}
+            />
+          )}
+          {scene.kind === "referral" && <ReferralScene />}
+
+          {/* Footer controls. The identity scene drives its own forward action
+              (connect / enter as guest), so it shows only Back. */}
+          <div className="mt-6 flex items-center gap-3">
+            {step > 0 && (
+              <button
+                onClick={back}
+                className="text-text-3 text-sm hover:text-text-2 transition-colors px-2 py-3"
+              >
+                ← Back
+              </button>
+            )}
+            <div className="flex-1" />
+            {(scene.kind === "lore" || scene.kind === "building") && (
+              <button
+                onClick={next}
+                className="rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
+              >
+                Continue
+              </button>
+            )}
+            {scene.kind === "identity" && identity.isSet && (
+              <button
+                onClick={next}
+                className="rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
+              >
+                Continue
+              </button>
+            )}
+            {scene.kind === "funnel" && (
+              <button
+                onClick={next}
+                className="text-text-3 text-sm hover:text-text-2 transition-colors px-2 py-3"
+              >
+                Maybe later →
+              </button>
+            )}
+            {scene.kind === "referral" && (
+              <button
+                onClick={enterRites}
+                className="rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
+              >
+                Enter the Tavern →
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- scenes */
+
+function LoreScene({
+  title,
+  body,
+  docs,
+}: {
+  title: string;
+  body: string;
+  docs?: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <h2 className="font-display text-3xl text-brand">{title}</h2>
+      <p className="text-text-2 text-base leading-relaxed">{body}</p>
+      {docs && (
+        <a
+          href={DOCS_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block text-brand text-sm hover:text-brand-soft transition-colors"
+        >
+          Read the documentation →
+        </a>
+      )}
+    </div>
+  );
+}
+
+function BuildingScene({ id }: { id: BuildingId }) {
+  const b = BUILDING_BY_ID[id];
+  const n = TOUR.indexOf(id) + 1;
+  return (
+    <div className="space-y-4">
+      {/* Exterior close-up — placeholder for the designer's building art. */}
+      <div
+        className="h-32 rounded-md flex items-center justify-center text-5xl border border-surface-3/60"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 70%, #221a12, var(--color-surface) 75%)",
+        }}
+      >
+        {glyph(id)}
+      </div>
+      <div>
+        <div className="text-text-3 text-[11px] uppercase tracking-widest mb-1">
+          {n} of {TOUR.length} · {b.tagline}
+        </div>
+        <h2 className="font-display text-3xl text-brand leading-none">{b.name}</h2>
+      </div>
+      <p className="text-text-2 text-base leading-relaxed">{TOUR_LINE[id]}</p>
+    </div>
+  );
+}
+
+/* The fork: connect a wallet, or enter as a named guest. Connecting is never
+   forced — many people are wary of it, so guest is an equal, first-class path. */
+function IdentityScene({ onChose }: { onChose: () => void }) {
+  const { mode, address, username, connectWallet, continueAsGuest, reset } = useIdentity();
+  const { status } = useWallet();
+  const [guestOpen, setGuestOpen] = useState(false);
+  const [name, setName] = useState("");
+  const advanced = useRef(false);
+  // Was an identity already set when this scene mounted? (i.e. Back navigation.)
+  // If so, don't auto-advance — let the visitor sit and use Back / Continue.
+  const startedSet = useRef(mode !== null);
+
+  // Auto-advance only on a FRESH wallet connect made on this scene.
+  useEffect(() => {
+    if (mode === "wallet" && !startedSet.current && !advanced.current) {
+      advanced.current = true;
+      onChose();
+    }
+  }, [mode, onChose]);
+
+  const connecting = status === "connecting";
+
+  // Already chosen (revisited via Back): confirm + let the footer Continue.
+  if (mode) {
+    return (
+      <div className="space-y-3">
+        <h2 className="font-display text-3xl text-brand">You&rsquo;re in.</h2>
+        <p className="text-text-2 text-base leading-relaxed">
+          {mode === "wallet"
+            ? `Connected as ${address ? shortAddress(address) : "your wallet"}. Your address is your entry.`
+            : `Entering as ${username}. You’ll add your wallet at the very end.`}
+        </p>
+        <button
+          onClick={reset}
+          className="text-text-3 text-xs hover:text-text-2 transition-colors"
+        >
+          Change how I enter
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-display text-3xl text-brand">How will you enter?</h2>
+      <p className="text-text-2 text-base leading-relaxed">
+        The fire doesn&rsquo;t demand your wallet. Connect if you like, or stay a
+        guest and keep your distance. Either way, the rites are open to you.
+      </p>
+
+      {!guestOpen ? (
+        <div className="space-y-2">
+          <button
+            onClick={connectWallet}
+            disabled={connecting}
+            className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
+          >
+            <div className="text-sm font-medium">
+              {connecting ? "Lighting the lantern…" : "Connect wallet"}
+            </div>
+            <div className="text-bg/70 text-xs">
+              Your address is your entry, so there's nothing else to submit.
+            </div>
+          </button>
+          <button
+            onClick={() => setGuestOpen(true)}
+            className="w-full text-left rounded-md bg-surface-2 text-text border border-surface-3 px-4 py-3 hover:bg-surface-3 transition-colors"
+          >
+            <div className="text-sm font-medium">Continue as guest</div>
+            <div className="text-text-3 text-xs">
+              Stay private. Pick a name now, add your wallet at the very end.
+            </div>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Field label="Choose a name" value={name} onChange={setName} placeholder="stranger" />
+          <Button
+            onClick={() => {
+              continueAsGuest(name);
+              onChose();
+            }}
+            disabled={name.trim().length < 2}
+            className="w-full"
+          >
+            Enter as {name.trim() || "guest"}
+          </Button>
+          <button
+            onClick={() => setGuestOpen(false)}
+            className="w-full text-text-3 text-xs hover:text-text-2 transition-colors pt-1"
+          >
+            ← back to options
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FunnelScene({ onFollow }: { onFollow: () => void }) {
+  const follow = QUEST_CATALOG.find((q) => q.id === "follow");
+  const { mode, address, username } = useIdentity();
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="text-text-3 text-[11px] uppercase tracking-widest mb-1">
+          The Tavern
+        </div>
+        <h2 className="font-display text-3xl text-brand leading-none">The Rites</h2>
+      </div>
+      <p className="text-text-2 text-base leading-relaxed">
+        You came early, and the early are remembered. Each rite you complete
+        earns <span className="text-brand">Embers</span>; what they unlock is
+        revealed closer to launch. New rites keep being kindled as the fire
+        nears, so this is only the beginning.
+      </p>
+      {mode === "wallet" && address && (
+        <p className="text-text-3 text-xs">
+          Connected as {shortAddress(address)}. Your wallet is already set, nothing to submit
+          later.
+        </p>
+      )}
+      {mode === "guest" && username && (
+        <p className="text-text-3 text-xs">
+          Entering as {username}. You&rsquo;ll add your wallet at the end to claim.
+        </p>
+      )}
+
+      {/* The rites, previewed — this is the "introduce the quest platform" beat. */}
+      <ul className="space-y-1.5">
+        {QUEST_CATALOG.filter((q) => q.id !== "submit")
+          .slice(0, 5)
+          .map((q) => (
+            <li key={q.id} className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-2 min-w-0">
+                <span className="text-text-3">○</span>
+                <span className="text-text-2 truncate">{q.title}</span>
+              </span>
+              <span className="tabular text-text-3 text-xs shrink-0">+{q.points}</span>
+            </li>
+          ))}
+        <li className="text-text-3 text-xs pl-5">…and submit your wallet to lock it in.</li>
+      </ul>
+
+      {/* The FIRST rite, done for real — the "first win" before the share card. */}
+      <a
+        href={follow?.href ?? "https://x.com"}
+        target="_blank"
+        rel="noreferrer"
+        onClick={onFollow}
+        className="block text-center rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
+      >
+        Begin the first rite: Follow @{X_HANDLE} on X
+      </a>
+    </div>
+  );
+}
+
+/* The closing beat — introduce refer-a-friend (the repeatable earn) right before
+   handing the visitor into the Tavern. Doubles as the viral share moment. */
+function ReferralScene() {
+  const referral = useReferral();
+  const [copied, setCopied] = useState(false);
+  const code = referral.data?.code;
+  const link = code ? referralLink(code) : "";
+  const embersEach = referral.data?.embersEach ?? 30;
+  const tweet = tweetIntent(
+    "I'm gathering Embers before the fire is lit. Come stand at the Tavern with me. ⟡",
+    link || undefined
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* A small flex moment. */}
+      <div
+        className="rounded-md p-6 text-center border border-brand/30"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 0%, rgba(240,169,59,0.18), var(--color-surface-2) 70%)",
+          boxShadow: "var(--shadow-glow)",
+        }}
+      >
+        <div className="text-4xl mb-2" aria-hidden>
+          🔥
+        </div>
+        <h2 className="font-display text-2xl text-brand">The fire spreads by hand.</h2>
+        <p className="text-text-2 text-sm mt-2 max-w-xs mx-auto">
+          You showed up early. Now bring others. Every friend who joins through
+          your link earns you {embersEach} Embers, again and again.
+        </p>
+      </div>
+
+      {/* The referral link + the viral share, at peak satisfaction. */}
+      {link && (
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={link}
+            onFocus={(e) => e.currentTarget.select()}
+            className="tabular flex-1 min-w-0 rounded-md bg-surface-2 border border-surface-3 px-3 py-2 text-xs text-text-2 outline-none"
+          />
+          <button
+            onClick={() => {
+              navigator.clipboard?.writeText(link);
+              setCopied(true);
+            }}
+            className="shrink-0 rounded-md bg-surface-2 text-text border border-surface-3 px-4 py-2 text-sm hover:bg-surface-3 transition-colors"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
+      <a
+        href={tweet}
+        target="_blank"
+        rel="noreferrer"
+        className="block text-center rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
+      >
+        Share your link on X
+      </a>
+    </div>
+  );
+}

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — Village World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080504; --s1: #0D0A07; --s2: #110E0A;
+  --brand: #C9A96E; --gold: #E8C88A; --warm: #B8894A;
+  --ember: #FF6B1A; --pyre-red: #DC2F02;
+  --t1: #EDE8E0; --t2: #B8A88A; --t3: #7A6A52; --t4: #42362A;
+  --line: rgba(201,169,110,0.10); --linef: rgba(201,169,110,0.25);
+  --display: 'Cormorant Garamond', serif;
+  --sg: 'DM Sans', sans-serif; --mono: 'Fira Code', monospace;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+html, body { height: 100%; overflow-x: hidden; }
+body { background: var(--bg); color: var(--t1); font-family: var(--sg); -webkit-font-smoothing: antialiased; }
+
+/* ─── PARTICLES ─── */
+#particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle {
+  position: absolute; bottom: -10px; border-radius: 50%;
+  animation: rise linear infinite;
+  background: radial-gradient(circle, #FF6B1A, transparent 70%);
+}
+@keyframes rise {
+  0%   { transform: translateX(0) scale(1); opacity: 0; bottom: -10px; }
+  10%  { opacity: .6; }
+  80%  { opacity: .25; }
+  100% { transform: translateX(var(--drift)) scale(.2); opacity: 0; bottom: 100vh; }
+}
+.sky-glow {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 400px; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(220,47,2,0.16) 0%, rgba(255,107,26,0.07) 40%, transparent 70%);
+  animation: gpulse 6s ease-in-out infinite alternate;
+}
+@keyframes gpulse { 0% { opacity:.7; transform:translateX(-50%) scaleX(1); } 100% { opacity:1; transform:translateX(-50%) scaleX(1.15); } }
+
+/* ─── VILLAGE PAGE ─── */
+#village-page { position: relative; z-index: 1; min-height: 100vh; }
+
+header {
+  position: relative; z-index: 10;
+  padding: clamp(40px,7vw,72px) clamp(20px,5vw,48px) 0;
+  text-align: center;
+}
+.logo { font-family: var(--display); font-size: clamp(11px,1.5vw,14px); letter-spacing: .35em; text-transform: uppercase; color: var(--brand); margin-bottom: clamp(20px,4vw,36px); }
+.village-title { font-family: var(--display); font-size: clamp(44px,9vw,96px); font-weight: 300; line-height: .95; color: var(--t1); }
+.village-title em { font-style: italic; color: var(--gold); }
+.village-sub { font-family: var(--mono); font-size: clamp(10px,1.2vw,12px); letter-spacing: .18em; text-transform: uppercase; color: var(--t3); margin-top: 18px; margin-bottom: clamp(16px,3vw,24px); }
+
+/* countdown */
+.countdown-bar {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--linef); background: rgba(13,10,7,.85);
+  backdrop-filter: blur(8px); margin-bottom: clamp(40px,6vw,64px);
+  overflow: hidden;
+}
+.cd-unit { padding: 10px 18px; text-align: center; border-right: 1px solid var(--line); }
+.cd-unit:last-child { border-right: none; }
+.cd-num { font-family: var(--display); font-size: clamp(20px,3vw,30px); font-weight: 300; color: var(--brand); display: block; line-height: 1; }
+.cd-label { font-family: var(--mono); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--t3); display: block; margin-top: 3px; }
+
+/* strip */
+.strip {
+  position: relative; z-index: 10;
+  background: rgba(201,169,110,0.05); border-top: 1px solid var(--linef); border-bottom: 1px solid var(--linef);
+  padding: 12px clamp(20px,5vw,48px);
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-bottom: clamp(36px,5vw,56px);
+}
+.strip-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ember); animation: blink 2s ease-in-out infinite; flex-shrink: 0; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+.strip-text { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
+
+/* ─── BUILDINGS GRID ─── */
+.village-section { position: relative; z-index: 10; padding: 0 clamp(16px,4vw,48px); max-width: 1100px; margin: 0 auto; }
+.village-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--t3); text-align: center; margin-bottom: 28px;
+  display: flex; align-items: center; gap: 16px; justify-content: center;
+}
+.village-label::before, .village-label::after { content: ''; display: block; width: 40px; height: 1px; background: var(--line); }
+.buildings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* building card */
+.building {
+  position: relative; border: 1px solid var(--line); background: rgba(13,10,7,.85);
+  padding: clamp(22px,3vw,32px) clamp(18px,2.5vw,26px);
+  cursor: pointer; transition: border-color .25s, background .25s, transform .15s;
+  display: flex; flex-direction: column; gap: 10px; min-height: 190px;
+  -webkit-tap-highlight-color: transparent;
+}
+.building:active { transform: scale(0.98); }
+.building.unlocked:hover { border-color: rgba(201,169,110,0.28); background: rgba(17,14,10,.95); }
+.building.unlocked:hover .building-name { color: var(--gold); }
+.building.unlocked:hover .building-icon { transform: scale(1.1); }
+.building-icon { font-size: clamp(26px,3.5vw,36px); line-height: 1; transition: transform .3s; display: block; }
+.building-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid; display: inline-block; align-self: flex-start;
+}
+.building.unlocked .building-tag { color: var(--brand); border-color: rgba(201,169,110,0.3); }
+.building.locked   .building-tag { color: var(--t4);   border-color: rgba(66,54,42,0.4); }
+.building-name { font-family: var(--display); font-size: clamp(20px,2.5vw,26px); font-weight: 400; color: var(--t1); line-height: 1.1; transition: color .25s; }
+.building.locked .building-name { color: var(--t4); }
+.building-desc { font-size: 13px; color: var(--t3); line-height: 1.55; flex: 1; }
+.building.unlocked .building-desc { color: var(--t2); }
+
+/* lock icon */
+.lock-mark {
+  position: absolute; top: 14px; right: 14px;
+  width: 26px; height: 26px; border: 1px solid var(--t4);
+  display: flex; align-items: center; justify-content: center;
+}
+.lock-mark svg { width: 12px; height: 12px; fill: none; stroke: var(--t4); stroke-width: 1.5; }
+
+/* CTA */
+.cta-area { position: relative; z-index: 10; text-align: center; padding: clamp(36px,5vw,56px) clamp(20px,5vw,48px) clamp(36px,5vw,56px); }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  border: 1px solid var(--brand); background: transparent;
+  color: var(--brand); font-family: var(--mono); font-size: 12px;
+  letter-spacing: .15em; text-transform: uppercase; text-decoration: none;
+  padding: 16px 32px; transition: background .25s, color .25s;
+}
+.cta-btn:hover { background: var(--brand); color: var(--bg); }
+.cta-note { font-family: var(--sg); font-size: 13px; color: var(--t3); margin-top: 12px; }
+
+.footer-area {
+  position: relative; z-index: 10;
+  border-top: 1px solid var(--line);
+  padding: clamp(20px,3vw,28px) clamp(20px,5vw,48px);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.footer-left { font-family: var(--display); font-size: 17px; font-weight: 300; color: var(--t3); }
+.footer-right { font-family: var(--mono); font-size: 10px; color: var(--t4); letter-spacing: .1em; }
+
+/* ─── BUILDING DETAIL OVERLAY ─── */
+.detail-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(8,5,4,.82); backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s var(--ease);
+}
+.detail-backdrop.active { opacity: 1; pointer-events: all; }
+
+.detail-panel {
+  position: fixed; z-index: 201;
+  left: 50%; bottom: 0;
+  width: min(520px, 100%);
+  transform: translateX(-50%) translateY(100%);
+  transition: transform .4s var(--ease);
+  background: var(--s1); border-top: 1px solid var(--linef);
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  padding: clamp(24px,4vw,40px) clamp(24px,4vw,40px) clamp(28px,4vw,44px);
+  max-height: 90vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* desktop: center vertically */
+@media (min-width: 600px) {
+  .detail-panel {
+    top: 50%; bottom: auto;
+    transform: translateX(-50%) translateY(-40%) scale(0.95);
+    border: 1px solid var(--linef);
+    transition: transform .35s var(--ease), opacity .3s;
+    opacity: 0; max-height: 85vh;
+  }
+  .detail-backdrop.active + .detail-panel,
+  .detail-panel.active {
+    transform: translateX(-50%) translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+@media (max-width: 599px) {
+  .detail-panel.active { transform: translateX(-50%) translateY(0); }
+}
+
+.detail-panel .close-btn {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px; border: 1px solid var(--line); background: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--t3); font-size: 18px; font-family: var(--sg); transition: color .2s, border-color .2s;
+}
+.detail-panel .close-btn:hover { color: var(--t1); border-color: var(--t3); }
+
+.dp-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.dp-tag { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; display: inline-block; margin-bottom: 16px; }
+.dp-tag.open { color: var(--brand); border-color: rgba(201,169,110,0.35); }
+.dp-tag.locked { color: var(--t4); border-color: rgba(66,54,42,0.4); }
+.dp-name { font-family: var(--display); font-size: clamp(26px,4vw,38px); font-weight: 300; color: var(--t1); margin-bottom: 12px; line-height: 1.1; }
+.dp-name em { font-style: italic; color: var(--gold); }
+.dp-desc { font-size: 15px; color: var(--t2); line-height: 1.7; margin-bottom: 20px; }
+.dp-note { font-family: var(--mono); font-size: 11px; color: var(--t3); letter-spacing: .06em; line-height: 1.6; margin-bottom: 24px; padding: 12px 16px; border-left: 2px solid var(--line); }
+
+.enter-btn {
+  width: 100%; padding: 15px; background: transparent;
+  border: 1px solid var(--brand); color: var(--brand);
+  font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+  cursor: pointer; transition: background .25s, color .25s; text-align: center;
+}
+.enter-btn:hover { background: var(--brand); color: var(--bg); }
+
+/* ─── CONTENT PANEL (full-page) ─── */
+#content-panel {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg); overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transform: translateY(100%);
+  transition: transform .45s var(--ease);
+  will-change: transform;
+}
+#content-panel.active { transform: translateY(0); }
+
+/* back bar */
+.back-bar {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(8,5,4,0.97); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 clamp(16px,4vw,32px);
+  display: flex; align-items: center; height: 50px; gap: 16px;
+}
+.back-bar-btn {
+  background: none; border: none; color: var(--t3);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 0;
+  transition: color .2s;
+}
+.back-bar-btn:hover { color: var(--brand); }
+.back-bar-title { font-family: var(--display); font-size: 15px; color: var(--t3); font-weight: 400; }
+
+/* ─── DOCS CONTENT (embedded) ─── */
+.docs-wrap { max-width: calc(780px + clamp(20px,5vw,48px)*2); margin: 0 auto; }
+.docs-hero { padding: clamp(48px,8vw,96px) clamp(20px,5vw,48px) clamp(36px,5vw,56px); border-bottom: 1px solid var(--line); }
+.docs-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--brand); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.docs-eyebrow::before { content: ''; display: block; width: 24px; height: 1px; background: var(--brand); }
+.docs-hero h1 { font-family: var(--display); font-size: clamp(36px,6vw,72px); font-weight: 300; line-height: 1.05; color: var(--t1); margin-bottom: 24px; }
+.docs-hero h1 em { font-style: italic; color: var(--gold); }
+.docs-hero .lead { font-size: clamp(15px,2vw,18px); color: var(--t2); line-height: 1.7; max-width: 560px; }
+.chapter { padding: clamp(36px,5vw,60px) clamp(20px,5vw,48px); border-bottom: 1px solid var(--line); }
+.chapter:last-child { border-bottom: none; }
+.ch-num { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--t3); margin-bottom: 10px; }
+.chapter h2 { font-family: var(--display); font-size: clamp(26px,4vw,42px); font-weight: 300; line-height: 1.1; color: var(--t1); margin-bottom: 22px; }
+.chapter h2 em { font-style: italic; color: var(--gold); }
+.chapter p { color: var(--t2); margin-bottom: 18px; font-size: 15px; line-height: 1.75; }
+.chapter p:last-child { margin-bottom: 0; }
+.chapter p strong { color: var(--t1); font-weight: 500; }
+.callout { background: rgba(201,169,110,0.05); border-left: 2px solid var(--brand); padding: 16px 20px; margin: 22px 0; }
+.callout p { color: var(--t2); font-size: 14px; margin: 0; }
+.callout p strong { color: var(--gold); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 22px 0; }
+.stat-cell { background: var(--s1); padding: 18px 20px; }
+.stat-cell-num { font-family: var(--display); font-size: 28px; font-weight: 300; color: var(--brand); display: block; line-height: 1; margin-bottom: 5px; }
+.stat-cell-label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); display: block; }
+.data-table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); margin: 20px 0; }
+.data-table th { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--t3); text-align: left; padding: 10px 14px; background: var(--s1); border-bottom: 1px solid var(--line); }
+.data-table td { padding: 11px 14px; color: var(--t2); border-bottom: 1px solid rgba(201,169,110,0.06); font-size: 13px; vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td .mono { font-family: var(--mono); font-size: 12px; }
+
+/* ─── MOBILE ─── */
+@media (max-width: 700px) {
+  .buildings { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .building { min-height: 160px; }
+}
+@media (max-width: 420px) {
+  .buildings { grid-template-columns: 1fr; }
+  .countdown-bar { display: grid; grid-template-columns: repeat(4,1fr); width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div class="sky-glow"></div>
+
+<!-- ═══════════════════════════════════ VILLAGE PAGE ═══════════════════════════════════ -->
+<div id="village-page">
+
+<header>
+  <div class="logo">P Y R E</div>
+  <h1 class="village-title"><em>Village</em><br>World</h1>
+  <p class="village-sub">Enter the village. Survive the fire.</p>
+
+  <div class="countdown-bar">
+    <div class="cd-unit"><span class="cd-num" id="cd-d">—</span><span class="cd-label">Days</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cd-h">—</span><span class="cd-label">Hours</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cd-m">—</span><span class="cd-label">Min</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cd-s">—</span><span class="cd-label">Sec</span></div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="strip-dot"></div>
+  <div class="strip-text">The village awakens — one building is open</div>
+</div>
+
+<div class="village-section">
+  <div class="village-label">Explore the Village</div>
+  <div class="buildings">
+
+    <div class="building unlocked" onclick="openBuilding('archive')">
+      <span class="building-icon">🏛</span>
+      <span class="building-tag">Open</span>
+      <div class="building-name">The Archive</div>
+      <div class="building-desc">The protocol. How PYRE works. Read here before the fire is lit.</div>
+    </div>
+
+    <div class="building locked" onclick="openBuilding('forge')">
+      <div class="lock-mark"><svg viewBox="0 0 14 16"><rect x="2" y="7" width="10" height="8" rx="1"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+      <span class="building-icon" style="filter:grayscale(1) opacity(.3)">⚒</span>
+      <span class="building-tag">Coming</span>
+      <div class="building-name">The Forge</div>
+      <div class="building-desc">Stake. Burn. Your Fire Spirit awaits.</div>
+    </div>
+
+    <div class="building locked" onclick="openBuilding('hearth')">
+      <div class="lock-mark"><svg viewBox="0 0 14 16"><rect x="2" y="7" width="10" height="8" rx="1"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+      <span class="building-icon" style="filter:grayscale(1) opacity(.3)">🔥</span>
+      <span class="building-tag">Pre-launch</span>
+      <div class="building-name">The Hearth</div>
+      <div class="building-desc">Complete tasks. Submit your wallet. Earn your rewards.</div>
+    </div>
+
+    <div class="building locked" onclick="openBuilding('hall')">
+      <div class="lock-mark"><svg viewBox="0 0 14 16"><rect x="2" y="7" width="10" height="8" rx="1"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+      <span class="building-icon" style="filter:grayscale(1) opacity(.3)">👁</span>
+      <span class="building-tag">Coming</span>
+      <div class="building-name">Hall of the Immolated</div>
+      <div class="building-desc">Only those who have fully burned may enter.</div>
+    </div>
+
+    <div class="building locked" onclick="openBuilding('pyre')">
+      <div class="lock-mark"><svg viewBox="0 0 14 16"><rect x="2" y="7" width="10" height="8" rx="1"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+      <span class="building-icon" style="filter:grayscale(1) opacity(.3)">🕯</span>
+      <span class="building-tag">Coming</span>
+      <div class="building-name">The Pyre</div>
+      <div class="building-desc">Watch supply burn in real time. Witness others transcend.</div>
+    </div>
+
+    <div class="building locked" onclick="openBuilding('market')">
+      <div class="lock-mark"><svg viewBox="0 0 14 16"><rect x="2" y="7" width="10" height="8" rx="1"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+      <span class="building-icon" style="filter:grayscale(1) opacity(.3)">⚖</span>
+      <span class="building-tag">Coming</span>
+      <div class="building-name">The Market</div>
+      <div class="building-desc">Live protocol stats. Volume, burned supply, active stakers.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="cta-area">
+  <a href="marketing-funnel.html" class="cta-btn">Complete tasks → earn your rewards</a>
+  <p class="cta-note">Whitelisted wallets receive launch rewards. Details revealed when the fire is lit.</p>
+</div>
+
+<div class="footer-area">
+  <div class="footer-left">PYRE</div>
+  <div class="footer-right">Built on Ethereum · Uniswap V4</div>
+</div>
+
+</div><!-- /village-page -->
+
+
+<!-- ═══════════════════════════════════ BUILDING DETAIL OVERLAY ═══════════════════════════════════ -->
+<div class="detail-backdrop" id="detail-backdrop" onclick="closeDetail()"></div>
+
+<div class="detail-panel" id="detail-panel">
+  <button class="close-btn" onclick="closeDetail()">✕</button>
+  <span class="dp-icon" id="dp-icon"></span>
+  <span class="dp-tag" id="dp-tag"></span>
+  <div class="dp-name" id="dp-name"></div>
+  <div class="dp-desc" id="dp-desc"></div>
+  <div class="dp-note" id="dp-note" style="display:none"></div>
+  <button class="enter-btn" id="dp-enter" style="display:none" onclick="enterBuilding()">Enter the building →</button>
+</div>
+
+
+<!-- ═══════════════════════════════════ CONTENT PANEL ═══════════════════════════════════ -->
+<div id="content-panel">
+  <div class="back-bar">
+    <button class="back-bar-btn" onclick="closeContent()">← Village World</button>
+    <div class="back-bar-title" id="content-title"></div>
+  </div>
+  <div id="content-body"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════ BUILDING DATA ═══════════════════════════════════ -->
+<script>
+const BUILDINGS = {
+  archive: {
+    icon: '🏛',
+    tag: 'Open',
+    tagClass: 'open',
+    name: 'The <em>Archive</em>',
+    desc: 'The protocol library. Everything you need to understand PYRE — the decay mechanic, staking, burning, Fire Spirits, yield sources, and the Immolated.',
+    note: 'Open now. Read before the fire is lit — this is where KOLs, researchers, and early believers come to understand the mechanic.',
+    enter: true,
+    enterLabel: 'Enter the Archive →',
+    content: 'archive'
+  },
+  forge: {
+    icon: '⚒',
+    tag: 'Coming at launch',
+    tagClass: 'locked',
+    name: 'The <em>Forge</em>',
+    desc: 'The staking and burning dashboard. Stake your PYRE tokens to stop decay and earn yield. Burn tokens to mint your Fire Spirit NFT and evolve through EMBER → FLAME → FORGE → PYRE stages.',
+    note: 'Opens at launch. Connect your wallet, stake or burn, and watch your Fire Spirit take form on-chain.',
+    enter: false
+  },
+  hearth: {
+    icon: '🔥',
+    tag: 'Pre-launch',
+    tagClass: 'locked',
+    name: 'The <em>Hearth</em>',
+    desc: 'The pre-launch quest hub. Complete tasks, share PYRE with your network, learn the mechanic, and submit your wallet address to the whitelist before launch.',
+    note: 'Opens when the first post goes live. Complete all tasks before the deadline to earn your launch rewards.',
+    enter: false
+  },
+  hall: {
+    icon: '👁',
+    tag: 'Coming',
+    tagClass: 'locked',
+    name: 'Hall of the <em>Immolated</em>',
+    desc: 'The hall of those who have given the most to the fire. Only wallets that have burned 300,000 PYRE and passed the final threshold may be listed here.',
+    note: 'Opens post-launch. The Immolated carry a permanent identity — visible on-chain, on the leaderboard, and in this hall.',
+    enter: false
+  },
+  pyre: {
+    icon: '🕯',
+    tag: 'Coming',
+    tagClass: 'locked',
+    name: 'The <em>Pyre</em>',
+    desc: 'A live ceremonial view of the protocol burning. Watch supply decrease in real time with every sell-side fee. Every transaction shrinks what remains.',
+    note: 'Opens at launch. Each token burned here is gone forever — the Pyre shows the collective commitment of everyone who has given to the fire.',
+    enter: false
+  },
+  market: {
+    icon: '⚖',
+    tag: 'Coming',
+    tagClass: 'locked',
+    name: 'The <em>Market</em>',
+    desc: 'Live protocol analytics. Daily volume, cumulative burned supply, active stakers, current yield rate, and the full history of every epoch since launch.',
+    note: 'Opens at launch. The numbers speak plainly — the protocol performs or it doesn\'t. No marketing copy, just the data.',
+    enter: false
+  }
+};
+
+// ─── ARCHIVE CONTENT (embedded docs) ───
+const ARCHIVE_HTML = `
+<div class="docs-wrap">
+  <div class="docs-hero">
+    <div class="docs-eyebrow">Protocol Documentation</div>
+    <h1>Not a token you <em>hold.</em><br>A token you <em>become.</em></h1>
+    <p class="lead">PYRE is a DeFi protocol built on a single belief — that conviction should be rewarded permanently, and indifference should have a cost. Everything that follows is a consequence of that idea.</p>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">01</div>
+    <h2>What <em>PYRE</em> is</h2>
+    <p>Most tokens are designed to reward holding. Buy, wait, sell when it's high enough. The protocol inflates, the team distributes, and everyone pretends the dilution isn't happening. PYRE was built on the belief that this model is dishonest.</p>
+    <p>PYRE is a token with <strong>built-in decay</strong> — liquid tokens lose value every hour. Stopping the decay requires commitment. Transcending it entirely requires burning. Both paths are rewarded. Neither is optional.</p>
+    <p>There are no VCs. No pre-mine. No team allocation on a vesting cliff. Equal access for everyone — the only advantage available is arriving before the price rises.</p>
+    <div class="callout"><p><strong>The core idea:</strong> Stake to survive the decay. Burn to transcend it entirely. Every token that burns becomes a permanent yield position, held by a Fire Spirit NFT that earns forever.</p></div>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">02</div>
+    <h2>The <em>Decay</em> Mechanic</h2>
+    <p>Every liquid $PYRE token — sitting in a wallet, not staked, not burned — loses value at a fixed rate every hour. This is called decay. It is calculated and applied on-chain at every epoch (approximately one hour).</p>
+    <p>Decay is not punishment. It is an honest representation of what indifference costs. Every other token in the market also loses value through inflation and team distribution — PYRE simply says so out loud.</p>
+    <div class="stat-grid">
+      <div class="stat-cell"><span class="stat-cell-num">0.45%</span><span class="stat-cell-label">Decay per hour — Era 0</span></div>
+      <div class="stat-cell"><span class="stat-cell-num">~57%</span><span class="stat-cell-label">Lost over 7-day exit drip</span></div>
+      <div class="stat-cell"><span class="stat-cell-num">0.01%</span><span class="stat-cell-label">Floor rate — token survives forever</span></div>
+    </div>
+    <p>The decay rate halves every 2,000 epochs — roughly every 83 days. Each halving is called an Era. The rate declines progressively until it reaches 0.01% per hour, at which point $PYRE survives indefinitely. Exiting requires a 7-day drip — tokens unlock gradually, during which decay continues and no yield is earned.</p>
+    <table class="data-table">
+      <thead><tr><th>Era</th><th>Rate / hour</th><th>Duration</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0</td><td class="mono">0.45%</td><td>Days 0–83</td></tr>
+        <tr><td class="mono">1</td><td class="mono">0.22%</td><td>Days 83–166</td></tr>
+        <tr><td class="mono">2</td><td class="mono">0.11%</td><td>Days 166–249</td></tr>
+        <tr><td class="mono">3</td><td class="mono">0.06%</td><td>Days 249–332</td></tr>
+        <tr><td class="mono">4</td><td class="mono">0.03%</td><td>Days 332–415</td></tr>
+        <tr><td class="mono">5+</td><td class="mono" style="color:var(--brand)">0.01%</td><td style="color:var(--brand)">Forever — floor rate</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">03</div>
+    <h2><em>Staking</em> — Survive the Decay</h2>
+    <p>Staking is the first path. When $PYRE is staked, decay stops completely. Staked tokens are protected — they do not lose value over time. In return, stakers earn a proportional share of <strong>all ETH fees generated by every swap</strong> in the PYRE liquidity pool.</p>
+    <div class="callout"><p>Staking does not create a visual identity or NFT. It is a purely financial commitment — decay protection and yield share. The Fire Spirit belongs exclusively to those who burn.</p></div>
+    <p>There is no minimum stake. Exiting requires the 7-day drip, which makes long-term commitment the rational choice.</p>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">04</div>
+    <h2><em>Burning</em> — Transcend It</h2>
+    <p>Burning is the permanent path. When $PYRE tokens are burned, they are destroyed forever. In return, the burner receives a <strong>Fire Spirit NFT</strong> that earns yield permanently. Burning is irreversible — the decision is final. The protocol rewards it accordingly, with yield multipliers that increase as cumulative burns grow.</p>
+    <div class="callout"><p><strong>Sell-side fees are burned too.</strong> Every sell on the protocol collects a fee in $PYRE — and 100% of that is permanently burned. Every transaction shrinks supply.</p></div>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">05</div>
+    <h2>Fire <em>Spirits</em></h2>
+    <p>A Fire Spirit is an NFT minted automatically when a wallet's cumulative $PYRE burns cross 10,000 tokens. The art is generative — computed entirely on-chain from a seed locked at the moment of first mint. Every Fire Spirit's final form is determined at EMBER stage, revealed progressively as the wallet burns more.</p>
+    <table class="data-table">
+      <thead><tr><th>Stage</th><th>Cumulative Burn</th><th>Traits Revealed</th><th>Yield Weight</th></tr></thead>
+      <tbody>
+        <tr><td style="color:#8B8B9C; font-family:var(--display); font-size:16px">EMBER</td><td class="mono">10,000 PYRE</td><td style="font-size:12px">Silhouette + fire coloration</td><td class="mono" style="color:var(--brand)">1×</td></tr>
+        <tr><td style="color:#FF6B1A; font-family:var(--display); font-size:16px">FLAME</td><td class="mono">75,000 PYRE</td><td style="font-size:12px">1 trait revealed</td><td class="mono" style="color:var(--brand)">1.5×</td></tr>
+        <tr><td style="color:#E85D04; font-family:var(--display); font-size:16px">FORGE</td><td class="mono">150,000 PYRE</td><td style="font-size:12px">2 traits revealed</td><td class="mono" style="color:var(--brand)">2×</td></tr>
+        <tr><td style="color:#DC2F02; font-family:var(--display); font-size:16px">PYRE</td><td class="mono">300,000 PYRE</td><td style="font-size:12px">Full form revealed</td><td class="mono" style="color:var(--brand)">3×</td></tr>
+      </tbody>
+    </table>
+    <p>The yield multiplier reflects the NFT holder's share of the yield pool relative to other holders. A PYRE-stage Fire Spirit earns three times the yield weight of an EMBER-stage one. Higher stages become more exclusive as price rises — the same threshold costs more, rewarding those who committed earliest.</p>
+    <p>Fire Spirit yield follows the NFT, not the wallet. When a Fire Spirit is transferred or sold, accumulated yield settles to the seller automatically, and the new holder begins earning from that point forward.</p>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">06</div>
+    <h2>Where <em>Yield</em> Comes From</h2>
+    <p>PYRE generates yield from a single source: swap fees on every trade through the PYRE liquidity pool. No external protocol, no farming strategy, no external dependency. The yield is a direct function of trading volume.</p>
+    <div class="stat-grid">
+      <div class="stat-cell"><span class="stat-cell-num">5%</span><span class="stat-cell-label">Total effective fee</span></div>
+      <div class="stat-cell"><span class="stat-cell-num">80%</span><span class="stat-cell-label">Buy ETH → yield pool</span></div>
+      <div class="stat-cell"><span class="stat-cell-num">100%</span><span class="stat-cell-label">Sell PYRE → burned</span></div>
+    </div>
+    <p>Buy-side fees flow in ETH — 80% to the yield pool (split between stakers and Fire Spirit holders by weight), 20% to the team. Sell-side fees are collected in $PYRE and burned permanently. Yield is distributed continuously — no claim needed, no lockup on earned ETH.</p>
+    <div class="callout"><p><strong>At $1M daily volume:</strong> the yield pool receives ~$43,200/day in ETH. ~$36,000/day in $PYRE is permanently burned. At $5M TVL staked, that represents ~315% ETH APY.</p></div>
+  </div>
+
+  <div class="chapter">
+    <div class="ch-num">07</div>
+    <h2>The <em>Immolated</em></h2>
+    <p>The Immolated is not a tier. It is a title — earned by the wallets that have committed most completely to the fire. It is the rarest identity in the PYRE protocol and it cannot be purchased, only earned.</p>
+    <p>To become Immolated, a wallet must reach <strong>PYRE stage</strong> (300,000 cumulative $PYRE burned) and then burn an additional <strong>10,000 $PYRE</strong> on top of that. The Immolated gain access to the Hall of the Immolated and carry a visual identity that marks them permanently on the leaderboard and within the Village World.</p>
+    <div class="callout"><p>The 10,000 additional burn mirrors the EMBER threshold intentionally — the entry point and the apex are the same number. Symmetry as design.</p></div>
+    <p>There is no hard cap on how many wallets can become Immolated. The threshold is fixed in tokens — as price rises, fewer wallets can reach it. Early participants who burned when price was low will always have an advantage that cannot be replicated later.</p>
+  </div>
+
+</div>`;
+
+// ─── STATE ───
+let currentBuilding = null;
+
+function openBuilding(key) {
+  const b = BUILDINGS[key];
+  if (!b) return;
+  currentBuilding = key;
+
+  // populate panel
+  document.getElementById('dp-icon').textContent = b.icon;
+  const tag = document.getElementById('dp-tag');
+  tag.textContent = b.tag;
+  tag.className = 'dp-tag ' + b.tagClass;
+  document.getElementById('dp-name').innerHTML = b.name;
+  document.getElementById('dp-desc').textContent = b.desc;
+
+  const noteEl = document.getElementById('dp-note');
+  if (b.note) { noteEl.textContent = b.note; noteEl.style.display = 'block'; }
+  else { noteEl.style.display = 'none'; }
+
+  const enterEl = document.getElementById('dp-enter');
+  if (b.enter) { enterEl.textContent = b.enterLabel || 'Enter →'; enterEl.style.display = 'block'; }
+  else { enterEl.style.display = 'none'; }
+
+  // show
+  document.getElementById('detail-backdrop').classList.add('active');
+  requestAnimationFrame(() => {
+    document.getElementById('detail-panel').classList.add('active');
+  });
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detail-backdrop').classList.remove('active');
+  document.getElementById('detail-panel').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function enterBuilding() {
+  const b = BUILDINGS[currentBuilding];
+  if (!b || !b.enter) return;
+
+  closeDetail();
+
+  // load content
+  if (b.content === 'archive') {
+    document.getElementById('content-body').innerHTML = ARCHIVE_HTML;
+    document.getElementById('content-title').textContent = 'The Archive';
+  }
+
+  // slide in
+  requestAnimationFrame(() => {
+    const panel = document.getElementById('content-panel');
+    panel.scrollTop = 0;
+    panel.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+function closeContent() {
+  const panel = document.getElementById('content-panel');
+  panel.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// ESC key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('content-panel').classList.contains('active')) closeContent();
+    else closeDetail();
+  }
+});
+
+// ─── COUNTDOWN ───
+function tick() {
+  const diff = new Date('2026-06-23T22:00:00Z') - new Date();
+  if (diff <= 0) {
+    ['cd-d','cd-h','cd-m','cd-s'].forEach(id => document.getElementById(id).textContent = '0');
+    return;
+  }
+  document.getElementById('cd-d').textContent = String(Math.floor(diff / 86400000)).padStart(2,'0');
+  document.getElementById('cd-h').textContent = String(Math.floor((diff % 86400000) / 3600000)).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+}
+tick(); setInterval(tick, 1000);
+
+// ─── PARTICLES ───
+const container = document.getElementById('particles');
+for (let i = 0; i < 22; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = Math.random() * 4 + 2;
+  p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;animation-delay:-${Math.random()*12}s;animation-duration:${Math.random()*14+10}s;--drift:${(Math.random()-.5)*120}px;opacity:0;`;
+  container.appendChild(p);
+}
+</script>
+</body>
+</html>

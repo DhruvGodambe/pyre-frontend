@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE Studio — Designer Area</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080504; --s1: #0D0A07; --s2: #110E0A;
+  --brand: #C9A96E; --gold: #E8C88A; --warm: #B8894A;
+  --t1: #EDE8E0; --t2: #B8A88A; --t3: #7A6A52;
+  --line: rgba(201,169,110,0.12); --linef: rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg: 'DM Sans', sans-serif; --mono: 'Fira Code', monospace;
+}
+html, body { height: 100%; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--t1); font-family: var(--sg); }
+
+/* GATE */
+#gate {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 40px 24px; flex-direction: column; gap: 0;
+}
+.gate-logo { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--brand); margin-bottom: 40px; }
+.gate-title { font-family: var(--display); font-size: clamp(36px,6vw,60px); font-weight: 300; color: var(--t1); margin-bottom: 12px; text-align: center; }
+.gate-sub { font-family: var(--mono); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--t3); margin-bottom: 40px; text-align: center; }
+.gate-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
+.gate-input {
+  width: 100%; padding: 14px 18px; background: var(--s1); border: 1px solid var(--line);
+  color: var(--t1); font-family: var(--mono); font-size: 14px; letter-spacing: .08em;
+  outline: none; transition: border-color .2s;
+}
+.gate-input:focus { border-color: var(--brand); }
+.gate-input::placeholder { color: var(--t3); }
+.gate-btn {
+  width: 100%; padding: 14px; background: transparent; border: 1px solid var(--brand);
+  color: var(--brand); font-family: var(--mono); font-size: 12px; letter-spacing: .2em;
+  text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s;
+}
+.gate-btn:hover { background: var(--brand); color: var(--bg); }
+.gate-err { font-family: var(--mono); font-size: 11px; color: #B03030; letter-spacing: .08em; text-align: center; min-height: 16px; }
+
+/* STUDIO */
+#studio { display: none; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,5,4,0.97); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 clamp(20px,5vw,48px); display: flex; align-items: center; height: 52px; gap: 0;
+}
+.nav-logo { font-family: var(--display); font-size: 16px; font-weight: 600; color: var(--brand); letter-spacing: .06em; margin-right: auto; }
+.nav-badge { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--t3); border: 1px solid var(--line); padding: 4px 10px; margin-left: 16px; }
+
+/* MAIN LAYOUT */
+.studio-wrap { max-width: calc(860px + clamp(20px,5vw,48px)*2); margin: 0 auto; padding: 0 clamp(20px,5vw,48px); }
+
+/* SECTION HEADER */
+.s-header { padding: clamp(48px,6vw,72px) 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+.s-header h2 { font-family: var(--display); font-size: clamp(30px,4vw,44px); font-weight: 300; color: var(--t1); margin-bottom: 8px; }
+.s-header h2 em { font-style: italic; color: var(--gold); }
+.s-header p { color: var(--t3); font-size: 14px; }
+
+/* SECTION DIVIDER */
+.section-break { border-top: 1px solid var(--line); margin: clamp(40px,5vw,60px) 0 0; }
+
+/* BRIEF CARD */
+.brief-card { border: 1px solid var(--line); background: var(--s1); margin-bottom: 16px; }
+.brief-header { padding: 18px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; user-select: none; transition: background .2s; }
+.brief-header:hover { background: var(--s2); }
+.brief-icon { font-size: 20px; flex-shrink: 0; }
+.brief-meta { flex: 1; min-width: 0; }
+.brief-title { font-family: var(--display); font-size: 20px; font-weight: 400; color: var(--t1); }
+.brief-status { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); margin-top: 2px; }
+.brief-chevron { font-size: 11px; color: var(--t3); transition: transform .25s; flex-shrink: 0; }
+.brief-card.open .brief-chevron { transform: rotate(90deg); }
+.brief-body { display: none; padding: 0 24px 24px; }
+.brief-card.open .brief-body { display: block; }
+
+/* BRIEF CONTENT STYLES */
+.bc-label { font-family: var(--mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--t3); margin: 24px 0 10px; }
+.bc-text { font-size: 14px; color: var(--t2); line-height: 1.7; margin-bottom: 12px; }
+.bc-quote { font-family: var(--display); font-size: 22px; font-style: italic; color: var(--gold); border-left: 2px solid var(--brand); padding: 12px 20px; margin: 16px 0; line-height: 1.35; }
+.bc-spec { background: rgba(0,0,0,.35); padding: 14px 18px; font-family: var(--mono); font-size: 12px; color: var(--t2); line-height: 1.8; margin: 12px 0; }
+.bc-spec strong { color: var(--brand); }
+.bc-tag { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; border: 1px solid var(--line); padding: 4px 10px; color: var(--t3); margin: 3px 3px 0 0; }
+.bc-warn { background: rgba(176,48,48,0.1); border: 1px solid rgba(176,48,48,0.3); padding: 12px 16px; font-size: 13px; color: #C87070; margin-top: 12px; }
+.bc-warn strong { color: #E07070; }
+.bc-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.bc-table th { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.bc-table td { padding: 10px 12px; color: var(--t2); border-bottom: 1px solid rgba(201,169,110,0.06); vertical-align: top; }
+.bc-table tr:last-child td { border-bottom: none; }
+.bc-swatch { display: inline-flex; align-items: center; gap: 8px; margin: 4px 8px 4px 0; }
+.bc-swatch-dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,.1); }
+.bc-swatch-code { font-family: var(--mono); font-size: 11px; color: var(--t2); }
+
+/* CONTENT PLAN */
+.post-row { display: grid; grid-template-columns: 60px 1fr; gap: 0; border-bottom: 1px solid var(--line); }
+.post-row:last-child { border-bottom: none; }
+.post-num { padding: 16px 12px; font-family: var(--mono); font-size: 11px; color: var(--t3); border-right: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: center; }
+.post-content { padding: 16px 18px; }
+.post-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+.post-title { font-family: var(--display); font-size: 18px; color: var(--t1); margin-bottom: 6px; }
+.post-note { font-size: 13px; color: var(--t3); line-height: 1.6; }
+
+/* LOCK NOTE */
+.lock-notice { background: rgba(201,169,110,0.06); border: 1px solid var(--linef); padding: 20px 24px; margin-bottom: 28px; }
+.lock-notice p { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--brand); line-height: 1.7; }
+.lock-notice strong { font-weight: 500; }
+
+@media (max-width:560px) {
+  .post-row { grid-template-columns: 40px 1fr; }
+  .brief-header { padding: 14px 16px; gap: 12px; }
+  .brief-body { padding: 0 16px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div class="gate-logo">PYRE</div>
+  <h1 class="gate-title">Studio Area</h1>
+  <p class="gate-sub">Designer & Creative — Restricted Access</p>
+  <form class="gate-form" onsubmit="return false;">
+    <input type="password" class="gate-input" id="pw" placeholder="Enter password" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="gate-btn" onclick="unlock()">Enter</button>
+    <div class="gate-err" id="err"></div>
+  </form>
+</div>
+
+<!-- STUDIO (hidden until unlocked) -->
+<div id="studio">
+
+<nav>
+  <div class="nav-logo">PYRE</div>
+  <div class="nav-badge">Studio — Internal</div>
+</nav>
+
+<div class="studio-wrap">
+
+  <!-- HEADER -->
+  <div class="s-header">
+    <h2>Designer <em>Briefs</em> &amp; Content Plan</h2>
+    <p>All creative direction, branding specs, and content strategy in one place. No deadlines set — post dates TBD.</p>
+  </div>
+
+  <div class="lock-notice">
+    <p><strong>Working context:</strong> PYRE is a DeFi protocol with a burn-to-earn NFT mechanic. The brand is luxury editorial — closer to a fashion house than a crypto project. Every design decision should reflect this. When in doubt: restraint wins. Less is always more here.</p>
+  </div>
+
+  <!-- BRANDING -->
+  <div class="brief-card open">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">🎨</span>
+      <div class="brief-meta">
+        <div class="brief-title">Brand Foundation</div>
+        <div class="brief-status">Core tokens — reference always</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <div class="bc-label">Colour Palette</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#080504; border:1px solid #333;"></div><span class="bc-swatch-code">#080504 — Background</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#C9A96E;"></div><span class="bc-swatch-code">#C9A96E — Brand Gold</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#E8C88A;"></div><span class="bc-swatch-code">#E8C88A — Gold Light</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#EDE8E0;"></div><span class="bc-swatch-code">#EDE8E0 — Off-white text</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#B8A88A;"></div><span class="bc-swatch-code">#B8A88A — Secondary text</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#FF6B1A;"></div><span class="bc-swatch-code">#FF6B1A — Ember</span></div>
+        <div class="bc-swatch"><div class="bc-swatch-dot" style="background:#DC2F02;"></div><span class="bc-swatch-code">#DC2F02 — PYRE Red</span></div>
+      </div>
+
+      <div class="bc-label">Typography</div>
+      <div class="bc-spec">
+        <strong>Display:</strong> Cormorant Garamond — Light (300), Regular (400), Italic variants<br>
+        <strong>Body:</strong> DM Sans — Light (300), Regular (400), Medium (500)<br>
+        <strong>Mono:</strong> Fira Code — Regular (400), Medium (500)<br><br>
+        All available free on Google Fonts. Display = headlines, quotes, names. Body = paragraphs, descriptions. Mono = labels, tags, data.
+      </div>
+
+      <div class="bc-label">Tone</div>
+      <div class="bc-text">Luxury editorial. Think high-end fashion, not crypto. When comparing reference images: if it looks like a DeFi launch, it's wrong. If it could be mistaken for a perfume advertisement or art exhibition announcement, it's right. Restraint and confidence — never flashy, never cluttered.</div>
+
+      <div class="bc-label">Logo / Wordmark</div>
+      <div class="bc-text">PYRE wordmark: all caps, wide letter spacing (~0.3em), Cormorant Garamond, Gold #C9A96E. When used as a signature element (bottom of graphics), make it small and quiet — a signature, not a stamp.</div>
+    </div>
+  </div>
+
+  <!-- BRIEF 1: MANIFESTO GRAPHIC -->
+  <div class="brief-card">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">🔥</span>
+      <div class="brief-meta">
+        <div class="brief-title">Brief 01 — Manifesto Launch Graphic</div>
+        <div class="brief-status">2 deliverables: static PNG + short video</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <div class="bc-label">Purpose</div>
+      <div class="bc-text">Appears on tweet 1 of the manifesto thread — the first thing anyone sees in a feed. Its only job is to stop the scroll and create a feeling. It does not explain PYRE. No mechanics, no numbers, no bullet points.</div>
+
+      <div class="bc-label">The line</div>
+      <div class="bc-quote">Stake to survive.<br>Burn to transcend.</div>
+      <div class="bc-text">This is the <strong>only text</strong> on the graphic. Nothing else.</div>
+
+      <div class="bc-label">Visual Direction</div>
+      <div class="bc-spec">
+        <strong>Background:</strong> #080504 — full bleed, near black<br>
+        <strong>Text font:</strong> Cormorant Garamond, Light (300)<br>
+        <strong>Text colour:</strong> #C9A96E (PYRE gold)<br>
+        <strong>Layout:</strong> Two lines, centred. Wide letter spacing — elegant, not cramped.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"Stake to survive." sits above. "Burn to transcend." sits below.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;A real beat of space between them — two declarations, not one sentence.<br><br>
+        <strong>Fire element:</strong> ONE controlled, elegant element. Not a raging bonfire. Options:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;— A single thin vertical flame, centred below the text<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;— Rising embers drifting upward from the bottom edge<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;— A subtle glow emanating from below, as if something burns underneath<br>
+        The fire should feel restrained and intentional. Ember, not explosion.<br><br>
+        <strong>Wordmark:</strong> Bottom centre, very small, same gold, wide letter spacing. Almost invisible — a signature.<br>
+        <strong>Nothing else:</strong> No URL. No date. No ticker. No borders. Restraint is the point.
+      </div>
+
+      <div class="bc-label">Deliverable 1 — Static</div>
+      <div class="bc-spec">
+        <strong>Format:</strong> PNG<br>
+        <strong>Dimensions:</strong> 1600 × 900px (landscape, optimised for X feed)
+      </div>
+
+      <div class="bc-label">Deliverable 2 — Video (3–4 seconds, silent)</div>
+      <div class="bc-spec">
+        <strong>Format:</strong> MP4 · 1600 × 900px · Silent — no audio<br><br>
+        <strong>Sequence:</strong><br>
+        &nbsp;&nbsp;1. Black screen, fire element present (subtle, slow)<br>
+        &nbsp;&nbsp;2. "Stake to survive." fades in — holds 1.5 seconds<br>
+        &nbsp;&nbsp;3. "Burn to transcend." fades in beneath — holds 1.5 seconds<br>
+        &nbsp;&nbsp;4. Both lines remain. Video ends.<br><br>
+        <strong>Loop point:</strong> Clean — last frame matches first so X autoplay loops seamlessly.<br>
+        <strong>End:</strong> No hard cut — the final frame should feel like it could hold forever.
+      </div>
+
+      <div class="bc-label">Reference Feeling</div>
+      <div class="bc-text">Luxury fashion. High-end editorial. Dark, quiet, confident. A typical DeFi launch graphic = wrong. Perfume ad or art exhibition announcement = right.</div>
+
+      <div class="bc-warn"><strong>No deadline set.</strong> Deliver when complete. Post date TBD — will be communicated separately.</div>
+    </div>
+  </div>
+
+  <!-- BRIEF 2: FIRE SPIRIT -->
+  <div class="brief-card">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">✦</span>
+      <div class="brief-meta">
+        <div class="brief-title">Brief 02 — Fire Spirit Collection</div>
+        <div class="brief-status">4 stages × art direction — reveals sequentially</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <div class="bc-label">What Fire Spirits are</div>
+      <div class="bc-text">Fire Spirits are on-chain NFTs minted automatically when a wallet burns 10,000+ PYRE tokens. They evolve through four stages as the wallet burns more. The art is generative but the direction is editorial — each stage has a distinct visual identity that reflects increasing commitment and power.</div>
+
+      <div class="bc-label">The Four Stages</div>
+      <table class="bc-table">
+        <thead><tr><th>Stage</th><th>Threshold</th><th>Art Direction</th><th>Feel</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:#8B8B9C">EMBER</strong></td>
+            <td style="font-family:var(--mono); font-size:12px;">10,000 PYRE</td>
+            <td>Silhouette form. Barely visible. Like something just beginning to glow — heat, not light. Form is human-ish but abstracted. Colour palette: deep coal greys, faint orange glow at edges.</td>
+            <td>Nascent. Potential, not power.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#FF6B1A">FLAME</strong></td>
+            <td style="font-family:var(--mono); font-size:12px;">75,000 PYRE</td>
+            <td>One trait revealed. The form clarifies — a face, hands, or some defining feature emerges from the silhouette. Amber and deep orange. More fire, more presence.</td>
+            <td>Awakening. The commitment is showing.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#E85D04">FORGE</strong></td>
+            <td style="font-family:var(--mono); font-size:12px;">150,000 PYRE</td>
+            <td>Two traits revealed. The Spirit is more defined — posture clear, character emerging. Colour: bright oranges and golds with darker underlighting. Sculpted, not burning.</td>
+            <td>Becoming. Intentional. Identity formed.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:#DC2F02">PYRE</strong></td>
+            <td style="font-family:var(--mono); font-size:12px;">300,000 PYRE</td>
+            <td>Full form revealed. Complete being. Majestic, controlled power. Not chaotic flame — contained fire. Colour: deep reds, charcoal, gold accent. The PYRE Spirit looks ancient and knowing.</td>
+            <td>Transcended. Permanent. Irreducible.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="bc-label">Post 3 — First Reveal (EMBER Stage)</div>
+      <div class="bc-text">This is a social post — the visual does the work. Show ONE Fire Spirit at EMBER stage. Minimal text. The goal: people screenshot and share it without knowing what it is yet. The visual creates the question.</div>
+      <div class="bc-spec"><strong>Format:</strong> Square 1080×1080px or 4:5 portrait for feed<br><strong>Text:</strong> Minimal or none — if text, just "EMBER" in small Fira Code, bottom corner<br><strong>Feel:</strong> Mysterious. The first glimpse. Not a reveal — a silhouette of a reveal.</div>
+
+      <div class="bc-label">Post 4 — The Four Stages</div>
+      <div class="bc-text">Show all four stages as a progression. This is educational — it needs to communicate the evolution from EMBER to PYRE visually, before anyone reads the caption.</div>
+      <div class="bc-spec"><strong>Format:</strong> Landscape 1600×900px<br><strong>Layout:</strong> Four stages side by side (left to right), each with name and threshold below in Fira Code<br><strong>Background:</strong> #080504 — same as always<br><strong>Feel:</strong> Progression, evolution, becoming. Like four chapters of the same story.</div>
+
+      <div class="bc-warn"><strong>No deadline set.</strong> EMBER reveal before Four Stages. Post dates communicated when confirmed.</div>
+    </div>
+  </div>
+
+  <!-- BRIEF 3: COMPLETION CARD -->
+  <div class="brief-card">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">◼</span>
+      <div class="brief-meta">
+        <div class="brief-title">Brief 03 — Completion Share Card</div>
+        <div class="brief-status">1 deliverable — dynamic personalised card</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <div class="bc-label">Context</div>
+      <div class="bc-text">After completing the pre-launch task funnel and submitting their wallet, users see a completion screen. The final action: they get a branded card copied to their clipboard to post on X alongside a pre-filled tweet. This card is the social proof moment — it needs to look like something people actually <em>want</em> to post. A flex, not a badge.</div>
+
+      <div class="bc-label">Card Content</div>
+      <div class="bc-spec">
+        <strong>Background:</strong> #080504 — near black, full bleed<br>
+        <strong>Central element:</strong> A fire element — ember or flame, same style as manifesto graphic<br>
+        <strong>Primary text:</strong> "The fire starts." — large, Cormorant Garamond, gold<br>
+        <strong>Wallet line:</strong> Partial wallet address (first 6 chars + "..." + last 4 chars) — small, Fira Code, secondary gold<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;Example: "0x1A3f...B7c2"<br>
+        <strong>Wordmark:</strong> PYRE — small, bottom, same gold. Almost invisible.<br>
+        <strong>Nothing else:</strong> No date. No mechanics. No website.
+      </div>
+
+      <div class="bc-label">Design Goal</div>
+      <div class="bc-text">When someone posts this on X: it should look beautiful enough that people ask "what is this?" — not "what crypto badge is this?" People copy this because it looks good, not because they were told to.</div>
+
+      <div class="bc-label">Format</div>
+      <div class="bc-spec">
+        <strong>Size:</strong> 1200 × 675px (standard X link card size)<br>
+        <strong>Format:</strong> PNG (will be copied to clipboard via JS)<br>
+        <strong>Personalisation:</strong> The wallet address section will be composited by the frontend — deliver with a clear placeholder zone
+      </div>
+
+      <div class="bc-warn"><strong>No deadline set.</strong> Needed before task funnel goes live.</div>
+    </div>
+  </div>
+
+  <!-- CONTENT PLAN -->
+  <div class="section-break"></div>
+  <div class="s-header" style="padding-top: clamp(40px,5vw,56px);">
+    <h2>Content <em>Plan</em></h2>
+    <p>Post sequence, KOL wave timing, and designer delivery dependencies. No dates — order is fixed, timing TBD.</p>
+  </div>
+
+  <div class="brief-card open">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">📋</span>
+      <div class="brief-meta">
+        <div class="brief-title">Post Sequence</div>
+        <div class="brief-status">6 pre-launch posts + launch day</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <div style="border: 1px solid var(--line);">
+        <div class="post-row">
+          <div class="post-num">01</div>
+          <div class="post-content">
+            <div class="post-label">Manifesto Thread</div>
+            <div class="post-title">The Inflation Lie</div>
+            <div class="post-note">Option B thread. Full tweets, no one-liners. Graphic on tweet 1 only (Brief 01). This creates the hook — does not explain PYRE. Makes people feel something and want more. Designer: manifesto graphic needed first.</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">02</div>
+          <div class="post-content">
+            <div class="post-label">Mechanic</div>
+            <div class="post-title">What is Decay?</div>
+            <div class="post-note">Text post — no graphic needed. Strong standalone. "Every hour you hold $PYRE liquid, it loses 0.45% of its value. That's not a bug. Here's why it exists."</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">03</div>
+          <div class="post-content">
+            <div class="post-label">Visual Reveal</div>
+            <div class="post-title">Fire Spirit — First Glimpse</div>
+            <div class="post-note">The art does the work. Minimal text. EMBER stage only — mysterious, not explained. Designer: EMBER reveal image (Brief 02) needed.</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">04</div>
+          <div class="post-content">
+            <div class="post-label">NFT Mechanics</div>
+            <div class="post-title">The Four Stages</div>
+            <div class="post-note">EMBER → FLAME → FORGE → PYRE. What they cost, what they mean. All four stages visually. Designer: four-stage progression graphic (Brief 02) needed.</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">05</div>
+          <div class="post-content">
+            <div class="post-label">Identity</div>
+            <div class="post-title">The Immolated</div>
+            <div class="post-note">The most emotional post. Who earns the title. What it means permanently. About identity, not mechanics.</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">06</div>
+          <div class="post-content">
+            <div class="post-label">Launch Push</div>
+            <div class="post-title">The Village Opens</div>
+            <div class="post-note">Task funnel live. Wallet submission window open. KOL Wave 3 activates within 48h of this post. All KOLs post countdown content.</div>
+          </div>
+        </div>
+        <div class="post-row">
+          <div class="post-num">—</div>
+          <div class="post-content">
+            <div class="post-label">Launch Day</div>
+            <div class="post-title">Live · CA drops on X</div>
+            <div class="post-note">Live updates leading into 10PM UTC. Stats thread at 1h / 6h / 24h. One KOL burns live on-screen. Boost window opens for whitelisted wallets.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KOL WAVES -->
+  <div class="brief-card">
+    <div class="brief-header" onclick="toggle(this)">
+      <span class="brief-icon">📡</span>
+      <div class="brief-meta">
+        <div class="brief-title">KOL Wave Strategy</div>
+        <div class="brief-status">4 waves — educators → conviction → countdown → authentic</div>
+      </div>
+      <div class="brief-chevron">▶</div>
+    </div>
+    <div class="brief-body">
+      <table class="bc-table">
+        <thead><tr><th>Wave</th><th>Timing</th><th>Type</th><th>Content Direction</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--brand)">Wave 1</strong></td><td>Posts 1–2</td><td>DeFi educators</td><td>"Here's a mechanic I haven't seen before" — explain the decay, no hype</td></tr>
+          <tr><td><strong style="color:var(--brand)">Wave 2</strong></td><td>Posts 3–5</td><td>Mid-tier conviction</td><td>"Here's why I'm watching this" — personal take, not sponsored feel</td></tr>
+          <tr><td><strong style="color:var(--brand)">Wave 3</strong></td><td>Post 6 + launch</td><td>Full activation</td><td>Countdown, mechanical reason to be early, task funnel push</td></tr>
+          <tr><td><strong style="color:var(--brand)">Wave 4</strong></td><td>Post-launch</td><td>Authentic</td><td>"Here's my Fire Spirit" — organic, earned, not coordinated</td></tr>
+        </tbody>
+      </table>
+      <div class="bc-warn"><strong>All KOLs must disclose (#ad).</strong> This is a contractual requirement stated publicly. Vet wallet history — no pump-and-dump profiles. Force-stake contractually.</div>
+    </div>
+  </div>
+
+  <div style="padding-bottom: clamp(48px,7vw,80px);"></div>
+</div>
+
+</div><!-- /studio -->
+
+<script>
+const PASSWORD = 'PYRE2026';
+
+function unlock() {
+  const val = document.getElementById('pw').value;
+  if (val === PASSWORD) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('studio').style.display = 'block';
+    window.scrollTo(0,0);
+  } else {
+    document.getElementById('err').textContent = 'Incorrect password.';
+    document.getElementById('pw').value = '';
+    document.getElementById('pw').focus();
+  }
+}
+
+document.getElementById('pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlock();
+  document.getElementById('err').textContent = '';
+});
+
+function toggle(header) {
+  const card = header.closest('.brief-card');
+  card.classList.toggle('open');
+}
+</script>
+</body>
+</html>

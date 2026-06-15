@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — Marketing Funnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:    #080504; --s1: #0D0A07; --s2: #110E0A;
+  --brand: #C9A96E; --gold: #E8C88A;
+  --ember: #FF6B1A; --flame: #FF8C00; --forge: #E85D04; --pyre: #DC2F02;
+  --green: #4CAF7D; --red: #FF4D00;
+  --t1: #EDE8E0; --t2: #B8A88A; --t3: #7A6A52;
+  --line: rgba(201,169,110,0.12); --linef: rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg: 'DM Sans', sans-serif; --mono: 'Fira Code', monospace;
+  --max: 1000px; --px: clamp(20px,5vw,64px);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--t1); font-family: var(--sg); font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,5,4,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--px); display: flex; align-items: center; height: 52px;
+}
+.nav-brand { font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--brand); letter-spacing: .04em; margin-right: auto; }
+.nav-links { display: flex; }
+.nav-links a {
+  text-decoration: none; color: var(--t3); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; font-weight: 500; padding: 0 16px; height: 52px;
+  display: flex; align-items: center; border-left: 1px solid var(--line); transition: color .2s;
+}
+.nav-links a:hover { color: var(--brand); }
+
+.countdown-bar {
+  background: rgba(220,47,2,0.07); border-bottom: 1px solid rgba(220,47,2,0.18);
+  padding: 10px var(--px); display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;
+}
+.countdown-label { font-family: var(--mono); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--pyre); }
+.countdown-timer { font-family: var(--mono); font-size: 18px; color: var(--t1); letter-spacing: .08em; font-weight: 500; }
+.countdown-sub { font-family: var(--mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; }
+
+.hero {
+  padding: clamp(56px,9vw,100px) var(--px) clamp(44px,6vw,72px);
+  border-bottom: 1px solid var(--line);
+  max-width: calc(var(--max) + var(--px)*2); margin: 0 auto;
+}
+.hero-label { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.hero-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--brand); }
+.hero h1 { font-family: var(--display); font-size: clamp(40px,6.5vw,72px); font-weight: 300; line-height: 1.08; color: var(--t1); margin-bottom: 28px; max-width: 760px; }
+.hero h1 em { font-style: italic; color: var(--gold); }
+.hero-sub { font-size: 16px; line-height: 1.7; color: var(--t2); max-width: 560px; margin-bottom: 36px; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 10px; font-family: var(--mono); font-size: 11px; color: var(--t3); letter-spacing: .05em; }
+.hero-meta span { padding: 6px 12px; border: 1px solid var(--line); border-radius: 2px; display: flex; align-items: center; gap: 7px; }
+.hero-meta span::before { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.hero-meta .hot { border-color: rgba(220,47,2,0.3); color: var(--pyre); background: rgba(220,47,2,0.05); }
+
+.section { max-width: calc(var(--max) + var(--px)*2); margin: 0 auto; padding: clamp(44px,6vw,72px) var(--px); border-bottom: 1px solid var(--line); }
+.section-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--brand); font-weight: 500; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.section-label::before { content: ''; display: block; width: 16px; height: 1px; background: var(--brand); }
+.section h2 { font-family: var(--display); font-size: clamp(26px,4vw,42px); font-weight: 300; line-height: 1.15; color: var(--t1); margin-bottom: 32px; }
+.section h2 em { font-style: italic; color: var(--gold); }
+
+/* THE REWARD — big, single, unmissable */
+.reward-hero {
+  border: 1px solid var(--linef);
+  background: linear-gradient(135deg, rgba(201,169,110,0.07) 0%, rgba(201,169,110,0.02) 100%);
+  padding: clamp(32px,5vw,56px) clamp(28px,4vw,48px);
+  position: relative; overflow: hidden;
+}
+.reward-hero::before {
+  content: '◆';
+  font-family: var(--display); font-size: clamp(100px,20vw,200px);
+  font-weight: 300; color: rgba(201,169,110,0.04);
+  position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+  line-height: 1; pointer-events: none; white-space: nowrap;
+}
+.reward-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--brand); margin-bottom: 16px; }
+.reward-hero h3 { font-family: var(--display); font-size: clamp(28px,4.5vw,52px); font-weight: 300; line-height: 1.1; color: var(--t1); margin-bottom: 20px; }
+.reward-hero h3 em { font-style: italic; color: var(--gold); }
+.reward-hero p { font-size: 15px; color: var(--t2); line-height: 1.7; max-width: 520px; }
+.reward-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.chip {
+  font-family: var(--mono); font-size: 12px; padding: 9px 16px;
+  background: rgba(8,5,4,0.7); border: 1px solid var(--line); border-radius: 2px; color: var(--t2);
+}
+.chip strong { color: var(--brand); }
+.chip.highlight { border-color: var(--linef); color: var(--gold); }
+
+/* HOW IT WORKS */
+.steps { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); }
+.step { display: grid; grid-template-columns: 64px 1fr; border-bottom: 1px solid var(--line); }
+.step:last-child { border-bottom: none; }
+.step-num {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-size: 28px; font-weight: 300; color: var(--brand);
+  border-right: 1px solid var(--line); background: var(--s1);
+}
+.step-body { padding: 22px 28px; }
+.step-body h4 { font-size: 15px; font-weight: 600; color: var(--t1); margin-bottom: 6px; letter-spacing: .01em; }
+.step-body p { font-size: 13px; color: var(--t2); line-height: 1.6; }
+.step-body p strong { color: var(--t1); font-weight: 500; }
+.step-body .mono-note { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-top: 8px; letter-spacing: .04em; }
+.step:last-child .step-num { color: var(--gold); }
+.step:last-child .step-body h4 { color: var(--gold); }
+
+/* TIMELINE */
+.timeline { border: 1px solid var(--line); }
+.tl-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 1px solid var(--line); transition: background .15s; }
+.tl-row:last-child { border-bottom: none; }
+.tl-row:hover { background: rgba(201,169,110,0.02); }
+.tl-date { padding: 16px 20px; font-family: var(--mono); font-size: 11px; color: var(--t3); letter-spacing: .04em; border-right: 1px solid var(--line); display: flex; align-items: center; line-height: 1.4; }
+.tl-body { padding: 16px 24px; }
+.tl-title { font-size: 13px; font-weight: 600; color: var(--t1); margin-bottom: 4px; }
+.tl-text { font-size: 13px; color: var(--t2); line-height: 1.55; }
+.tl-launch { background: rgba(220,47,2,0.05); }
+.tl-launch .tl-date { color: var(--pyre); border-color: rgba(220,47,2,0.2); }
+.tl-launch .tl-title { color: var(--pyre); }
+.tl-boost { background: rgba(201,169,110,0.04); }
+.tl-boost .tl-date { color: var(--brand); }
+.tl-boost .tl-title { color: var(--brand); }
+
+/* FUNNEL PHASES */
+.phases { display: flex; flex-direction: column; border: 1px solid var(--line); }
+.phase { display: grid; grid-template-columns: 180px 1fr; border-bottom: 1px solid var(--line); }
+.phase:last-child { border-bottom: none; }
+.phase-sidebar { padding: 26px; border-right: 1px solid var(--line); background: var(--s1); display: flex; flex-direction: column; gap: 8px; }
+.phase-n { font-family: var(--mono); font-size: 10px; letter-spacing: .15em; color: var(--t3); }
+.phase-icon { font-size: 24px; }
+.phase-name { font-family: var(--display); font-size: 18px; font-weight: 500; }
+.phase-dates { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+.phase-body { padding: 26px; display: flex; flex-direction: column; gap: 10px; }
+.action { display: flex; gap: 12px; font-size: 13px; color: var(--t2); line-height: 1.5; }
+.action::before { content: '→'; color: var(--brand); flex-shrink: 0; margin-top: 0; }
+.action strong { color: var(--t1); font-weight: 500; }
+
+/* KOL */
+.kol-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 20px; }
+.kol-card { background: var(--s1); padding: 20px 22px; }
+.kol-wave { font-family: var(--mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--brand); margin-bottom: 8px; }
+.kol-card h4 { font-family: var(--display); font-size: 16px; font-weight: 500; color: var(--t1); margin-bottom: 6px; }
+.kol-card p { font-size: 13px; color: var(--t2); line-height: 1.5; }
+
+/* GAPS */
+.gaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.gap { padding: 13px 16px; border: 1px solid var(--line); border-radius: 2px; display: flex; gap: 10px; font-size: 13px; }
+.gap-done { border-color: rgba(76,175,125,0.2); background: rgba(76,175,125,0.04); color: var(--t3); }
+.gap-todo { color: var(--t1); }
+.gap-crit { border-color: rgba(220,47,2,0.25); background: rgba(220,47,2,0.04); }
+.gap small { display: block; font-size: 11px; color: var(--t3); margin-top: 2px; }
+.tag { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; margin-top: 4px; }
+.tag-red { background: rgba(220,47,2,0.1); border: 1px solid rgba(220,47,2,0.25); color: var(--pyre); }
+.tag-gold { background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.25); color: var(--brand); }
+
+/* DEV NOTE */
+.dev-box { background: rgba(76,175,125,0.05); border: 1px solid rgba(76,175,125,0.2); padding: 20px 24px; }
+.dev-box-label { font-family: var(--mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
+.dev-box code { font-family: var(--mono); font-size: 12px; color: var(--green); background: rgba(76,175,125,0.08); padding: 2px 6px; border-radius: 2px; }
+.dev-box ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.dev-box li { font-size: 13px; color: var(--t2); display: flex; gap: 10px; line-height: 1.5; }
+.dev-box li::before { content: '//'; font-family: var(--mono); font-size: 11px; color: var(--t3); flex-shrink: 0; padding-top: 2px; }
+
+.scroll-top { position: fixed; bottom: 24px; right: 24px; width: 38px; height: 38px; background: var(--s1); border: 1px solid var(--line); color: var(--brand); font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none; border-radius: 2px; transition: border-color .2s; }
+.scroll-top:hover { border-color: var(--linef); }
+
+@media (max-width: 600px) {
+  .phase { grid-template-columns: 1fr; }
+  .phase-sidebar { border-right: none; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">PYRE</span>
+  <div class="nav-links">
+    <a href="#reward">The Reward</a>
+    <a href="#how">How It Works</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#funnel">Funnel</a>
+    <a href="#kols">KOLs</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</nav>
+
+<div class="countdown-bar">
+  <span class="countdown-label">Launch in</span>
+  <span class="countdown-timer" id="timer">—</span>
+  <span class="countdown-sub">June 23, 2026 · 10:00 PM UTC</span>
+</div>
+
+<div class="hero" id="top">
+  <div class="hero-label">Pre-Launch Marketing Strategy</div>
+  <h1>Do the tasks.<br><em>Earn the fire.</em></h1>
+  <p class="hero-sub">
+    Complete a set of tasks in the Village World before launch.
+    Submit your wallet. Rewards await those who complete everything.
+  </p>
+  <div class="hero-meta">
+    <span>Village World funnel</span>
+    <span>Fair launch · CA drops on X</span>
+    <span class="hot">16 days to launch</span>
+    <span class="hot">June 23 · 10PM UTC</span>
+  </div>
+</div>
+
+<!-- THE REWARD -->
+<div class="section" id="reward">
+  <div class="section-label">Rewards</div>
+  <h2>One task set. <em>Rewards for the committed.</em></h2>
+
+  <div class="reward-hero">
+    <div class="reward-eyebrow">Complete tasks → Submit wallet → Show up at launch</div>
+    <h3>Wallets that complete everything<br>will be <em>rewarded.</em></h3>
+    <p>
+      Every wallet that finishes the full task set and submits before the deadline
+      is added to the whitelist. What exactly awaits you — and how much —
+      will be visible the moment the protocol goes live. Complete the tasks. Show up.
+    </p>
+    <div class="reward-chips">
+      <div class="chip">Whitelist closes before launch</div>
+      <div class="chip">Whitelisted wallets receive <strong>launch rewards</strong></div>
+      <div class="chip highlight">Rewards revealed at launch</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section" id="how">
+  <div class="section-label">The Funnel</div>
+  <h2>Four steps. <em>Nothing more.</em></h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Complete the tasks — no wallet needed</h4>
+        <p>Everything runs in a regular browser. Follow PYRE on X, share posts as they go live, complete the mechanic quiz, refer one person. No extensions, no signing, no friction. Works on any phone, any browser.</p>
+        <div class="mono-note">// tasks tied to X posts unlock automatically on schedule — no manual activation</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Submit your wallet address</h4>
+        <p>Just a text field. Type your address, hit submit. No wallet connection, no MetaMask required. If you submit the wrong address you simply don't get the boost — it's self-correcting. Submission closes June 22.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Share your completion on X</h4>
+        <p>After submitting, a completion screen appears with one button: <strong>"I'm ready to burn."</strong> Clicking it copies a branded image to your clipboard and opens a pre-filled tweet — one line, your call to the fire. Paste the image, post it. Can't be forced, but the people who do it are your most engaged users and their posts carry the most weight right before launch.</p>
+        <div class="mono-note">// image: dark card, fire aesthetic, partial wallet address, "The fire starts June 23." — designed to look like a flex, not a badge</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Launch day — your whitelist position activates</h4>
+        <p>CA drops on X at launch — fair launch, everyone sees it at the same time. Whitelisted wallets that stake early automatically receive their rewards. <strong>No claim needed — staking triggers it automatically.</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="section" id="timeline">
+  <div class="section-label">16-Day Sprint</div>
+  <h2>Compressed timeline to <em>June 23</em></h2>
+
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-date">Jun 7–12</div>
+      <div class="tl-body">
+        <div class="tl-title">Village World opens · KOL Wave 1</div>
+        <div class="tl-text">Village World goes live with Phase 1 tasks. KOL Wave 1 (3–5 niche DeFi educators, staggered, all disclosed) drives first traffic. Twitter/X account live with manifesto thread.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-date">Jun 13–19</div>
+      <div class="tl-body">
+        <div class="tl-title">Full mechanics public · KOL Wave 2 + 3</div>
+        <div class="tl-text">All PYRE mechanics documented publicly. Harder tasks unlock in Village World. KOL Wave 2 (mid-tier conviction accounts) + Wave 3 (countdown content) go live. Twitter Space with founders.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-date">Jun 20–22</div>
+      <div class="tl-body">
+        <div class="tl-title">Wallet submission closes · Final push</div>
+        <div class="tl-text">Last chance to complete tasks and submit wallet. All KOLs active with 48-hour countdown content. Village World shows the countdown prominently. Whitelist finalised.</div>
+      </div>
+    </div>
+    <div class="tl-row tl-launch">
+      <div class="tl-date">Jun 23<br>22:00 UTC</div>
+      <div class="tl-body">
+        <div class="tl-title">CA drops on X · Pool opens · Boost window starts</div>
+        <div class="tl-text">Contract address shared publicly on X. All KOLs post simultaneously. Village World fully live. 48-hour boost claim window opens for whitelisted wallets. Twitter thread updated at 1h / 6h / 24h with live stats.</div>
+      </div>
+    </div>
+    <div class="tl-row tl-boost">
+      <div class="tl-date">Jun 24–25</div>
+      <div class="tl-body">
+        <div class="tl-title">Whitelist stake window closes</div>
+        <div class="tl-text">Whitelisted wallets must stake by June 25 at 10PM UTC to activate their launch rewards. After this point, the whitelist advantage expires.</div>
+      </div>
+    </div>
+    <div class="tl-row tl-boost">
+      <div class="tl-date">Jun 30<br>22:00 UTC</div>
+      <div class="tl-body">
+        <div class="tl-title">Launch rewards expire · Playing field levels</div>
+        <div class="tl-text">Launch-day whitelist advantages expire. KOL Wave 4 active: "Here's my Fire Spirit" authentic post-burn content. Fire Spirit NFT art becomes the ongoing viral vector.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FUNNEL PHASES (VILLAGE WORLD) -->
+<div class="section" id="funnel">
+  <div class="section-label">Village World Phases</div>
+  <h2>What happens <em>inside</em> the world</h2>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="phase-sidebar">
+        <span class="phase-n">Phase 01</span>
+        <span class="phase-icon">🌑</span>
+        <span class="phase-name" style="color:#8B8B9C">Ignition</span>
+        <span class="phase-dates">Jun 7–12 · live day 1</span>
+      </div>
+      <div class="phase-body">
+        <div class="action"><strong>Follow PYRE on X</strong> — verified in Village World, no wallet</div>
+        <div class="action"><strong>Share the manifesto</strong> — repost or quote-tweet, verified by link</div>
+        <div class="action"><strong>Complete the mechanic quiz</strong> — 3 questions on decay, yield, Fire Spirits. By the end they understand exactly why being early matters</div>
+        <div class="action"><strong>Refer one person</strong> — unique link per user, tracked server-side, no wallet needed</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-sidebar">
+        <span class="phase-n">Phase 02</span>
+        <span class="phase-icon">🔥</span>
+        <span class="phase-name" style="color:var(--ember)">Ember</span>
+        <span class="phase-dates">Jun 13–20 · auto-unlocks</span>
+      </div>
+      <div class="phase-body">
+        <div class="action"><strong>Share the "what is decay?" post</strong> — unlocks automatically when the post goes live on X</div>
+        <div class="action"><strong>Share the launch announcement</strong> — unlocks automatically June 20 when announcement drops</div>
+        <div class="action">Tasks tied to X posts are pre-written and scheduled — no manual activation on launch day, no late flipping of switches</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-sidebar">
+        <span class="phase-n">Phase 03</span>
+        <span class="phase-icon">🔶</span>
+        <span class="phase-name" style="color:var(--flame)">Flame</span>
+        <span class="phase-dates">Jun 20–22 · closes Jun 22</span>
+      </div>
+      <div class="phase-body">
+        <div class="action"><strong>Submit wallet address</strong> — text field only, no wallet connection. Closes June 22. Goes on the whitelist.</div>
+        <div class="action"><strong>Completion screen appears</strong> — button: "I'm ready to burn." Copies branded image to clipboard, opens pre-filled tweet in one click</div>
+        <div class="action">Pre-filled tweet: <em style="color:var(--t3)">"I'm ready. @PYRE_xyz launches June 23. [link]"</em> — one line, paste image, post. Soft nudge, not forced</div>
+        <div class="action">Village World shows confirmed status + exact launch time. Nothing left to do but wait for the CA on June 23</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px; padding:18px 22px; border:1px solid var(--linef); background:rgba(201,169,110,0.04)">
+    <p style="font-size:13px; color:var(--t2); line-height:1.65">
+      <strong style="color:var(--t1)">The task set is intentionally designed to educate.</strong>
+      By the time someone submits their wallet, they know what PYRE is, how decay works, what Fire Spirits are, and exactly why showing up at launch is in their interest. What awaits whitelisted wallets is revealed when the protocol goes live.
+    </p>
+  </div>
+</div>
+
+<!-- KOL STRATEGY -->
+<div class="section" id="kols">
+  <div class="section-label">KOL Strategy</div>
+  <h2>Three waves. <em>All disclosed.</em></h2>
+
+  <div style="background:rgba(220,47,2,0.06); border:1px solid rgba(220,47,2,0.2); padding:16px 20px; margin-bottom:20px; display:flex; gap:12px">
+    <span style="flex-shrink:0">⚠️</span>
+    <p style="font-size:13px; color:var(--t2); line-height:1.6"><strong style="color:var(--pyre)">97% of crypto KOL campaigns don't disclose paid posts</strong> (ZachXBT / Memenetic data, Sep 2025). Make #ad disclosure contractual and announce the policy publicly before launch — it's a genuine differentiator in this market.</p>
+  </div>
+
+  <div class="kol-row">
+    <div class="kol-card">
+      <div class="kol-wave">Wave 1 · Jun 7–12</div>
+      <h4>Educators</h4>
+      <p>3–5 niche DeFi accounts. Explainer content — the burn mechanic, not the price. Staggered, all disclosed. Drive early Village World traffic.</p>
+    </div>
+    <div class="kol-card">
+      <div class="kol-wave">Wave 2 · Jun 13–19</div>
+      <h4>Conviction</h4>
+      <p>Mid-tier, larger audiences. Personal thesis: why they're watching PYRE. Drives curious → researching. Still disclosed and staggered.</p>
+    </div>
+    <div class="kol-card">
+      <div class="kol-wave">Wave 3 · Jun 20–23</div>
+      <h4>Countdown</h4>
+      <p>All KOLs coordinated in 48-hour window. One burns live on-screen at launch. Focus: the mechanical reason to stake early, not price calls.</p>
+    </div>
+    <div class="kol-card">
+      <div class="kol-wave">Wave 4 · Jun 30+</div>
+      <h4>Authentic</h4>
+      <p>KOLs share their Fire Spirit post-burn. On-chain authentic, disclosed. Most compelling — the transaction is publicly verifiable.</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+    <div style="padding:16px 20px; border:1px solid var(--line); background:var(--s1)">
+      <div style="font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--green); margin-bottom:10px">Vetting</div>
+      <div style="display:flex; flex-direction:column; gap:7px; font-size:13px; color:var(--t2)">
+        <div style="display:flex;gap:8px"><span style="color:var(--green)">✓</span>Wallet history — do they dump post-promotion?</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--green)">✓</span>Engagement ratio — flag below 0.5% likes/followers</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--green)">✓</span>Require protocol interaction (burn or stake)</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--green)">✓</span>Bot check: HypeAuditor + manual spot check</div>
+      </div>
+    </div>
+    <div style="padding:16px 20px; border:1px solid var(--line); background:var(--s1)">
+      <div style="font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--brand); margin-bottom:10px">Contract non-negotiables</div>
+      <div style="display:flex; flex-direction:column; gap:7px; font-size:13px; color:var(--t2)">
+        <div style="display:flex;gap:8px"><span style="color:var(--brand)">→</span>#ad disclosure on every post — contractual</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--brand)">→</span>Force-staked via smart contract</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--brand)">→</span>No guaranteed dump window</div>
+        <div style="display:flex;gap:8px"><span style="color:var(--brand)">→</span>Bot inflation → performance clawed back</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEV NOTE -->
+<div class="section">
+  <div class="section-label">Contract Note</div>
+  <h2>What dev needs to <em>build for this</em></h2>
+
+  <div class="dev-box">
+    <div class="dev-box-label">PyreStaking.sol — additions required</div>
+    <ul>
+      <li><code>mapping(address => bool) public whitelist</code> — populated from Village World wallet submissions before launch</li>
+      <li><code>uint256 public launchTimestamp</code> — set at pool open, gates the boost claim window</li>
+      <li>Weight modifier: if <code>whitelist[msg.sender]</code> AND staked within <code>launchTimestamp + 48h</code> AND within <code>launchTimestamp + 7 days</code> → apply 1.2× yield weight</li>
+      <li>Boost expires automatically at <code>launchTimestamp + 7 days</code> — no manual action needed</li>
+      <li>One-time per wallet — no stacking, no transferring the whitelist slot</li>
+      <li>Village World backend must export the final wallet list and call a whitelist setter on the contract before launch</li>
+    </ul>
+  </div>
+</div>
+
+<!-- GAPS -->
+<div class="section" id="gaps">
+  <div class="section-label">Project Status · June 7, 2026</div>
+  <h2>Done vs. <em>needs to ship</em></h2>
+
+  <div class="gaps">
+    <div class="gap gap-done"><span>✅</span><div>Token mechanics locked</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Branding direction (Alchemist)</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Dashboard plan</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Village World concept</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Funnel architecture</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Whitelist reward strategy confirmed</div></div>
+    <div class="gap gap-done"><span>✅</span><div>Launch date (Jun 23, 10PM UTC)</div></div>
+    <div class="gap gap-crit gap-todo"><span>🔴</span><div>Village World quest system<small>Funnel platform — must ship first</small><span class="tag tag-red">Critical path</span></div></div>
+    <div class="gap gap-crit gap-todo"><span>🔴</span><div>Whitelist contract logic<small>PyreStaking.sol additions for the boost</small><span class="tag tag-red">Critical path</span></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>Landing page copy<small>Designers need narrative text</small><span class="tag tag-gold">Unblocks designers</span></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>Exact task list<small>What are the specific Village World tasks?</small><span class="tag tag-gold">Week 1</span></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>Twitter/X content calendar<small>16-day post schedule</small></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>KOL contracts + legal<small>Disclosure language, force-stake</small></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>KOL roster confirmed<small>Who, which wave, deal terms</small></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>Manifesto finalised<small>Draft exists — needs polish</small></div></div>
+    <div class="gap gap-todo"><span>❌</span><div>Telegram channel<small>For launch-day live updates</small></div></div>
+  </div>
+</div>
+
+<div style="border-top:1px solid var(--line); padding:20px var(--px); max-width:calc(var(--max)+var(--px)*2); margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px">
+  <span style="font-family:var(--display); font-size:16px; color:var(--brand); font-weight:500">PYRE</span>
+  <span style="font-family:var(--mono); font-size:10px; color:var(--t3); letter-spacing:.08em">Marketing Funnel · June 7, 2026</span>
+  <a href="#top" style="font-family:var(--mono); font-size:10px; color:var(--t3); text-decoration:none; letter-spacing:.1em; text-transform:uppercase">↑ Top</a>
+</div>
+
+<a href="#top" class="scroll-top">↑</a>
+
+<script>
+function tick() {
+  const diff = new Date('2026-06-23T22:00:00Z') - new Date();
+  if (diff <= 0) { document.getElementById('timer').textContent = 'LIVE'; return; }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('timer').textContent = `${d}d  ${String(h).padStart(2,'0')}h  ${String(m).padStart(2,'0')}m  ${String(s).padStart(2,'0')}s`;
+}
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — The Protocol That Burns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────
+   BRAND SYSTEM — THE ALCHEMIST
+   Display: Cormorant Garamond — PYRE name, hero, section titles, stats
+   Body:    DM Sans — nav, body, buttons, UI labels
+   Mono:    Fira Code — addresses, numbers, code
+   Mono: JetBrains Mono — code, stats
+   Background: #000000
+   Text: warm white #F0EBE3 / warm grey #8A7868
+   Brand: #FF4D00 (fire orange — matches logo pixel color)
+   Accent: #FF8C00 (warm orange), #FFCC00 (yellow, rare)
+───────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080504;
+  --s1:      #0D0A07;
+  --brand:   #C9A96E;
+  --warm:    #B8894A;
+  --gold:    #E8C88A;
+  --t1:      #EDE8E0;
+  --t2:      #B8A88A;
+  --t3:      #7A6A52;
+  --line:    rgba(201,169,110,0.12);
+  --linef:   rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg:      'DM Sans', sans-serif;
+  --mono:    'Fira Code', monospace;
+  --max:     1040px;
+  --px:      clamp(20px,5vw,72px);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--sg);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* AMBIENT FIRE GLOW — CSS only, very subtle */
+body::before {
+  content: '';
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60vh;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 100%,
+    rgba(160,110,35,0.07) 0%,
+    rgba(80,50,12,0.03) 55%,
+    transparent 75%
+  );
+  animation: heat 8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes heat {
+  from { opacity: 0.6; transform: scaleX(0.96); }
+  to   { opacity: 1.0; transform: scaleX(1.04); }
+}
+
+/* ─ ROUTER ─────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+#app { position: relative; z-index: 1; }
+
+/* ─ NAV ─────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--px);
+  background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.brand-name {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand);
+  line-height: 1;
+}
+
+.nav-links {
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  display: flex; gap: 30px; list-style: none;
+}
+.nav-links a {
+  font-family: var(--sg);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(237,232,224,0.55);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--t1); }
+
+.nav-cta {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: none;
+  border: 1px solid rgba(201,169,110,0.3);
+  padding: 7px 20px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.nav-cta:hover { background: rgba(201,169,110,0.06); border-color: rgba(201,169,110,0.6); }
+
+/* ─ HERO ─────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 100px var(--px) 72px;
+  position: relative;
+}
+
+.hero-logo-wrap {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.hero-name {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(72px, 11vw, 144px);
+  letter-spacing: 0.24em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--t1);
+}
+
+.hero-sub {
+  font-family: var(--sg);
+  font-weight: 300;
+  font-size: clamp(13px, 1.3vw, 15px);
+  color: rgba(237,232,224,0.78);
+  max-width: 420px;
+  line-height: 1.9;
+  margin: 24px auto 40px;
+  letter-spacing: 0.02em;
+}
+
+.hero-btns {
+  display: flex; gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 80px;
+}
+
+.btn-primary {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  padding: 13px 34px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-primary:hover { background: var(--gold); border-color: var(--gold); }
+
+.btn-secondary {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: none;
+  border: 1px solid rgba(201,169,110,0.3);
+  padding: 12px 30px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-secondary:hover { border-color: rgba(201,169,110,0.6); background: rgba(201,169,110,0.05); }
+
+.hero-stats {
+  width: 100%;
+  max-width: 680px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+  padding-top: 32px;
+}
+.hstat { text-align: center; }
+.hstat + .hstat { border-left: 1px solid var(--line); }
+.hstat-n {
+  font-family: var(--display);
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--brand);
+  line-height: 1;
+  margin-bottom: 7px;
+  letter-spacing: 0.02em;
+}
+.hstat-n em { font-style: normal; color: var(--t2); font-size: 0.55em; vertical-align: baseline; margin-left: 2px; }
+.hstat-l {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,0.65);
+}
+
+/* ─ SECTIONS ─────────────────────────────── */
+.wrap { max-width: var(--max); margin: 0 auto; padding: 88px var(--px); }
+.rule { height: 1px; background: var(--line); max-width: calc(var(--max) - var(--px)*2); margin: 0 auto; }
+
+.tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,0.5);
+  margin-bottom: 16px;
+}
+.sec-title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(32px, 4vw, 56px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--t1);
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+.sec-lead {
+  font-family: var(--sg);
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(237,232,224,0.78);
+  max-width: 480px;
+  line-height: 1.9;
+  margin-bottom: 52px;
+  letter-spacing: 0.01em;
+}
+
+/* ─ MECHANISM ─────────────────────────────── */
+
+/* Visual flow: 3 steps */
+.flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 56px;
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.flow-step { text-align: center; }
+.flow-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 10px;
+}
+.flow-word {
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--t1);
+  margin-bottom: 12px;
+}
+.flow-step:last-child .flow-word { color: var(--brand); }
+.flow-desc {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--t2);
+  line-height: 1.5;
+  max-width: 160px;
+  margin: 0 auto;
+}
+.flow-arr {
+  font-size: 18px;
+  color: var(--brand);
+  opacity: 0.4;
+  padding: 0 12px;
+}
+
+/* 6 mechanics grid */
+.mech-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  margin-bottom: 52px;
+}
+.mech {
+  background: var(--bg);
+  padding: 28px 26px;
+  transition: background 0.18s;
+}
+.mech:hover { background: rgba(255,77,0,0.025); }
+.mech-idx {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--t3);
+  margin-bottom: 14px;
+}
+.mech-h {
+  font-family: var(--sg);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--t1);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+.mech-p {
+  font-size: 12.5px;
+  font-weight: 300;
+  color: var(--t2);
+  line-height: 1.75;
+}
+.mech-code {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--brand);
+}
+
+/* Burn equation */
+.burn-row {
+  padding: 40px 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 56px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.burn-eq {
+  font-family: var(--mono);
+  font-size: clamp(14px, 2vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--t1);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.burn-eq span { color: var(--brand); }
+.burn-copy {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--t2);
+  max-width: 380px;
+  line-height: 1.8;
+}
+
+/* ─ NFT EVOLUTION ─────────────────────────── */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+}
+.stage {
+  background: var(--bg);
+  padding: 28px 22px;
+  position: relative;
+}
+/* Stage color bar at top */
+.stage-bar { height: 2px; margin-bottom: 24px; }
+.stage:nth-child(1) .stage-bar { background: #2a0800; }
+.stage:nth-child(2) .stage-bar { background: #aa1800; }
+.stage:nth-child(3) .stage-bar { background: var(--brand); }
+.stage:nth-child(4) .stage-bar { background: linear-gradient(90deg, var(--brand), var(--gold)); }
+.stage-n { font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; color: var(--t3); margin-bottom: 6px; }
+.stage-name {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--t1);
+  margin-bottom: 10px;
+  line-height: 1.8;
+}
+.stage-dur { font-family: var(--mono); font-size: 10px; color: var(--brand); margin-bottom: 12px; opacity: 0.8; }
+.stage-p { font-size: 12px; font-weight: 300; color: var(--t2); line-height: 1.65; }
+
+/* Immolated block */
+.immolated {
+  margin-top: 1px;
+  background: var(--line);
+  padding: 1px;
+}
+.immolated-inner {
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+}
+.immolated-left {
+  background: var(--bg);
+  padding: 40px 36px;
+}
+.immolated-right {
+  background: var(--bg);
+  padding: 40px 36px;
+}
+.immolated-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  border: 1px solid rgba(255,204,0,0.25);
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--gold);
+  margin-bottom: 18px;
+}
+.immolated-h {
+  font-family: var(--display);
+  font-size: clamp(14px, 2vw, 20px);
+  letter-spacing: 0.04em;
+  color: var(--t1);
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+.immolated-sub {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--t2);
+  line-height: 1.8;
+  max-width: 320px;
+}
+.perks { list-style: none; display: flex; flex-direction: column; gap: 0; }
+.perk {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--t2);
+  line-height: 1.4;
+  align-items: flex-start;
+}
+.perk:first-child { border-top: 1px solid var(--line); }
+.perk::before {
+  content: '→';
+  font-family: var(--mono);
+  color: var(--brand);
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─ TOKENOMICS ────────────────────────────── */
+.tok-tbl { width: 100%; border-collapse: collapse; }
+.tok-tbl th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--linef);
+}
+.tok-tbl td {
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--t2);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.tok-tbl td:first-child { color: var(--t1); font-family: var(--sg); font-size: 13px; font-weight: 500; }
+.tok-tbl .v { color: var(--brand); font-family: var(--mono); }
+.tok-tbl tr:hover td { background: rgba(255,77,0,0.018); }
+
+/* ─ FOOTER ────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 36px var(--px);
+  max-width: var(--max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.foot-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.foot-links a {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--t3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.foot-links a:hover { color: var(--t2); }
+.foot-copy { font-family: var(--mono); font-size: 10px; color: var(--t3); width: 100%; }
+
+/* ─ DOCS ──────────────────────────────────── */
+.docs-layout { display: grid; grid-template-columns: 208px 1fr; min-height: 100vh; }
+.docs-side {
+  position: sticky; top: 58px;
+  height: calc(100vh - 58px);
+  overflow-y: auto;
+  padding: 32px 0 32px var(--px);
+  border-right: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.2) transparent;
+}
+.docs-side::-webkit-scrollbar { width: 2px; }
+.docs-side::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.12); }
+.sb-g { margin-bottom: 24px; }
+.sb-cap {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--brand);
+  opacity: 0.65;
+  padding-bottom: 8px;
+}
+.sb-a {
+  display: block;
+  padding: 5px 0 5px 10px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--t2);
+  text-decoration: none;
+  cursor: pointer;
+  border-left: 1px solid transparent;
+  transition: color 0.14s, border-color 0.14s;
+}
+.sb-a:hover { color: var(--t1); }
+.sb-a.active { color: var(--t1); border-left-color: var(--brand); }
+
+.docs-body { padding: 48px 0 96px 52px; max-width: 700px; }
+.docs-body h1 { font-family: var(--display); font-weight: 300; font-size: 40px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t1); margin-bottom: 18px; line-height: 1.2; }
+.docs-body .lead { font-family: var(--sg); font-size: 14px; font-weight: 300; color: rgba(237,232,224,0.78); line-height: 1.9; margin-bottom: 28px; }
+.docs-body h2 { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t1); margin: 56px 0 18px; padding-top: 56px; border-top: 1px solid var(--line); line-height: 1.4; }
+.docs-body h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.docs-body h3 { font-family: var(--display); font-weight: 500; font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand); margin: 30px 0 8px; }
+.docs-body h4 { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(201,169,110,0.65); margin: 24px 0 6px; }
+.docs-body p { font-family: var(--sg); font-size: 13.5px; font-weight: 300; color: rgba(237,232,224,0.78); line-height: 1.85; margin-bottom: 13px; }
+.docs-body strong { color: var(--t1); font-weight: 500; }
+.docs-body ul, .docs-body ol { margin: 11px 0 14px 17px; font-family: var(--sg); color: rgba(237,232,224,0.78); font-size: 13.5px; font-weight: 300; line-height: 1.78; }
+.docs-body li { margin-bottom: 4px; }
+.docs-body code { font-family: var(--mono); font-size: 11.5px; color: var(--brand); background: rgba(201,169,110,0.07); padding: 1px 5px; }
+.cb { position: relative; background: #050301; border: 1px solid rgba(201,169,110,0.1); border-left: 2px solid rgba(201,169,110,0.28); padding: 18px 16px; margin: 14px 0; overflow-x: auto; }
+.cb pre { font-family: var(--mono); font-size: 11.5px; color: rgba(237,232,224,0.75); line-height: 1.65; white-space: pre; }
+.cb-lang { position: absolute; top: 5px; right: 32px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--t3); }
+.cb-copy { position: absolute; top: 4px; right: 6px; background: none; border: none; color: var(--t3); cursor: pointer; font-size: 13px; padding: 2px 3px; transition: color 0.15s; }
+.cb-copy:hover { color: var(--t2); } .cb-copy.done { color: #88cc99; }
+.note { border-left: 2px solid rgba(201,169,110,0.65); background: rgba(201,169,110,0.04); padding: 10px 14px; margin: 13px 0; }
+.note.warn { border-left-color: rgba(201,169,110,0.55); background: rgba(201,169,110,0.06); }
+.note p { margin: 0; font-size: 12.5px; font-family: var(--sg); font-weight: 300; color: rgba(237,232,224,0.78); }
+.note-cap { font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+.note.warn .note-cap { color: var(--gold); }
+.dt { width: 100%; border-collapse: collapse; margin: 13px 0; }
+.dt th { text-align: left; font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(201,169,110,0.65); padding: 7px 10px; border-bottom: 1px solid var(--linef); }
+.dt td { padding: 9px 10px; font-family: var(--mono); font-size: 11.5px; color: rgba(237,232,224,0.78); border-bottom: 1px solid var(--line); vertical-align: top; }
+.dt td:first-child { color: var(--brand); }
+
+/* ─ SCROLL / UTILS ────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,77,0,0.12); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,77,0,0.12) transparent; }
+
+@media (max-width: 880px) {
+  .mech-grid { grid-template-columns: 1fr 1fr; }
+  .stages { grid-template-columns: 1fr 1fr; }
+  .immolated-inner { grid-template-columns: 1fr; }
+  .docs-layout { grid-template-columns: 1fr; }
+  .docs-side { display: none; }
+  .docs-body { padding-left: 0; }
+  .nav-links { display: none; }
+  .flow { grid-template-columns: 1fr; }
+  .flow-arr { display: none; }
+  .hero-stats { grid-template-columns: repeat(2,1fr); row-gap: 24px; }
+}
+@media (max-width: 560px) {
+  .mech-grid { grid-template-columns: 1fr; }
+  .stages { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="brand" onclick="go('home')">
+    <span class="brand-name">PYRE</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#mechanism" class="nl">Mechanism</a></li>
+    <li><a href="#nft" class="nl">Fire Spirits</a></li>
+    <li><a href="#tokenomics" class="nl">Tokenomics</a></li>
+    <li><a href="#" onclick="go('docs');return false;" class="nl" id="nl-docs">Docs</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a class="nav-cta" href="dashboard.html" style="color:var(--brand)">Dashboard</a>
+    <a class="nav-cta" href="#" onclick="go('docs');return false;">Documentation</a>
+  </div>
+</nav>
+
+<div id="app">
+
+<!-- ════ HOME ════ -->
+<div id="pg-home" class="page active">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-logo-wrap">
+    <div class="hero-name">PYRE</div>
+  </div>
+  <p class="hero-sub">Every swap mints. Every idle token burns at 0.45% per hour. Stake to survive. Burn to transcend. Or watch your balance disappear.</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="#mechanism">How It Works</a>
+    <a class="btn-secondary" href="#" onclick="go('docs');return false;">Read the Docs</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hstat">
+      <div class="hstat-n">0.45<em>%/hr</em></div>
+      <div class="hstat-l">Burn Rate</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-n">180<em>d</em></div>
+      <div class="hstat-l">Full Evolution</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-n">4</div>
+      <div class="hstat-l">Spirit Stages</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-n">0</div>
+      <div class="hstat-l">Pre-mine</div>
+    </div>
+  </div>
+</section>
+
+<!-- MECHANISM -->
+<div class="rule"></div>
+<div id="mechanism">
+<div class="wrap">
+  <p class="tag">Protocol Mechanics</p>
+  <h2 class="sec-title">The Burn Loop</h2>
+  <p class="sec-lead">A Uniswap V4 hook that turns every trade into newly minted $PYRE — and every idle wallet into a slow-burning liability.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">Step 01</div>
+      <div class="flow-word">SWAP</div>
+      <p class="flow-desc">Trade on any PYRE-enabled V4 pool</p>
+    </div>
+    <div class="flow-arr">→</div>
+    <div class="flow-step">
+      <div class="flow-num">Step 02</div>
+      <div class="flow-word">MINT</div>
+      <p class="flow-desc">$PYRE minted to your wallet via afterSwap hook</p>
+    </div>
+    <div class="flow-arr">→</div>
+    <div class="flow-step">
+      <div class="flow-num">Step 03</div>
+      <div class="flow-word">BURN OR STAKE</div>
+      <p class="flow-desc">Hold and burn at 0.45%/hr — or stake to shield</p>
+    </div>
+  </div>
+
+  <div class="mech-grid">
+    <div class="mech">
+      <div class="mech-idx">01</div>
+      <div class="mech-h">afterSwap Hook</div>
+      <p class="mech-p">Each trade through a PYRE-enabled Uniswap V4 pool triggers the hook. $PYRE is minted to the swapper, proportional to volume and the current global scaling factor.</p>
+      <span class="mech-code">afterSwap → IPyreToken.mint(sender, amount)</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">02</div>
+      <div class="mech-h">Lazy Burn Decay</div>
+      <p class="mech-p">Unstaked balances decay at 0.45% per hour via global scaling factor. No active loops — burn is applied lazily on next interaction. Halves every 2,000 epochs (~83 days).</p>
+      <span class="mech-code">balance × (0.9955)^Δhours</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">03</div>
+      <div class="mech-h">Staking Immunity</div>
+      <p class="mech-p">Depositing $PYRE into the staking contract pauses the burn clock entirely. Principal is preserved. Earn proportional ETH yield from the fee pool — no visual identity, staking is purely financial.</p>
+      <span class="mech-code">staked = true → decay halted</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">04</div>
+      <div class="mech-h">Global Scaling</div>
+      <p class="mech-p">Mint rate decays over time via S(t) = S₀ · e^(−λt). Early traders earn more per unit of volume. Creates urgency without a hard supply cap or halving events.</p>
+      <span class="mech-code">mintAmt = vol × BASE_RATE × S(t)</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">05</div>
+      <div class="mech-h">Zero Pre-mine</div>
+      <p class="mech-p">Genesis supply is exactly zero. Every circulating $PYRE was minted by real, on-chain trading activity. No team tokens. No treasury. No favored early access.</p>
+      <span class="mech-code">genesis supply: 0</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">06</div>
+      <div class="mech-h">Real Yield</div>
+      <p class="mech-p">5% fee on every swap — 4% hook-level, 1% pool fee. Buy-side fees flow as ETH to stakers and Fire Spirit holders proportionally. Sell-side fees are burned permanently. No inflationary emissions.</p>
+      <span class="mech-code">5% per swap → ETH yield + PYRE burn</span>
+    </div>
+  </div>
+
+  <div class="burn-row">
+    <div class="burn-eq">HOLD → BURN<br>STAKE → <span>SURVIVE</span><br>BURN → <span>TRANSCEND</span></div>
+    <p class="burn-copy">There is no passive option. Every unstaked token decays at 0.45%/hr. Staking preserves your balance and earns ETH yield. Burning earns a Fire Spirit and perpetual yield. The protocol enforces commitment mathematically.</p>
+  </div>
+</div>
+</div>
+
+<!-- NFT -->
+<div class="rule"></div>
+<div id="nft">
+<div class="wrap">
+  <p class="tag">Fire Spirit NFT</p>
+  <h2 class="sec-title">Your Spirit, Evolving</h2>
+  <p class="sec-lead">Burn 10,000 $PYRE and a Fire Spirit NFT mints to your wallet permanently. Burn more and it evolves through four stages — fully on-chain SVG, tradeable, your yield position travels with it.</p>
+
+  <div class="stages">
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage I</div>
+      <div class="stage-name">Ember</div>
+      <div class="stage-dur">10,000 $PYRE burned · 1×</div>
+      <p class="stage-p">A single dim coal. The ritual has begun. You fed the fire — now it works for you.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage II</div>
+      <div class="stage-name">Flame</div>
+      <div class="stage-dur">75,000 $PYRE burned · 1.5×</div>
+      <p class="stage-p">Volatile and hungry. Your spirit has ignited. The sacrifice is undeniable — the yield reflects it.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage III</div>
+      <div class="stage-name">Forge</div>
+      <div class="stage-dur">150,000 $PYRE burned · 2×</div>
+      <p class="stage-p">White-hot. Almost fully revealed. You have permanently removed 150,000 tokens from existence.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage IV</div>
+      <div class="stage-name">PYRE</div>
+      <div class="stage-dur">300,000 $PYRE burned · 3×</div>
+      <p class="stage-p">The final form. Unique — revealed only when 300,000 tokens have burned. Your conviction is permanent, on-chain, irreversible.</p>
+    </div>
+  </div>
+
+  <div class="immolated">
+    <div class="immolated-inner">
+      <div class="immolated-left">
+        <div class="immolated-mark">◈</div>
+        <h3 class="immolated-h">The Immolated<br>Protocol</h3>
+        <p class="immolated-sub">Burn $PYRE or ETH+$PYRE liquidity permanently. A Fire Spirit mints — your on-chain proof of sacrifice. Burn more, evolve further, earn more. No gate, no minimum time. The protocol pays you forever.</p>
+      </div>
+      <div class="immolated-right">
+        <ul class="perks">
+          <li class="perk">Burns accumulate — every transaction counts toward your stage, nothing wasted</li>
+          <li class="perk">Proportional ETH yield — your share of the buy-side fee pool, weighted by burn amount × stage multiplier</li>
+          <li class="perk">LP burn path: +20% weight bonus for locking ETH+$PYRE liquidity forever — plus ongoing LP fees captured and redirected to the yield pool</li>
+          <li class="perk">Early burners hold disproportionate weight — burn when S(t) is high, earn more weight per token forever</li>
+          <li class="perk">Fully tradeable — yield auto-settles to seller on transfer, new holder inherits the Fire Spirit</li>
+          <li class="perk">Sell-side fees burned permanently — every exit compresses supply further, rewarding remaining holders</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TOKENOMICS -->
+<div class="rule"></div>
+<div id="tokenomics">
+<div class="wrap">
+  <p class="tag">Tokenomics</p>
+  <h2 class="sec-title">Live Supply</h2>
+  <p class="sec-lead">No allocation table. No vesting schedules. Supply is determined entirely by the inflow of trading activity and the outflow of passive burn — every block, forever.</p>
+  <table class="tok-tbl">
+    <thead><tr><th>Parameter</th><th>Value</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Genesis Supply</td><td><span class="v">0</span></td><td>No pre-mine, no team allocation, no airdrop</td></tr>
+      <tr><td>Mint Source</td><td><span class="v">afterSwap hook</span></td><td>Per-swap, scaled by volume × BASE_RATE × S(t)</td></tr>
+      <tr><td>Initial Burn Rate</td><td><span class="v">0.45% / hour</span></td><td>Halves every 2,000 epochs (~83 days). Floor: 0.01%/hr</td></tr>
+      <tr><td>Era 0 Half-life</td><td><span class="v">~6.4 days</span></td><td>Time for unstaked balance to halve at initial rate</td></tr>
+      <tr><td>Staking Immunity</td><td><span class="v">100%</span></td><td>Zero decay while staked — balance fully preserved</td></tr>
+      <tr><td>Hook Fee</td><td><span class="v">4% per swap</span></td><td>Both buy and sell — hook level, no UI warnings triggered</td></tr>
+      <tr><td>Pool Swap Fee</td><td><span class="v">1% per swap</span></td><td>Standard V4 fee tier — visible as fee tier only, no warning</td></tr>
+      <tr><td>Launch Fee</td><td><span class="v">+20% → 0% over 24h</span></td><td>Buy side only — linear decline from launch. 100% to yield pool, no team cut</td></tr>
+      <tr><td>Buy-side fees</td><td><span class="v">ETH → yield pool</span></td><td>80% to stakers + Fire Spirits (proportional), 20% to team</td></tr>
+      <tr><td>Sell-side fees</td><td><span class="v">$PYRE → burned</span></td><td>100% permanently burned — never distributed</td></tr>
+      <tr><td>Stage Multipliers</td><td><span class="v">1× / 1.5× / 2× / 3×</span></td><td>Applied to Fire Spirit burn weight in yield pool</td></tr>
+      <tr><td>Supply Cap</td><td><span class="v">1,000,000,000</span></td><td>Hard cap — hook reverts on overflow, never exceeded</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<footer>
+  <div class="brand">
+    <span class="brand-name" style="font-size:11px">PYRE</span>
+  </div>
+  <div class="foot-links">
+    <a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a>
+    <a href="#" onclick="go('docs');return false;">Docs</a>
+  </div>
+  <p class="foot-copy">© 2025 PYRE Protocol — Unaudited software. Not financial advice. The burn is real.</p>
+</footer>
+
+</div><!-- /pg-home -->
+
+<!-- ════ DOCS ════ -->
+<div id="pg-docs" class="page">
+<div class="docs-layout">
+  <aside class="docs-side">
+    <div class="sb-g"><div class="sb-cap">Overview</div>
+      <a class="sb-a active" onclick="ds('d-intro')">Introduction</a>
+      <a class="sb-a" onclick="ds('d-how')">How It Works</a>
+      <a class="sb-a" onclick="ds('d-arch')">Architecture</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Token</div>
+      <a class="sb-a" onclick="ds('d-token')">$PYRE Token</a>
+      <a class="sb-a" onclick="ds('d-mint')">Minting</a>
+      <a class="sb-a" onclick="ds('d-decay')">Decay & Halving</a>
+      <a class="sb-a" onclick="ds('d-scale')">Scaling Factor</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Fire Spirits</div>
+      <a class="sb-a" onclick="ds('d-spirit')">The Fire Spirit</a>
+      <a class="sb-a" onclick="ds('d-stages')">Stages & Evolution</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">The Immolated</div>
+      <a class="sb-a" onclick="ds('d-immolated')">Overview</a>
+      <a class="sb-a" onclick="ds('d-tokburn')">Token Burn Path</a>
+      <a class="sb-a" onclick="ds('d-lpburn')">LP Burn Path</a>
+      <a class="sb-a" onclick="ds('d-weight')">Weight & Yield</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Staking</div>
+      <a class="sb-a" onclick="ds('d-staking')">How to Stake</a>
+      <a class="sb-a" onclick="ds('d-fees')">Fee Distribution</a>
+      <a class="sb-a" onclick="ds('d-drip')">The Drip Exit</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Contracts</div>
+      <a class="sb-a" onclick="ds('d-hook')">PyreHook</a>
+      <a class="sb-a" onclick="ds('d-pyretoken')">PyreToken</a>
+      <a class="sb-a" onclick="ds('d-pyrestaking')">PyreStaking</a>
+      <a class="sb-a" onclick="ds('d-pyrenft')">PyreNFT</a>
+      <a class="sb-a" onclick="ds('d-pyreimmolated')">PyreImmolated</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Integration</div>
+      <a class="sb-a" onclick="ds('d-deploy')">Deployment</a>
+      <a class="sb-a" onclick="ds('d-pool')">Pool Setup</a>
+      <a class="sb-a" onclick="ds('d-api')">API Reference</a>
+    </div>
+    <div class="sb-g"><div class="sb-cap">Security</div>
+      <a class="sb-a" onclick="ds('d-sec')">Considerations</a>
+      <a class="sb-a" onclick="ds('d-audit')">Audit Status</a>
+    </div>
+  </aside>
+
+  <div class="docs-body">
+    <h1 id="d-intro">PYRE Protocol</h1>
+    <p class="lead">Technical reference for the PYRE protocol — a Uniswap V4 hook system on Ethereum mainnet. Every swap mints $PYRE. Every unstaked token burns at 0.45%/hr, halving every 2,000 epochs. Staking stops the burn and earns proportional ETH yield. Burn $PYRE to mint a Fire Spirit NFT and earn perpetual yield weighted by how much you've burned.</p>
+    <p>There is one NFT: the Fire Spirit. It is earned by burning, evolves through four stages based on cumulative burns, and carries your yield position on-chain. Fully tradeable — yield auto-settles on transfer. This document covers every mechanic, every contract, and every formula.</p>
+    <div class="note"><div class="note-cap">Status</div><p>Contracts are unaudited. Do not deploy to mainnet until audits complete.</p></div>
+
+    <h2 id="d-how">How It Works</h2>
+    <p>PYRE compresses the entire protocol into one inevitable loop:</p>
+    <ol style="padding-left:22px;color:var(--t2);font-size:13px;line-height:2.2;margin:14px 0">
+      <li>Buy $PYRE by swapping ETH through the V4 hook — the hook mints tokens proportional to your volume</li>
+      <li>Your effective balance immediately begins decaying at 0.45%/hr — stake to stop it</li>
+      <li>Stake to pause decay and earn proportional ETH yield from the fee pool</li>
+      <li>Burn $PYRE to mint a Fire Spirit NFT — burns accumulate, NFT mints at 10,000 cumulative</li>
+      <li>Burn more to evolve: 75k → FLAME (1.5×), 150k → FORGE (2×), 300k → PYRE (3×)</li>
+      <li>Fire Spirit earns perpetual ETH yield proportional to your burn weight × stage multiplier, forever</li>
+    </ol>
+    <p>Every 2,000 epochs (~83 days), the decay rate halves. Era 0 pressure gives way to Era 1 relief — the protocol rewards those who survived the fire.</p>
+
+    <h2 id="d-arch">Architecture</h2>
+    <p>Five contracts. One NFT type.</p>
+    <table class="dt"><thead><tr><th>Contract</th><th>Role</th></tr></thead><tbody>
+      <tr><td>PyreHook.sol</td><td>V4 BaseHook — afterSwap, minting, 4% hook fee capture, fee routing to yield pool</td></tr>
+      <tr><td>PyreToken.sol</td><td>ERC-20 — hook-minted, lazy decay, global scaling factor, halving schedule</td></tr>
+      <tr><td>PyreNFT.sol</td><td>ERC-721 — Fire Spirit, burn-to-mint, on-chain SVG, evolves by cumulative burn weight</td></tr>
+      <tr><td>PyreStaking.sol</td><td>Staking vault, decay immunity, proportional ETH yield distribution, drip exit</td></tr>
+      <tr><td>PyreBurn.sol</td><td>Token burn + LP burn paths, Fire Spirit mint/upgrade, proportional yield by burn weight × multiplier</td></tr>
+    </tbody></table>
+
+    <h2 id="d-token">$PYRE Token</h2>
+    <table class="dt"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>
+      <tr><td>Name / Ticker</td><td>Pyre / $PYRE</td></tr>
+      <tr><td>Standard</td><td>ERC-20</td></tr>
+      <tr><td>Chain</td><td>Ethereum mainnet</td></tr>
+      <tr><td>Supply cap</td><td>1,000,000,000 $PYRE</td></tr>
+      <tr><td>Genesis supply</td><td>0</td></tr>
+      <tr><td>Minting authority</td><td>PyreHook only (immutable)</td></tr>
+      <tr><td>Team allocation</td><td>0%</td></tr>
+    </tbody></table>
+    <p style="margin-top:14px">No $PYRE exists before the first swap. Supply is entirely demand-driven: it grows from trading activity and contracts from continuous decay. The 1B cap is a hard ceiling the hook will never exceed — <code>mint()</code> reverts on overflow.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>function afterSwap(
+    address sender,
+    PoolKey calldata key,
+    IPoolManager.SwapParams calldata params,
+    BalanceDelta delta,
+    bytes calldata hookData
+) external override onlyPoolManager returns (bytes4) {
+    uint256 vol = uint256(
+        params.amountSpecified &lt; 0
+            ? -params.amountSpecified
+            : params.amountSpecified
+    );
+    uint256 amt = _computeMint(vol);
+    if (amt &gt; 0) IPyreToken(pyreToken).mint(sender, amt);
+    return BaseHook.afterSwap.selector;
+}</pre></div>
+
+    <h2 id="d-mint">Minting</h2>
+    <p>$PYRE is minted exclusively by the V4 hook on every inbound ETH swap. The amount minted per swap decreases over time as S(t) decays — creating early-mover advantage without a hard cap on participation.</p>
+    <div class="cb"><span class="cb-lang">math</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>mintAmount = volume × BASE_RATE × S(t)
+
+  volume    = |amountSpecified| from swap params (in wei)
+  BASE_RATE = immutable constant set at deploy (e.g. 1e14)
+  S(t)      = global scaling factor — starts at 1.0, decays toward floor
+
+Example: BASE_RATE=1e14, S(t)=0.8, 1 ETH swap
+  1e18 × 1e14 × 8e17 / 1e36 = 0.00008 $PYRE minted</pre></div>
+
+    <h2 id="d-decay">Decay &amp; Halving Schedule</h2>
+    <p>Every unstaked token decays continuously. The rate starts at 0.45%/hr and halves every 2,000 epochs — each epoch is one hour, each halving is approximately 83 days. A floor of 0.01%/hr is enforced permanently.</p>
+    <div class="cb"><span class="cb-lang">math</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>effectiveBalance = rawBalance × (scalingFactor / 1e18)
+
+scalingFactor updated once per epoch:
+  newScaling = oldScaling × (10000 - currentRate) / 10000
+
+Era rates:
+  Era 0 (epochs    0–2,000):  0.450%/hr  →  ~10.4%/day
+  Era 1 (epochs 2,000–4,000): 0.225%/hr  →  ~5.2%/day
+  Era 2 (epochs 4,000–6,000): 0.113%/hr  →  ~2.6%/day
+  Era 3 (epochs 6,000–8,000): 0.056%/hr  →  ~1.3%/day
+  Era 4 (epochs 8,000–10,000):0.028%/hr  →  ~0.67%/day
+  Era 5 (epoch 10,000+):      0.014%/hr  →  ~0.34%/day
+  Floor:                      0.010%/hr  →  permanent
+
+Survival rates at Era 0 (0.45%/hr):
+  24 hours →  89.7% remains
+  7 days   →  47.0% remains   (drip window — ~53% lost)
+  30 days  →   3.9% remains
+  90 days  →   0.0001% remains</pre></div>
+    <div class="note warn"><div class="note-cap">Staked tokens are exempt</div><p>The scaling factor only applies to liquid and LP balances. Staked balances are stored as raw values and returned in full — zero decay while staked.</p></div>
+
+    <h2 id="d-scale">Global Scaling Factor S(t)</h2>
+    <p>S(t) governs the mint rate over time — separate from the decay scaling factor above. As S(t) decreases, each ETH swap mints fewer $PYRE. This creates early-buyer advantage without a vesting cliff.</p>
+    <table class="dt"><thead><tr><th>λ / year</th><th>S at 6mo</th><th>S at 1yr</th><th>S at 2yr</th><th>Effect</th></tr></thead><tbody>
+      <tr><td>0.5</td><td>0.78</td><td>0.61</td><td>0.37</td><td>Slow decay, long emission window</td></tr>
+      <tr><td>1.0</td><td>0.61</td><td>0.37</td><td>0.14</td><td>Recommended — mirrors Bitcoin halving intuition</td></tr>
+      <tr><td>2.0</td><td>0.37</td><td>0.14</td><td>0.02</td><td>Fast decay, maximum early-mover advantage</td></tr>
+    </tbody></table>
+
+    <h2 id="d-spirit">The Fire Spirit</h2>
+    <p>There is one NFT in the PYRE protocol: the <strong>Fire Spirit</strong>. It is the only NFT. It is tradeable. It tells the complete story of a wallet's commitment on-chain.</p>
+    <p>A Fire Spirit mints when a wallet's cumulative $PYRE burns cross 10,000. Burns accumulate across every transaction — no burn is ever wasted. As cumulative burns cross higher thresholds the art evolves in place — same token ID, same wallet, changing appearance. No IPFS. Art generated entirely on-chain as SVG.</p>
+    <table class="dt"><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>
+      <tr><td>Standard</td><td>ERC-721</td></tr>
+      <tr><td>Transferability</td><td>Tradeable — yield auto-settles on transfer</td></tr>
+      <tr><td>Mint trigger</td><td>10,000 $PYRE cumulative burned (any number of transactions)</td></tr>
+      <tr><td>Hard cap</td><td>None — open access forever</td></tr>
+      <tr><td>Art storage</td><td>Fully on-chain SVG — evolves in place as burns accumulate</td></tr>
+      <tr><td>LP burn variant</td><td>Gradient overlay — visually distinct, +20% yield weight</td></tr>
+    </tbody></table>
+    <p style="margin-top:14px">On secondary transfer: all accrued yield settles to the seller before ownership changes. The new holder inherits the Fire Spirit at its current visual stage but their own burn accumulation starts from 0.</p>
+
+    <h2 id="d-stages">Stages &amp; Evolution</h2>
+    <p>The Fire Spirit evolves through four stages based on cumulative $PYRE burned. Burns accumulate permanently — crossing a threshold upgrades the stage automatically. Visual stage ratchets upward and never regresses.</p>
+    <table class="dt"><thead><tr><th>Stage</th><th>Name</th><th>Cumulative burned</th><th>Yield weight multiplier</th></tr></thead><tbody>
+      <tr><td>1</td><td>EMBER</td><td>10,000 $PYRE</td><td>1×</td></tr>
+      <tr><td>2</td><td>FLAME</td><td>75,000 $PYRE</td><td>1.5×</td></tr>
+      <tr><td>3</td><td>FORGE</td><td>150,000 $PYRE</td><td>2×</td></tr>
+      <tr><td>4</td><td>PYRE</td><td>300,000 $PYRE</td><td>3×</td></tr>
+    </tbody></table>
+    <p style="margin-top:14px">Stage multipliers apply to Fire Spirit yield weight: a Stage IV holder earns 3× more ETH yield per burned unit than a Stage I holder. The multiplier applies to burn weight — buying a high-stage Fire Spirit on secondary gives you the visual but your own yield weight starts from 0 burns.</p>
+
+    <h2 id="d-immolated">The Immolated Protocol — Overview</h2>
+    <p>The Immolated Protocol is the deepest layer of commitment. The Immolated permanently remove $PYRE from supply and hold a perpetual claim on 25% of all swap fees — forever, regardless of whether they continue staking.</p>
+    <p>Immolated status is not a second NFT. It is a permanent mark fused directly onto the existing Fire Spirit. The Fire Spirit's on-chain SVG renders the Immolated overlay for all to see.</p>
+    <table class="dt"><thead><tr><th>Requirement</th><th>Detail</th></tr></thead><tbody>
+      <tr><td>Stage gate</td><td>Stage 4 (PYRE) — 300,000 cumulative burn weight required</td></tr>
+      <tr><td>Minimum burn</td><td>10,000 $PYRE additional (mirrors the EMBER threshold — the first burn and the final seal are the same)</td></tr>
+      <tr><td>Must hold Fire Spirit</td><td>Immolated status fuses to an existing Fire Spirit token ID</td></tr>
+      <tr><td>Burn is permanent</td><td>Cannot be undone. No exit from Immolated status.</td></tr>
+      <tr><td>Both paths eligible</td><td>Token burn and LP burn paths both qualify — LP burns count at +20% weight</td></tr>
+    </tbody></table>
+
+    <h2 id="d-tokburn">Token Burn Path</h2>
+    <p>Burn a minimum of 10,000 $PYRE directly. Tokens are sent to <code>address(0)</code> — permanently removed from supply. Your Fire Spirit receives the Immolated mark.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>// Weight = underlying units (pre-scaling) — early burners get more weight
+uint256 weight = amount * 1e18 / scalingFactorWAD;
+
+// e.g. burn 1000 $PYRE at S(t)=0.7:
+//   weight = 1000e18 * 1e18 / 0.7e18 = 1,428 underlying units</pre></div>
+    <p>Because weight is denominated in underlying units, burning 1,000 $PYRE at Era 0 creates more weight than burning 1,000 $PYRE at Era 3. Early Immolated are permanently and disproportionately rewarded for their conviction.</p>
+
+    <h2 id="d-lpburn">LP Burn Path</h2>
+    <p>Deposit ETH + $PYRE into the liquidity pool and burn the resulting LP shares permanently. The liquidity is locked forever — deepening the protocol's permanent floor. LP Immolated receive a <strong>20% weight bonus</strong> on top of their $PYRE-equivalent value, and their Fire Spirit receives a distinct gradient visual treatment.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>// LP weight with bonus
+uint256 baseWeight = pyreAmt * 1e18 / scalingFactorWAD;
+uint256 weight     = baseWeight * 1_200 / 1_000; // +20%
+
+// LP shares burned to address(0) — permanent
+IERC20(lpToken).transfer(address(0), lpReceived);</pre></div>
+    <div class="note warn"><div class="note-cap">Irreversible</div><p>ETH and $PYRE deposited into the pool via LP burn are locked permanently. The liquidity cannot be withdrawn. This is by design — LP Immolated are rewarded with higher weight precisely because they have committed deeper.</p></div>
+
+    <h2 id="d-weight">Weight &amp; Yield</h2>
+    <p>Immolated yield is distributed proportionally to weight. Weight is accumulated — you can burn multiple times into the same Fire Spirit and weight compounds.</p>
+    <div class="cb"><span class="cb-lang">math</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>// Synthetix-style O(1) distribution
+rewardPerWeight += (newFees * 1e18) / totalImmolatedWeight
+
+// Pending yield for a specific tokenId
+pending = immolatedWeight[tokenId]
+        * (rewardPerWeight - rewardPerWeightPaid[tokenId])
+        / 1e18</pre></div>
+    <table class="dt" style="margin-top:14px"><thead><tr><th>Scenario</th><th>Detail</th></tr></thead><tbody>
+      <tr><td>Fewer Immolated</td><td>Each of the Immolated earns a larger share of the 25% pool</td></tr>
+      <tr><td>Higher swap volume</td><td>Larger 25% pool — absolute ETH yield scales with protocol usage</td></tr>
+      <tr><td>Early burn</td><td>More weight per $PYRE — permanent advantage, never diluted retroactively</td></tr>
+      <tr><td>LP burn vs token burn</td><td>+20% weight for LP path — rewards deeper liquidity commitment</td></tr>
+    </tbody></table>
+
+    <h2 id="d-staking">How to Stake</h2>
+    <p>Staking is immediate — no warmup, no lockup. Staked balances are completely exempt from decay. Your Fire Spirit evolution clock advances only while staked.</p>
+    <ol style="padding-left:22px;color:var(--t2);font-size:13px;line-height:2.4;margin:14px 0">
+      <li>Approve $PYRE spending: <code>pyreToken.approve(stakingContract, amount)</code></li>
+      <li>Call <code>stake(uint256 amount)</code> — tokens transferred, decay paused instantly</li>
+      <li>If this is your first stake and effective balance ≥ 200K, Fire Spirit auto-mints</li>
+      <li>Yield accrues from the moment you stake — claim anytime with <code>claimFees()</code></li>
+    </ol>
+    <div class="note"><div class="note-cap">Top-up allowed</div><p>You can stake additional $PYRE at any time without resetting your evolution clock. Only unstaking pauses the clock — it does not reset it.</p></div>
+
+    <h2 id="d-fees">Fee Distribution</h2>
+    <p>100% of swap fees generated by the PYRE pool flow to active participants. Zero protocol cut.</p>
+    <div class="cb"><span class="cb-lang">math</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>Swap fees (100%)
+├── Stakers:       75%  → split by (stakedBalance × stageMultiplier)
+└── the Immolated: 25%  → split by (immolatedWeight in underlying units)
+
+Staker reward per token:
+  rewardPerToken += (newStakerFees * 1e18) / totalWeightedStake
+
+Effective weight per staker:
+  weight = stakedBalance * stageMultiplier[stage]
+
+Stage multipliers:
+  EMBER (1): 1×   FLAME (2): 2×   FORGE (3): 4×   PYRE (4): 7×</pre></div>
+    <p style="margin-top:14px">Yield is denominated in ETH — not $PYRE. There is no inflationary APY. If swap volume is low, yield is low. The protocol's health is directly legible from fee distribution.</p>
+
+    <h2 id="d-drip">The Drip Exit</h2>
+    <p>Unstaking does not return tokens immediately. It initiates a 7-day linear drip during which tokens continue decaying at the current epoch rate. The drip is the entire exit cost — there are no additional fees.</p>
+    <div class="cb"><span class="cb-lang">math</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>claimable = dripAmount × (elapsed / 7 days) × (scalingFactor / 1e18)
+
+Era 0 drip loss (0.250%/hr × 168 hours):
+  0.9975^168 = e^(168 × -0.002503) ≈ 0.656
+  → ~34.4% of tokens lost over full 7-day drip
+
+Era 1 drip loss (0.125%/hr × 168 hours):
+  → ~19.6% of tokens lost (halvings make exit cheaper over time)</pre></div>
+    <div class="note warn"><div class="note-cap">Clock behavior</div><p>Unstaking pauses your evolution clock — it does not reset it. Your accumulated staking time is preserved. Restaking resumes the clock from where it stopped. You cannot restake until the current drip is fully claimed.</p></div>
+
+    <h2 id="d-hook">PyreHook.sol</h2>
+    <p>Inherits <code>BaseHook</code>. Registers <code>afterSwap</code> only.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>function getHookPermissions()
+    public pure override returns (Hooks.Permissions memory)
+{
+    return Hooks.Permissions({
+        beforeInitialize: false, afterInitialize: false,
+        beforeAddLiquidity: false, afterAddLiquidity: false,
+        beforeRemoveLiquidity: false, afterRemoveLiquidity: false,
+        beforeSwap: false, afterSwap: true,
+        beforeDonate: false, afterDonate: false,
+        beforeSwapReturnDelta: false, afterSwapReturnDelta: false,
+        afterAddLiquidityReturnDelta: false,
+        afterRemoveLiquidityReturnDelta: false
+    });
+}
+
+function afterSwap(...) external override onlyPoolManager returns (bytes4, int128) {
+    uint256 vol = uint256(params.amountSpecified < 0
+        ? -params.amountSpecified : params.amountSpecified);
+    uint256 amt = _computeMint(vol);
+    if (amt > 0) IPyreToken(pyreToken).mint(sender, amt);
+    _checkThreshold(sender);   // lazy Fire Spirit mint/burn
+    _routeFees(delta);          // 75% → staking, 25% → immolated
+    return (BaseHook.afterSwap.selector, 0);
+}</pre></div>
+
+    <h2 id="d-pyretoken">PyreToken.sol</h2>
+    <p>ERC-20 with global lazy decay. Staked balances skip the scaling factor entirely.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>uint256 public epochCount;
+uint256 public currentDecayRate = 250; // 0.250% = basis-tenth-points
+uint256 public scalingFactorWAD = 1e18;
+
+function balanceOf(address a) public view override returns (uint256) {
+    if (isStaked[a]) return rawBalance[a];
+    return rawBalance[a] * scalingFactorWAD / 1e18;
+}
+
+// Called by Chainlink Automation every 3600 seconds
+function _tickEpoch() internal {
+    epochCount++;
+    uint256 era = epochCount / 2500;
+    uint256 r   = 250 >> era;
+    currentDecayRate = r < 5 ? 5 : r;
+    scalingFactorWAD = scalingFactorWAD * (10000 - currentDecayRate) / 10000;
+}</pre></div>
+
+    <h2 id="d-pyrenft">PyreNFT.sol</h2>
+    <p>Tradeable ERC-721. One token per wallet. Visual stage + Immolated status rendered entirely on-chain. Yield settles on transfer via <code>_beforeTokenTransfer</code>.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>function currentStage(address wallet) public view returns (uint8) {
+    uint256 total = accumulatedStakingTime[wallet];
+    if (stakeStart[wallet] != 0)
+        total += block.timestamp - stakeStart[wallet];
+    if (total >= 180 days) return 4; // PYRE
+    if (total >= 90  days) return 3; // FORGE
+    if (total >= 30  days) return 2; // FLAME
+    return 1;                         // EMBER
+}
+
+function _beforeTokenTransfer(address from, address to, uint256 id) internal override {
+    if (from != address(0)) {
+        IPyreStaking(staking).settleYield(from, to, id);   // settle staker yield
+        IPyreImmolated(forged).settleYield(from, id, id);  // settle immolated yield
+        peakStage[id] = currentStage(from);                // lock visual stage
+        accumulatedStakingTime[to] = 0;                    // new holder starts fresh
+        stakeStart[to] = 0;
+    }
+}</pre></div>
+
+    <h2 id="d-pyrestaking">PyreStaking.sol</h2>
+    <p>Synthetix-style O(1) fee distribution. Stage multiplier applied at reward claim time.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>uint256[5] public stageMultiplier = [0, 1e18, 2e18, 4e18, 7e18];
+
+function stake(uint256 amount) external nonReentrant {
+    _settleReward(msg.sender);
+    IPyreToken(pyreToken).transferFrom(msg.sender, address(this), amount);
+    IPyreToken(pyreToken).setStaked(msg.sender, true);
+    positions[msg.sender].amount += amount;
+    IPyreNFT(pyreNFT).startClock(msg.sender);
+    totalWeightedStake += amount * stageMultiplier[_stage(msg.sender)] / 1e18;
+}
+
+function unstake(uint256 amount) external nonReentrant {
+    _settleReward(msg.sender);
+    positions[msg.sender].amount -= amount;
+    IPyreToken(pyreToken).setStaked(msg.sender, false);
+    IPyreNFT(pyreNFT).pauseClock(msg.sender); // pauses, does NOT reset
+    drips[msg.sender] = Drip({ amount: amount, startTime: block.timestamp, claimed: 0 });
+}</pre></div>
+
+    <h2 id="d-pyreimmolated">PyreImmolated.sol</h2>
+    <p>Handles both burn paths, weight accounting, and perpetual 25% fee distribution.</p>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>uint256 public constant MIN_BURN        = 100e18;   // 100 $PYRE
+uint256 public constant LP_WEIGHT_BONUS = 1_200;    // × 1.20
+uint256 public constant BONUS_DENOM     = 1_000;
+
+function burnTokens(uint256 amount) external nonReentrant {
+    require(amount >= MIN_BURN);
+    uint256 tokenId = IPyreNFT(pyreNFT).tokenOf(msg.sender);
+    require(IPyreNFT(pyreNFT).currentStage(msg.sender) >= 3, "FORGE required");
+    _settleReward(tokenId);
+    uint256 weight = amount * 1e18 / IPyreToken(pyreToken).scalingFactorWAD();
+    IPyreToken(pyreToken).transferFrom(msg.sender, address(0), amount);
+    immolatedWeight[tokenId] += weight;
+    totalImmolatedWeight      += weight;
+    IPyreNFT(pyreNFT).setImmolated(tokenId, false);
+}
+
+function burnLP(uint256 ethAmt, uint256 pyreAmt) external payable nonReentrant {
+    require(msg.value == ethAmt);
+    uint256 tokenId  = IPyreNFT(pyreNFT).tokenOf(msg.sender);
+    require(IPyreNFT(pyreNFT).currentStage(msg.sender) >= 3, "FORGE required");
+    _settleReward(tokenId);
+    uint256 lp       = _addLiquidity(ethAmt, pyreAmt);
+    uint256 weight   = (pyreAmt * 1e18 / scalingFactorWAD()) * LP_WEIGHT_BONUS / BONUS_DENOM;
+    IERC20(lpToken).transfer(address(0), lp); // burn LP permanently
+    immolatedWeight[tokenId] += weight;
+    totalImmolatedWeight      += weight;
+    IPyreNFT(pyreNFT).setImmolated(tokenId, true); // true = LP variant
+}</pre></div>
+
+    <h2 id="d-deploy">Deployment</h2>
+    <div class="cb"><span class="cb-lang">bash</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre># Deploy in order — wire permissions after all deployed
+forge create PyreToken      --constructor-args $SUPPLY_CAP $BASE_RATE
+forge create PyreNFT
+forge create PyreStaking    --constructor-args $PYRE_TOKEN $PYRE_NFT
+forge create PyreImmolated  --constructor-args $PYRE_TOKEN $PYRE_NFT $LP_TOKEN
+forge create PyreHook       \
+    --constructor-args $POOL_MANAGER $PYRE_TOKEN $PYRE_NFT $PYRE_STAKING $PYRE_IMMOLATED $BASE_RATE
+
+# Wire permissions
+cast send $PYRE_TOKEN      "setHook(address)"      $PYRE_HOOK
+cast send $PYRE_TOKEN      "setStaking(address)"   $PYRE_STAKING
+cast send $PYRE_NFT        "setHook(address)"      $PYRE_HOOK
+cast send $PYRE_NFT        "setStaking(address)"   $PYRE_STAKING
+cast send $PYRE_NFT        "setImmolated(address)" $PYRE_IMMOLATED
+cast send $PYRE_STAKING    "setHook(address)"      $PYRE_HOOK
+cast send $PYRE_IMMOLATED  "setHook(address)"      $PYRE_HOOK</pre></div>
+
+    <h2 id="d-pool">Pool Setup</h2>
+    <div class="cb"><span class="cb-lang">solidity</span><button class="cb-copy" onclick="cp(this)">⎘</button><pre>PoolKey memory key = PoolKey({
+    currency0:   Currency.wrap(address(0)),       // ETH
+    currency1:   Currency.wrap(PYRE_TOKEN),
+    fee:         3000,                            // 0.3% swap fee
+    tickSpacing: 60,
+    hooks:       IHooks(PYRE_HOOK_ADDRESS)        // must be mined address
+});
+poolManager.initialize(key, sqrtPriceX96, "");</pre></div>
+    <div class="note warn"><div class="note-cap">Hook Address Mining</div><p>V4 hooks must be deployed at addresses whose lower bits encode the permission flags. Use <code>HookMiner.find()</code> from v4-periphery, or the Foundry hook miner script. Mine before deploying — the hook must go to a specific address.</p></div>
+
+    <h2 id="d-api">API Reference</h2>
+    <h3>PyreToken</h3>
+    <table class="dt"><thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead><tbody>
+      <tr><td>balanceOf(address)</td><td>public view</td><td>Live post-decay balance (or raw if staked)</td></tr>
+      <tr><td>mint(address, uint256)</td><td>external</td><td>Only callable by authorized hook</td></tr>
+      <tr><td>setStaked(address, bool)</td><td>external</td><td>Only callable by staking contract</td></tr>
+      <tr><td>scalingFactorWAD()</td><td>public view</td><td>Current decay scaling factor as WAD</td></tr>
+      <tr><td>currentDecayRate()</td><td>public view</td><td>Current epoch rate (250 → 5)</td></tr>
+      <tr><td>epochCount()</td><td>public view</td><td>Total epochs elapsed (hours since deploy)</td></tr>
+    </tbody></table>
+    <h3>PyreNFT</h3>
+    <table class="dt"><thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead><tbody>
+      <tr><td>currentStage(address)</td><td>public view</td><td>Returns stage 1–4 for current holder</td></tr>
+      <tr><td>tokenURI(uint256)</td><td>public view</td><td>Base64 JSON + on-chain SVG</td></tr>
+      <tr><td>accumulatedStakingTime(address)</td><td>public view</td><td>Total staked seconds for wallet</td></tr>
+      <tr><td>isForged(uint256)</td><td>public view</td><td>True if tokenId has Immolated status</td></tr>
+      <tr><td>peakStage(uint256)</td><td>public view</td><td>Highest stage ever reached by this token</td></tr>
+      <tr><td>tokenOf(address)</td><td>public view</td><td>TokenId held by wallet (0 if none)</td></tr>
+    </tbody></table>
+    <h3>PyreStaking</h3>
+    <table class="dt"><thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead><tbody>
+      <tr><td>stake(uint256)</td><td>external</td><td>Deposit $PYRE; pause decay; advance clock</td></tr>
+      <tr><td>unstake(uint256)</td><td>external</td><td>Initiate 7-day drip; pause clock</td></tr>
+      <tr><td>claimDrip()</td><td>external</td><td>Claim available drip tokens (decay applies)</td></tr>
+      <tr><td>claimFees()</td><td>external</td><td>Claim accumulated ETH yield</td></tr>
+      <tr><td>pendingFees(address)</td><td>external view</td><td>View claimable ETH amount</td></tr>
+      <tr><td>effectiveWeight(address)</td><td>public view</td><td>stakedBalance × stageMultiplier</td></tr>
+    </tbody></table>
+    <h3>PyreImmolated</h3>
+    <table class="dt"><thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead><tbody>
+      <tr><td>burnTokens(uint256)</td><td>external</td><td>Token burn path — min 100 $PYRE, Stage 3+ required</td></tr>
+      <tr><td>burnLP(uint256, uint256)</td><td>external payable</td><td>LP burn path — ETH + $PYRE, +20% weight bonus</td></tr>
+      <tr><td>claimYield(uint256)</td><td>external</td><td>Claim pending Immolated ETH yield for tokenId</td></tr>
+      <tr><td>pendingYield(uint256)</td><td>external view</td><td>View claimable Immolated yield for tokenId</td></tr>
+      <tr><td>immolatedWeight(uint256)</td><td>public view</td><td>Total burn weight for tokenId</td></tr>
+      <tr><td>totalImmolatedWeight()</td><td>public view</td><td>Sum of all Immolated weights</td></tr>
+    </tbody></table>
+
+    <h2 id="d-sec">Security Considerations</h2>
+    <table class="dt"><thead><tr><th>Risk</th><th>Mitigation</th></tr></thead><tbody>
+      <tr><td>Mint authority bypass</td><td><code>hook</code> address is immutable — set once at deploy, cannot be changed</td></tr>
+      <tr><td>Threshold crossing attack</td><td>PFP burns on downward crossing — self-defeating (costs gas and tokens)</td></tr>
+      <tr><td>Scaling factor manipulation</td><td>Monotonic decrease enforced; floor of 5 prevents division-by-zero</td></tr>
+      <tr><td>Drip gaming</td><td><code>inDrip</code> flag blocks restaking until drip fully claimed</td></tr>
+      <tr><td>Reentrancy</td><td><code>ReentrancyGuard</code> on all state-modifying functions</td></tr>
+      <tr><td>Yield theft on transfer</td><td><code>settleYield()</code> called in <code>_beforeTokenTransfer</code> — settled before ownership changes</td></tr>
+      <tr><td>Immolated weight manipulation</td><td>Weight computed from raw underlying units — scaling factor snapshotted at burn time</td></tr>
+      <tr><td>LP burn to wrong address</td><td>LP balance checked before and after burn; verified transfer to <code>address(0)</code></td></tr>
+      <tr><td>Chainlink failure</td><td>Lazy evaluation in hook covers all interactive wallets; Automation is supplemental</td></tr>
+      <tr><td>WAD overflow</td><td>All WAD multiplication paths checked against max expected volume</td></tr>
+    </tbody></table>
+
+    <h2 id="d-audit">Audit Status</h2>
+    <div class="note"><div class="note-cap">Unaudited</div><p>PYRE contracts have not been audited. Do not use with real funds on mainnet until a full security review is complete.</p></div>
+    <p>Planned audit scope: lazy decay accounting correctness, halving schedule integrity, hook authorization paths, staking/unstaking invariants, fee distribution math (both pools), Fire Spirit clock manipulation, Immolated weight in underlying units, yield settlement on transfer, WAD overflow in all multiplication paths, LP burn to address(0) verification.</p>
+    <p>Target: Code4rena community audit + Spearbit private review. Pre-mainnet launch requirement.</p>
+  </div>
+</div>
+</div><!-- /pg-docs -->
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════════
+// ROUTING
+// ════════════════════════════════════════════
+function go(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('nl-docs').classList.toggle('active', page === 'docs');
+}
+
+// ════════════════════════════════════════════
+// HOME SCROLL SPY
+// ════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  if (!document.getElementById('pg-home').classList.contains('active')) return;
+  const ids = ['mechanism', 'nft', 'tokenomics'];
+  let cur = '';
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 110) cur = id;
+  });
+  document.querySelectorAll('.nl').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+  });
+}, { passive: true });
+
+// ════════════════════════════════════════════
+// DOCS SCROLL SPY
+// ════════════════════════════════════════════
+function ds(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function initDocsSpy() {
+  const links = document.querySelectorAll('.sb-a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const id = e.target.id;
+      links.forEach(l => {
+        l.classList.toggle('active',
+          (l.getAttribute('onclick') || '').includes(id));
+      });
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  document.querySelectorAll('.docs-body h1[id], .docs-body h2[id]').forEach(el => obs.observe(el));
+}
+
+// ════════════════════════════════════════════
+// CODE COPY
+// ════════════════════════════════════════════
+function cp(btn) {
+  const pre = btn.closest('.cb').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    btn.textContent = '✓'; btn.classList.add('done');
+    setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('done'); }, 2000);
+  }).catch(() => {});
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initDocsSpy();
+});
+</script>
+</body>
+</html>

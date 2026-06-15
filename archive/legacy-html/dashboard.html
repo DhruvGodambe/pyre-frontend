@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080504;
+  --s1:      #0D0A07;
+  --panel:   #0D0A0700;
+  --brand:   #C9A96E;
+  --warm:    #B8894A;
+  --gold:    #E8C88A;
+  --t1:      #EDE8E0;
+  --t2:      #B8A88A;
+  --t3:      #7A6A52;
+  --line:    rgba(201,169,110,0.12);
+  --linef:   rgba(201,169,110,0.28);
+  --display: 'Cormorant Garamond', serif;
+  --sg:      'DM Sans', sans-serif;
+  --mono:    'Fira Code', monospace;
+  --nav-h:   52px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--sg);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 50vh;
+  background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(160,110,35,0.07) 0%, rgba(80,50,12,0.03) 55%, transparent 75%);
+  animation: heat 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes heat {
+  from { opacity: 0.5; transform: scaleX(0.94); }
+  to   { opacity: 1.0; transform: scaleX(1.06); }
+}
+
+/* ─ NAV ─ */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.brand-name {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand);
+  line-height: 1;
+}
+.nav-center {
+  display: flex;
+  gap: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+}
+.nav-center li a {
+  display: block;
+  font-family: var(--sg);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(237,232,224,0.72);
+  text-decoration: none;
+  padding: 7px 18px;
+  border-right: 1px solid var(--line);
+  transition: color 0.2s, background 0.2s;
+}
+.nav-center li:last-child a { border-right: none; }
+.nav-center li a:hover { color: rgba(237,232,224,0.65); }
+.nav-center li a.active { color: var(--t1); background: rgba(201,169,110,0.05); }
+
+.wallet-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: none;
+  border: 1px solid rgba(201,169,110,0.28);
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.wallet-btn:hover { background: rgba(201,169,110,0.06); border-color: rgba(201,169,110,0.55); }
+.wallet-btn.connected { color: var(--t2); border-color: rgba(201,169,110,0.15); }
+.wallet-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--t3);
+  flex-shrink: 0;
+}
+.wallet-dot.live { background: var(--brand); box-shadow: 0 0 6px var(--brand); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ─ DASHBOARD BODY ─ */
+#dash {
+  position: relative;
+  z-index: 1;
+  padding-top: var(--nav-h);
+  min-height: 100vh;
+}
+
+/* ─ CONNECT WALL ─ */
+#connect-wall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--nav-h));
+  gap: 20px;
+  text-align: center;
+  padding: 40px 20px;
+}
+.cw-title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(28px,3vw,44px);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--t1);
+  line-height: 1.2;
+}
+.cw-sub {
+  font-size: 12px;
+  color: var(--t2);
+  max-width: 320px;
+  line-height: 1.8;
+}
+.cw-btn {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  padding: 14px 40px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.cw-btn:hover { background: var(--gold); border-color: var(--gold); }
+
+/* ─ LIVE DASHBOARD (hidden until connected) ─ */
+#dash-live { display: none; }
+#dash-live.visible { display: block; }
+
+/* ─ TOP ROW ─ */
+.top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--line);
+}
+.top-panel {
+  padding: 20px 22px 18px;
+  border-right: 1px solid var(--line);
+  position: relative;
+}
+.top-panel:last-child { border-right: none; }
+
+/* ─ STATS BAR ─ */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid var(--line);
+  background: rgba(201,169,110,0.02);
+}
+.sb-item {
+  padding: 9px 14px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sb-item:last-child { border-right: none; }
+.sb-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t2);
+}
+.sb-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--t1);
+}
+.sb-val.hi { color: var(--brand); }
+
+/* ─ MAIN GRID ─ */
+.main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  border-bottom: 1px solid var(--line);
+  min-height: 480px;
+}
+.mg-col {
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.mg-col:last-child { border-right: none; }
+
+/* ─ PANEL HEADER ─ */
+.panel-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--t1);
+  flex-shrink: 0;
+}
+.panel-hd::before {
+  content: '●';
+  color: var(--brand);
+  font-size: 7px;
+}
+
+/* ─ PANEL BODY ─ */
+.panel-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+/* ─ SECTION LABELS ─ */
+.field-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--t2);
+  margin-bottom: 4px;
+}
+
+/* ─ BIG NUMBERS ─ */
+.big-num {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--t1);
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.big-num .unit { font-size: 12px; color: var(--t2); margin-left: 4px; font-weight: 400; }
+.big-num.brand { color: var(--brand); }
+
+/* ─ PROGRESS RINGS ─ */
+.ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0 8px;
+}
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(201,169,110,0.08); }
+.ring-fill  { fill: none; stroke: var(--brand); stroke-linecap: round; transition: stroke-dashoffset 1.2s ease; }
+.ring-fill.warm { stroke: var(--warm); }
+.ring-fill.gold { stroke: var(--gold); }
+.ring-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%) rotate(90deg);
+  text-align: center;
+}
+.ring-container { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.ring-val { font-family: var(--mono); font-size: 16px; color: var(--t1); line-height: 1; }
+.ring-val-sm { font-family: var(--mono); font-size: 10px; color: var(--t2); margin-top: 3px; }
+
+/* ─ STAGE BADGE ─ */
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 1px solid;
+}
+.stage-badge.ember { color: #8A7868; border-color: rgba(138,120,104,0.3); }
+.stage-badge.flame { color: var(--brand); border-color: rgba(201,169,110,0.25); }
+.stage-badge.forge { color: var(--warm); border-color: rgba(255,140,0,0.3); }
+.stage-badge.pyre  { color: var(--gold); border-color: rgba(255,204,0,0.35); }
+.stage-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* ─ PROGRESS BAR ─ */
+.prog-wrap { margin-top: 2px; }
+.prog-bar {
+  height: 2px;
+  background: rgba(201,169,110,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--warm));
+  transition: width 1s ease;
+}
+.prog-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--t3);
+}
+
+/* ─ INPUTS ─ */
+.input-row {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  transition: border-color 0.15s;
+}
+.input-row:focus-within { border-color: rgba(201,169,110,0.38); }
+.tok-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--t1);
+  padding: 10px 12px;
+  min-width: 0;
+}
+.tok-input::placeholder { color: var(--t3); }
+.input-label {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--t3);
+  border-left: 1px solid var(--line);
+  background: rgba(255,255,255,0.01);
+}
+.max-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: none;
+  border: none;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.max-btn:hover { background: rgba(201,169,110,0.07); }
+
+/* ─ BUTTONS ─ */
+.act-btn {
+  width: 100%;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 11px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, opacity 0.15s;
+}
+.act-btn.primary { background: var(--brand); color: var(--bg); border: 1px solid var(--brand); }
+.act-btn.primary:hover { background: var(--gold); border-color: var(--gold); }
+.act-btn.ghost {
+  background: none;
+  color: var(--t2);
+  border: 1px solid rgba(201,169,110,0.18);
+}
+.act-btn.ghost:hover { border-color: rgba(201,169,110,0.45); color: var(--t1); background: rgba(201,169,110,0.04); }
+.act-btn.gold-btn { background: rgba(201,169,110,0.08); color: var(--brand); border: 1px solid rgba(201,169,110,0.25); }
+.act-btn.gold-btn:hover { background: rgba(201,169,110,0.14); border-color: rgba(201,169,110,0.5); }
+.act-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─ TABS ─ */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1;
+  font-family: var(--sg);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: rgba(201,169,110,0.55);
+  cursor: pointer;
+  border-right: 1px solid var(--line);
+  transition: color 0.2s, background 0.2s;
+}
+.tab:last-child { border-right: none; }
+.tab:hover { color: rgba(201,169,110,0.65); background: rgba(201,169,110,0.03); }
+.tab.active { color: var(--t1); background: rgba(201,169,110,0.05); }
+
+/* ─ DIVIDER ─ */
+.divider { height: 1px; background: var(--line); margin: 4px 0; }
+
+/* ─ STAT ROW ─ */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.stat-row + .stat-row { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 0; }
+.stat-k { font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t2); }
+.stat-v { font-family: var(--mono); font-size: 12px; color: var(--t1); }
+.stat-v.hi { color: var(--t1); }
+.stat-v.brand { color: var(--brand); }
+.stat-v.gold { color: var(--gold); }
+
+/* ─ YIELD PANEL ─ */
+.yield-panel {
+  background: rgba(201,169,110,0.05);
+  border: 1px solid rgba(201,169,110,0.15);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.yield-num { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--brand); line-height: 1; letter-spacing: 0.06em; }
+.yield-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--t3); margin-top: 3px; }
+.yield-btn {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: none;
+  border: 1px solid rgba(201,169,110,0.55);
+  padding: 7px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+.yield-btn:hover { background: rgba(201,169,110,0.07); border-color: rgba(201,169,110,0.55); }
+
+/* ─ DRIP PROGRESS ─ */
+.drip-panel {
+  background: rgba(201,169,110,0.04);
+  border: 1px solid rgba(201,169,110,0.15);
+  padding: 10px 12px;
+}
+.drip-title { font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); margin-bottom: 7px; }
+.drip-bar { height: 2px; background: rgba(255,140,0,0.12); }
+.drip-fill { height: 100%; background: var(--warm); }
+.drip-info { display: flex; justify-content: space-between; margin-top: 5px; font-family: var(--mono); font-size: 9px; color: var(--t3); }
+
+/* ─ WARN BOX ─ */
+.warn-box {
+  background: rgba(201,169,110,0.05);
+  border: 1px solid rgba(201,169,110,0.2);
+  padding: 9px 12px;
+  font-family: var(--sg);
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(237,232,224,0.72);
+  line-height: 1.65;
+}
+.warn-box .wr { color: var(--brand); margin-right: 4px; }
+
+/* ─ LOCK SCREEN ─ */
+.lock-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  opacity: 0.7;
+}
+.lock-icon { font-size: 20px; }
+.lock-msg { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t1); line-height: 1.8; }
+.lock-days { font-family: var(--mono); font-size: 20px; color: var(--warm); margin: 4px 0; }
+.lock-sub { font-size: 10px; color: var(--t3); }
+
+/* ─ BURN CHART AREA ─ */
+.chart-area {
+  flex: 1;
+  padding: 14px 16px;
+  position: relative;
+  min-height: 200px;
+}
+.chart-area canvas { width: 100% !important; }
+
+/* ─ CHART BOTTOM STATS ─ */
+.chart-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-top: 1px solid var(--line);
+}
+.cs-item {
+  padding: 10px 14px;
+  border-right: 1px solid var(--line);
+}
+.cs-item:last-child { border-right: none; }
+.cs-val { font-family: var(--mono); font-size: 13px; color: var(--t1); line-height: 1; margin-bottom: 3px; }
+.cs-val.brand { color: var(--brand); }
+.cs-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--t2); }
+
+/* ─ PYRARCH PANEL ─ */
+.pyrarch-tabs { display: flex; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.pyrarch-tab {
+  flex: 1;
+  font-family: var(--sg);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.pyrarch-tab:last-child { border-right: none; }
+.pyrarch-tab.active { color: var(--brand); background: rgba(201,169,110,0.06); }
+.pyrarch-tab:not(.active) { color: rgba(201,169,110,0.55); }
+.pyrarch-tab:not(.active):hover { color: rgba(201,169,110,0.65); }
+
+/* ─ ACTIVITY FEED ─ */
+.feed-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 9px;
+  transition: background 0.12s;
+}
+.feed-row:hover { background: rgba(201,169,110,0.03); }
+.feed-row:last-child { border-bottom: none; }
+.feed-time { color: var(--t3); white-space: nowrap; min-width: 48px; }
+.feed-msg { color: var(--t2); }
+.feed-msg strong { color: var(--t1); font-weight: 500; }
+.feed-msg .fire { color: var(--brand); }
+.feed-msg .gold { color: var(--gold); }
+.feed-amt { color: var(--t3); text-align: right; white-space: nowrap; }
+
+/* ─ BOTTOM ROW ─ */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ─ STATUS BAR ─ */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+.status-live { display: flex; align-items: center; gap: 6px; color: var(--brand); }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); animation: pulse 2s infinite; }
+
+/* ─ NFT FIRE SPIRIT PREVIEW ─ */
+.spirit-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0;
+}
+.spirit-img {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+  background: #0a0604;
+}
+.spirit-info { flex: 1; min-width: 0; }
+
+/* ─ FIRE SPIRIT SVG PLACEHOLDER ─ */
+.fs-canvas {
+  width: 72px;
+  height: 72px;
+}
+
+/* ─ SUPPLY RING CENTER ─ */
+.supply-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0 6px;
+}
+
+/* ─ DECAY TICKER ─ */
+.decay-ticker {
+  font-family: var(--mono);
+  font-size: 32px;
+  color: var(--brand);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.decay-ticker .dec { font-size: 13px; color: var(--t3); }
+
+/* ─ MODAL ─ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 900;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #0A0704;
+  border: 1px solid rgba(201,169,110,0.2);
+  width: 100%;
+  max-width: 400px;
+  margin: 20px;
+}
+.modal-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--t1); }
+.modal-close { background: none; border: none; color: var(--t3); font-size: 16px; cursor: pointer; padding: 0 4px; }
+.modal-close:hover { color: var(--t1); }
+.modal-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ─ TX TOAST ─ */
+.tx-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0A0704;
+  border: 1px solid rgba(201,169,110,0.22);
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--t2);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  max-width: 280px;
+  letter-spacing: 0.06em;
+}
+.tx-toast.show { opacity: 1; transform: translateY(0); }
+.tx-toast .tx-status { color: var(--brand); margin-bottom: 3px; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; }
+
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .mg-col { border-right: none; border-bottom: 1px solid var(--line); }
+  .top-row { grid-template-columns: 1fr; }
+  .top-panel { border-right: none; border-bottom: 1px solid var(--line); }
+  .stats-bar { grid-template-columns: repeat(3,1fr); }
+  .nav-center { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="brand" href="index.html">
+    <span class="brand-name">PYRE</span>
+  </a>
+  <ul class="nav-center">
+    <li><a href="index.html">HOME</a></li>
+    <li><a href="dashboard.html" class="active">DASHBOARD</a></li>
+    <li><a href="index.html#" onclick="sessionStorage.setItem('pg','docs')">DOCS</a></li>
+  </ul>
+  <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
+    <span class="wallet-dot" id="walletDot"></span>
+    <span id="walletLabel">CONNECT WALLET</span>
+  </button>
+</nav>
+
+<div id="dash">
+
+  <!-- CONNECT WALL -->
+  <div id="connect-wall">
+    <div class="cw-title">YOUR DASHBOARD</div>
+    <p class="cw-sub">Connect your wallet to view your Fire Spirit, staking position, and Pyrarch status.</p>
+    <button class="cw-btn" onclick="connectWallet()">CONNECT WALLET</button>
+  </div>
+
+  <!-- LIVE DASHBOARD -->
+  <div id="dash-live">
+
+    <!-- TOP ROW -->
+    <div class="top-row">
+
+      <!-- Panel 1: Fire Spirit -->
+      <div class="top-panel">
+        <div class="field-label">Your Fire Spirit</div>
+        <div class="spirit-preview" style="margin-top:10px">
+          <div class="spirit-img">
+            <svg class="fs-canvas" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" id="spiritSvg">
+              <!-- Generated pixel art placeholder — replaced by tokenURI() on-chain SVG -->
+              <rect width="72" height="72" fill="#0a0604"/>
+              <rect x="30" y="50" width="12" height="16" fill="#6B4A20" opacity="0.9"/>
+              <rect x="28" y="44" width="16" height="10" fill="#8B6230" opacity="0.85"/>
+              <rect x="26" y="38" width="20" height="8" fill="#A87840" opacity="0.85"/>
+              <rect x="28" y="32" width="16" height="8" fill="#C9963C" opacity="0.9"/>
+              <rect x="30" y="26" width="12" height="8" fill="#C9A96E" opacity="0.95"/>
+              <rect x="32" y="20" width="8" height="8" fill="#DEC080"/>
+              <rect x="34" y="14" width="4" height="8" fill="#EDE8E0" opacity="0.85"/>
+              <rect x="24" y="40" width="4" height="8" fill="#8B6230" opacity="0.5"/>
+              <rect x="44" y="40" width="4" height="8" fill="#8B6230" opacity="0.5"/>
+              <rect x="22" y="46" width="4" height="6" fill="#6B4A20" opacity="0.4"/>
+              <rect x="46" y="46" width="4" height="6" fill="#6B4A20" opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="spirit-info">
+            <div class="stage-badge flame" id="stageBadge">
+              <span class="dot"></span>
+              <span id="stageLabel">STAGE 2 — FLAME</span>
+            </div>
+            <div style="margin-top:10px">
+              <div class="field-label">Days Staked</div>
+              <div style="font-family:var(--mono);font-size:13px;color:var(--t1);margin-bottom:6px"><span id="daysStaked">35</span> / 90d to FORGE</div>
+              <div class="prog-bar"><div class="prog-fill" id="stageBar" style="width:38%"></div></div>
+              <div class="prog-labels"><span>FLAME</span><span>FORGE</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div class="field-label">Staked</div>
+            <div style="font-family:var(--mono);font-size:14px;color:var(--t1)" id="stakedBal">432,000 <span style="font-size:10px;color:var(--t3)">PYRE</span></div>
+          </div>
+          <div>
+            <div class="field-label">Liquid</div>
+            <div style="font-family:var(--mono);font-size:14px;color:var(--brand)" id="liquidBal">24,500 <span style="font-size:10px;color:var(--t3)">PYRE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Supply -->
+      <div class="top-panel">
+        <div class="field-label">PYRE Supply</div>
+        <div class="supply-ring-wrap">
+          <div class="ring-container">
+            <svg class="ring-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle class="ring-track" cx="60" cy="60" r="52" stroke-width="4"/>
+              <circle class="ring-fill" cx="60" cy="60" r="52" stroke-width="4"
+                stroke-dasharray="326.7" id="supplyRing"
+                stroke-dashoffset="163"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-val" id="supplyPct">70.4<span style="font-size:9px">%</span></div>
+              <div class="ring-val-sm">REMAINING</div>
+            </div>
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--t3);text-align:center">
+            <span id="supplyBurned">29.6%</span> CONSUMED
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line);margin-top:6px">
+          <div style="padding:8px 10px;border-right:1px solid var(--line)">
+            <div class="field-label">Circulating</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--t1)" id="circSupply">704M</div>
+          </div>
+          <div style="padding:8px 10px">
+            <div class="field-label">Total Burned</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--brand)" id="totalBurned">296M</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line)">
+          <div style="padding:8px 10px;border-right:1px solid var(--line)">
+            <div class="field-label">Active Spirits</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--t1)" id="activeSpirits">2,847</div>
+          </div>
+          <div style="padding:8px 10px">
+            <div class="field-label">Cap</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--t3)">1,000M</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Decay Clock -->
+      <div class="top-panel">
+        <div class="field-label">Decay Clock</div>
+        <div class="ring-container" style="display:flex;flex-direction:column;align-items:center;padding:14px 0 8px;gap:8px">
+          <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
+            <circle class="ring-track" cx="50" cy="50" r="42" stroke-width="3"/>
+            <circle class="ring-fill warm" cx="50" cy="50" r="42" stroke-width="3"
+              stroke-dasharray="263.9" id="decayRing"
+              stroke-dashoffset="40"/>
+          </svg>
+          <div style="position:absolute" class="ring-center" id="decayCenterWrap" style="top:50%;left:50%;transform:translate(-50%,-50%) rotate(90deg)">
+            <div class="ring-val" id="epochCountdown">24:07</div>
+            <div class="ring-val-sm">NEXT BURN</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--t3);letter-spacing:0.14em;text-transform:uppercase">EPOCH <span id="epochNum">312</span> &nbsp;·&nbsp; ERA <span id="eraNum">0</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line);margin-top:4px">
+          <div style="padding:8px 10px;border-right:1px solid var(--line)">
+            <div class="field-label">Rate</div>
+            <div style="font-family:var(--mono);font-size:13px;color:var(--warm)" id="currentRate">0.25<span style="font-size:9px;color:var(--t3)">%/hr</span></div>
+          </div>
+          <div style="padding:8px 10px">
+            <div class="field-label">Your Liquid Loss</div>
+            <div style="font-family:var(--mono);font-size:13px;color:var(--brand)" id="liquidLoss">73.5 <span style="font-size:9px;color:var(--t3)">PYRE/hr</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line)">
+          <div style="padding:8px 10px;border-right:1px solid var(--line)">
+            <div class="field-label">S(t) Factor</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--t2)" id="sFactor">0.72×</div>
+          </div>
+          <div style="padding:8px 10px">
+            <div class="field-label">Stage Mult.</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--warm)" id="stageMult">1.5×</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /top-row -->
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="sb-item">
+        <div class="sb-label">Liquid</div>
+        <div class="sb-val hi" id="sb-liquid">24,500</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-label">Staked</div>
+        <div class="sb-val" id="sb-staked">432,000</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-label">Pending Yield</div>
+        <div class="sb-val brand" id="sb-yield">2.41 ETH</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-label">Epoch</div>
+        <div class="sb-val" id="sb-epoch">312</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-label">Pyrarch</div>
+        <div class="sb-val" id="sb-pyrarch">—</div>
+      </div>
+      <div class="sb-item">
+        <div class="sb-label">Era / Rate</div>
+        <div class="sb-val" id="sb-burnrate">Era 0 · 0.25%</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- COL 1: Staking Controls -->
+      <div class="mg-col">
+        <div class="panel-hd">Staking Controls</div>
+        <div class="tabs">
+          <button class="tab active" id="tab-stake" onclick="switchTab('stake')">STAKE</button>
+          <button class="tab" id="tab-unstake" onclick="switchTab('unstake')">UNSTAKE</button>
+        </div>
+        <div class="panel-body">
+
+          <!-- STAKE PANE -->
+          <div id="pane-stake">
+            <div class="field-label">Amount <span style="float:right;color:var(--t3)">MAX: <span id="maxStake">24,500</span></span></div>
+            <div class="input-row">
+              <input class="tok-input" id="stakeInput" type="number" placeholder="0.00" oninput="updateStakePreview()">
+              <button class="max-btn" onclick="setMax('stake')">MAX</button>
+              <div class="input-label">PYRE</div>
+            </div>
+            <div style="margin-top:2px">
+              <div class="stat-row">
+                <span class="stat-k">You receive</span>
+                <span class="stat-v" id="stakeReceive">0 sPYRE</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-k">Decay stops</span>
+                <span class="stat-v hi">Immediately</span>
+              </div>
+            </div>
+            <button class="act-btn ghost" id="approveBtn" onclick="doApprove()" style="margin-top:4px">APPROVE PYRE</button>
+            <button class="act-btn primary" id="stakeBtn" onclick="doStake()" disabled>STAKE</button>
+          </div>
+
+          <!-- UNSTAKE PANE -->
+          <div id="pane-unstake" style="display:none">
+            <div class="field-label">Amount <span style="float:right;color:var(--t3)">MAX: <span id="maxUnstake">432,000</span></span></div>
+            <div class="input-row">
+              <input class="tok-input" id="unstakeInput" type="number" placeholder="0.00">
+              <button class="max-btn" onclick="setMax('unstake')">MAX</button>
+              <div class="input-label">sPYRE</div>
+            </div>
+            <div class="warn-box" style="margin-top:4px">
+              <span class="wr">!</span>Initiates 7-day drip. ~34% lost to decay at current era rate. Clock pauses — accumulated time is preserved.
+            </div>
+            <button class="act-btn primary" onclick="doUnstake()" style="margin-top:4px">BEGIN DRIP EXIT</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- YIELD CLAIM -->
+          <div>
+            <div class="field-label">Pending Yield</div>
+            <div class="yield-panel">
+              <div>
+                <div class="yield-num" id="pendingYield">2.41 ETH</div>
+                <div class="yield-label">From Swap Fees</div>
+              </div>
+              <button class="yield-btn" onclick="doClaim()">CLAIM</button>
+            </div>
+          </div>
+
+          <!-- DRIP PROGRESS (shown when dripping) -->
+          <div id="dripSection" style="display:none">
+            <div class="drip-panel">
+              <div class="drip-title">▸ DRIP IN PROGRESS</div>
+              <div class="drip-bar"><div class="drip-fill" id="dripFill" style="width:42%"></div></div>
+              <div class="drip-info">
+                <span>Day <span id="dripDay">3</span>/7</span>
+                <span id="dripClaimable">12,400 PYRE claimable</span>
+              </div>
+            </div>
+            <button class="act-btn ghost" onclick="claimDrip()">CLAIM DRIP</button>
+          </div>
+
+          <div class="divider"></div>
+          <div>
+            <div class="stat-row"><span class="stat-k">Staked</span><span class="stat-v hi" id="st-staked">432,000 PYRE</span></div>
+            <div class="stat-row"><span class="stat-k">Stage</span><span class="stat-v brand" id="st-stage">FLAME (2×)</span></div>
+            <div class="stat-row"><span class="stat-k">Total Earned</span><span class="stat-v" id="st-earned">8.74 ETH</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COL 2: Burn Chronicle + Activity -->
+      <div class="mg-col">
+        <div class="panel-hd">Burn Chronicle</div>
+        <div class="chart-area">
+          <canvas id="burnChart"></canvas>
+        </div>
+        <div class="chart-stats">
+          <div class="cs-item">
+            <div class="cs-val brand" id="cs-burned">296,214,882</div>
+            <div class="cs-label">Total Burned</div>
+          </div>
+          <div class="cs-item">
+            <div class="cs-val" id="cs-rate">2.1M/hr</div>
+            <div class="cs-label">Current Rate</div>
+          </div>
+          <div class="cs-item">
+            <div class="cs-val" id="cs-spirits">2,847</div>
+            <div class="cs-label">Active Spirits</div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="panel-hd" style="border-top:1px solid var(--line)">Activity Feed</div>
+        <div id="feedContainer" style="flex:1;overflow-y:auto;max-height:220px"></div>
+      </div>
+
+      <!-- COL 3: Pyrarch Protocol -->
+      <div class="mg-col">
+        <div class="panel-hd" style="color:var(--gold)">Pyrarch Protocol</div>
+
+        <!-- LOCKED (Stage < 3) -->
+        <div id="pyrarchLocked">
+          <div class="lock-screen">
+            <div class="lock-icon">🔒</div>
+            <div class="lock-msg">Requires Stage 3<br>FORGE</div>
+            <div class="lock-days" id="daysToForge">55</div>
+            <div class="lock-sub">days remaining</div>
+            <div style="width:100%;margin-top:8px">
+              <div class="prog-bar"><div class="prog-fill" id="forgeBar" style="width:38%"></div></div>
+              <div class="prog-labels"><span>FLAME</span><span>FORGE</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UNLOCKED (Stage >= 3) -->
+        <div id="pyrarchUnlocked" style="display:none;flex-direction:column;flex:1">
+          <div class="pyrarch-tabs">
+            <button class="pyrarch-tab active" id="ptab-lp" onclick="switchPyrarchTab('lp')">LP BURN</button>
+            <button class="pyrarch-tab" id="ptab-token" onclick="switchPyrarchTab('token')">TOKEN BURN</button>
+          </div>
+
+          <!-- LP BURN PANE -->
+          <div id="ppane-lp" class="panel-body">
+            <div style="font-size:10px;color:var(--t2);line-height:1.7">
+              Deposit ETH + PYRE into the pool and burn the LP shares permanently. Liquidity is locked forever. LP Pyrarchs receive a <span style="color:var(--gold)">+20% weight bonus</span>.
+            </div>
+            <div>
+              <div class="field-label">ETH Amount <span style="float:right;color:var(--t3)">MAX: <span id="maxEth">0.00</span></span></div>
+              <div class="input-row">
+                <input class="tok-input" id="ethInput" type="number" placeholder="0.00" oninput="calcLpWeight()">
+                <div class="input-label">ETH</div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">PYRE Amount</div>
+              <div class="input-row">
+                <input class="tok-input" id="pyreInputLp" type="number" placeholder="0.00" oninput="calcLpWeight()">
+                <div class="input-label">PYRE</div>
+              </div>
+            </div>
+            <div class="stat-row">
+              <span class="stat-k">Est. Weight</span>
+              <span class="stat-v gold" id="lpWeight">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-k">LP Bonus</span>
+              <span class="stat-v gold">+20%</span>
+            </div>
+            <div class="warn-box">
+              <span class="wr">!</span>Irreversible. ETH + PYRE deposited as liquidity and LP shares burned permanently.
+            </div>
+            <button class="act-btn gold-btn" onclick="doBecomePyrarch('lp')">DEPOSIT &amp; BURN LP</button>
+          </div>
+
+          <!-- TOKEN BURN PANE -->
+          <div id="ppane-token" class="panel-body" style="display:none">
+            <div style="font-size:10px;color:var(--t2);line-height:1.7">
+              Permanently burn PYRE tokens to fuse Pyrarch status onto your Fire Spirit and earn a perpetual share of 25% of all swap fees.
+            </div>
+            <div>
+              <div class="field-label">Burn Amount <span style="float:right;color:var(--t3)">MIN: 100 PYRE</span></div>
+              <div class="input-row">
+                <input class="tok-input" id="burnInput" type="number" placeholder="0.00" min="50" oninput="calcTokenWeight()">
+                <button class="max-btn" onclick="setMax('burn')">MAX</button>
+                <div class="input-label">PYRE</div>
+              </div>
+            </div>
+            <div class="stat-row">
+              <span class="stat-k">Your Weight</span>
+              <span class="stat-v gold" id="tokenWeight">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-k">Est. Break-even</span>
+              <span class="stat-v">~10 days</span>
+            </div>
+            <div class="warn-box">
+              <span class="wr">!</span>Irreversible. Tokens are permanently destroyed. NFT is tradeable — yield settles to seller on transfer.
+            </div>
+            <button class="act-btn gold-btn" onclick="doBecomePyrarch('token')">BURN &amp; BECOME PYRARCH</button>
+          </div>
+
+        </div>
+
+        <!-- PYRARCH POOL STATS (always shown) -->
+        <div style="border-top:1px solid var(--line)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)">
+            <div style="padding:10px 14px;border-right:1px solid var(--line)">
+              <div class="field-label">Total Pyrarchs</div>
+              <div style="font-family:var(--mono);font-size:18px;color:var(--t1)" id="totalPyrarchs">47</div>
+            </div>
+            <div style="padding:10px 14px">
+              <div class="field-label">Total Weight</div>
+              <div style="font-family:var(--mono);font-size:18px;color:var(--gold)" id="totalWeight">64.8M</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr">
+            <div style="padding:10px 14px;border-right:1px solid var(--line)">
+              <div class="field-label">Pool Share</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--t3)" id="myPoolShare">—</div>
+            </div>
+            <div style="padding:10px 14px">
+              <div class="field-label">Fee Pool (25%)</div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--t2)" id="pyrarchPool">0.48 ETH/day</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /main-grid -->
+
+  </div><!-- /dash-live -->
+</div><!-- /dash -->
+
+<!-- TX Toast -->
+<div class="tx-toast" id="txToast">
+  <div class="tx-status" id="txStatus">TRANSACTION PENDING</div>
+  <div id="txMsg">Waiting for confirmation...</div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title">Approve PYRE</span>
+      <button class="modal-close" onclick="closeModal('approveModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--t2);line-height:1.8">Allow the staking contract to spend your PYRE tokens. This is a one-time approval per session.</div>
+      <div class="stat-row"><span class="stat-k">Spender</span><span class="stat-v" style="font-size:10px">PyreStaking.sol</span></div>
+      <div class="stat-row"><span class="stat-k">Amount</span><span class="stat-v">Unlimited</span></div>
+      <button class="act-btn primary" onclick="confirmApprove()">CONFIRM APPROVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Become Pyrarch Modal -->
+<div class="modal-overlay" id="pyrarchModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title" style="color:var(--gold)">Become a Pyrarch</span>
+      <button class="modal-close" onclick="closeModal('pyrarchModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="warn-box" style="font-size:10px">
+        <span class="wr">!</span>This action is <strong style="color:var(--gold)">permanent and irreversible</strong>. Your tokens or LP shares will be destroyed forever. Your Pyrarch NFT is tradeable — yield auto-settles to you when sold.
+      </div>
+      <div id="pyrarchConfirmDetails" style="font-size:11px;color:var(--t2);line-height:1.8"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="act-btn ghost" onclick="closeModal('pyrarchModal')">CANCEL</button>
+        <button class="act-btn gold-btn" onclick="confirmPyrarch()">CONFIRM BURN</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+const state = {
+  connected: false,
+  address: null,
+  // TODO: replace all mock values with contract reads
+  liquid: 24500,
+  staked: 432000,
+  daysStaked: 35,
+  stage: 2, // 1=EMBER 2=FLAME 3=FORGE 4=PYRE
+  pendingYield: 2.41,
+  totalEarned: 8.74,
+  approved: false,
+  dripping: false,
+  dripDay: 3,
+  dripClaimable: 12400,
+  isPyrarch: false,
+  pyrarchBurnType: null,
+  // Global
+  circSupply: 704000000,
+  totalBurned: 296000000,
+  activeSpirits: 2847,
+  epochNum: 312,
+  sFactor: 0.72,
+  totalPyrarchs: 47,
+  totalWeight: 64812127,
+  pyrarchPool: 0.48
+};
+
+const STAGE_NAMES = ['','EMBER','FLAME','FORGE','PYRE'];
+const STAGE_CLASSES = ['','ember','flame','forge','pyre'];
+const STAGE_MULTS = [0,1,2,4,7];
+const STAGE_DAYS = [0,0,30,90,180];
+
+// ════════════════════════════════════════════
+// WALLET CONNECTION
+// ════════════════════════════════════════════
+async function connectWallet() {
+  if (typeof window.ethereum === 'undefined') {
+    showToast('NO WALLET DETECTED', 'Install MetaMask or another Web3 wallet to continue.', 4000);
+    return;
+  }
+  try {
+    showToast('CONNECTING', 'Requesting wallet access...');
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (accounts.length === 0) return;
+    state.connected = true;
+    state.address = accounts[0];
+    onConnected();
+    // TODO: load real data from contracts
+    // await loadContractData();
+  } catch (e) {
+    showToast('CANCELLED', 'Wallet connection rejected.', 3000);
+  }
+}
+
+function onConnected() {
+  const short = state.address.slice(0,6) + '···' + state.address.slice(-4);
+  document.getElementById('walletLabel').textContent = short;
+  document.getElementById('walletDot').classList.add('live');
+  document.getElementById('walletBtn').classList.add('connected');
+  document.getElementById('connect-wall').style.display = 'none';
+  document.getElementById('dash-live').classList.add('visible');
+  renderDashboard();
+  startDecayClock();
+  initBurnChart();
+  startFeed();
+}
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function renderDashboard() {
+  const s = state;
+
+  // Stage badge
+  const badge = document.getElementById('stageBadge');
+  badge.className = 'stage-badge ' + STAGE_CLASSES[s.stage];
+  document.getElementById('stageLabel').textContent = 'STAGE ' + s.stage + ' — ' + STAGE_NAMES[s.stage];
+
+  // Days + progress
+  const nextStageDays = STAGE_DAYS[s.stage + 1] || 180;
+  const prevStageDays = STAGE_DAYS[s.stage];
+  const pct = Math.min(100, ((s.daysStaked - prevStageDays) / (nextStageDays - prevStageDays)) * 100);
+  document.getElementById('daysStaked').textContent = s.daysStaked;
+  document.getElementById('stageBar').style.width = pct + '%';
+
+  // Balances
+  document.getElementById('stakedBal').innerHTML = fmt(s.staked) + ' <span style="font-size:10px;color:var(--t3)">PYRE</span>';
+  document.getElementById('liquidBal').innerHTML = fmt(s.liquid) + ' <span style="font-size:10px;color:var(--t3)">PYRE</span>';
+
+  // Supply ring
+  const pctRemaining = (s.circSupply / 1000000000 * 100).toFixed(1);
+  const pctBurned = (100 - pctRemaining).toFixed(1);
+  document.getElementById('supplyPct').innerHTML = pctRemaining + '<span style="font-size:9px">%</span>';
+  document.getElementById('supplyBurned').textContent = pctBurned + '%';
+  document.getElementById('circSupply').textContent = fmtM(s.circSupply);
+  document.getElementById('totalBurned').textContent = fmtM(s.totalBurned);
+  document.getElementById('activeSpirits').textContent = s.activeSpirits.toLocaleString();
+  const circ = 326.7 * (1 - s.circSupply / 1000000000);
+  document.getElementById('supplyRing').style.strokeDashoffset = circ;
+
+  // Decay
+  document.getElementById('sFactor').textContent = s.sFactor.toFixed(2) + '×';
+  document.getElementById('stageMult').textContent = STAGE_MULTS[s.stage] + '×';
+  document.getElementById('liquidLoss').innerHTML = (s.liquid * 0.0025).toFixed(1) + ' <span style="font-size:9px;color:var(--t3)">PYRE/hr</span>';
+
+  // Stats bar
+  document.getElementById('sb-liquid').textContent = fmt(s.liquid);
+  document.getElementById('sb-staked').textContent = fmt(s.staked);
+  document.getElementById('sb-yield').textContent = s.pendingYield.toFixed(2) + ' ETH';
+  document.getElementById('sb-epoch').textContent = s.epochNum;
+  document.getElementById('sb-pyrarch').textContent = s.isPyrarch ? 'ACTIVE' : '—';
+  const curEra = Math.floor(s.epochNum / 2500);
+  const eraRateLabels = ['0.250','0.125','0.063','0.031','0.016','0.008'];
+  document.getElementById('sb-burnrate').textContent = 'Era ' + curEra + ' · ' + (eraRateLabels[Math.min(curEra, eraRateLabels.length-1)] || '0.005') + '%';
+  document.getElementById('st-stage').textContent = STAGE_NAMES[s.stage] + ' (' + STAGE_MULTS[s.stage] + '×)';
+  const era = Math.floor(s.epochNum / 2500);
+  const eraRates = [0.25, 0.125, 0.063, 0.031, 0.016, 0.008];
+  const rate = (eraRates[Math.min(era, eraRates.length - 1)] || 0.005).toFixed(3);
+  if (document.getElementById('eraNum')) document.getElementById('eraNum').textContent = era;
+  if (document.getElementById('currentRate')) document.getElementById('currentRate').innerHTML = rate + '<span style="font-size:9px;color:var(--t3)">%/hr</span>';
+
+  // Staking
+  document.getElementById('maxStake').textContent = fmt(s.liquid);
+  document.getElementById('maxUnstake').textContent = fmt(s.staked);
+  document.getElementById('pendingYield').textContent = s.pendingYield.toFixed(2) + ' ETH';
+  document.getElementById('st-staked').textContent = fmt(s.staked) + ' PYRE';
+  document.getElementById('st-earned').textContent = s.totalEarned.toFixed(2) + ' ETH';
+
+  // Drip
+  if (s.dripping) {
+    document.getElementById('dripSection').style.display = 'block';
+    document.getElementById('dripDay').textContent = s.dripDay;
+    document.getElementById('dripClaimable').textContent = fmt(s.dripClaimable) + ' PYRE claimable';
+    document.getElementById('dripFill').style.width = (s.dripDay / 7 * 100) + '%';
+  }
+
+  // Pyrarch
+  document.getElementById('totalPyrarchs').textContent = s.totalPyrarchs;
+  document.getElementById('totalWeight').textContent = fmtM(s.totalWeight);
+  document.getElementById('pyrarchPool').textContent = s.pyrarchPool.toFixed(2) + ' ETH/day';
+  document.getElementById('cs-burned').textContent = s.totalBurned.toLocaleString();
+  document.getElementById('cs-rate').textContent = fmtM(Math.floor(s.circSupply * 0.0025)) + '/hr';
+  document.getElementById('cs-spirits').textContent = s.activeSpirits.toLocaleString();
+
+  // Pyrarch lock/unlock
+  if (s.stage >= 3 || s.isPyrarch) {
+    document.getElementById('pyrarchLocked').style.display = 'none';
+    document.getElementById('pyrarchUnlocked').style.display = 'flex';
+  } else {
+    const daysLeft = STAGE_DAYS[3] - s.daysStaked;
+    document.getElementById('daysToForge').textContent = Math.max(0, daysLeft);
+    document.getElementById('forgeBar').style.width = ((s.daysStaked / 90) * 100).toFixed(1) + '%';
+  }
+}
+
+// ════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById('pane-stake').style.display = tab === 'stake' ? 'contents' : 'none';
+  document.getElementById('pane-unstake').style.display = tab === 'unstake' ? 'contents' : 'none';
+  document.getElementById('tab-stake').classList.toggle('active', tab === 'stake');
+  document.getElementById('tab-unstake').classList.toggle('active', tab === 'unstake');
+}
+
+function switchPyrarchTab(tab) {
+  document.getElementById('ppane-lp').style.display = tab === 'lp' ? 'flex' : 'none';
+  document.getElementById('ppane-token').style.display = tab === 'token' ? 'flex' : 'none';
+  document.getElementById('ptab-lp').classList.toggle('active', tab === 'lp');
+  document.getElementById('ptab-token').classList.toggle('active', tab === 'token');
+}
+
+// ════════════════════════════════════════════
+// INPUT HELPERS
+// ════════════════════════════════════════════
+function setMax(type) {
+  if (type === 'stake') { document.getElementById('stakeInput').value = state.liquid; updateStakePreview(); }
+  if (type === 'unstake') { document.getElementById('unstakeInput').value = state.staked; }
+  if (type === 'burn') { document.getElementById('burnInput').value = state.liquid; calcTokenWeight(); }
+}
+
+function updateStakePreview() {
+  const v = parseFloat(document.getElementById('stakeInput').value) || 0;
+  document.getElementById('stakeReceive').textContent = v > 0 ? fmt(v) + ' sPYRE' : '0 sPYRE';
+  document.getElementById('stakeBtn').disabled = v <= 0 || v > state.liquid || !state.approved;
+  document.getElementById('approveBtn').style.display = state.approved ? 'none' : 'block';
+}
+
+function calcLpWeight() {
+  const eth = parseFloat(document.getElementById('ethInput').value) || 0;
+  const pyre = parseFloat(document.getElementById('pyreInputLp').value) || 0;
+  if (eth <= 0 && pyre <= 0) { document.getElementById('lpWeight').textContent = '—'; return; }
+  // Weight = underlying PYRE units * 1.15 LP bonus
+  // TODO: use actual contract formula with S(t)
+  const w = Math.floor((pyre + eth * 1000) * state.sFactor * 1.15);
+  document.getElementById('lpWeight').textContent = fmt(w) + ' units';
+}
+
+function calcTokenWeight() {
+  const amt = parseFloat(document.getElementById('burnInput').value) || 0;
+  if (amt < 100) { document.getElementById('tokenWeight').textContent = amt > 0 ? 'Min 100 PYRE' : '—'; return; }
+  // Weight = amount * S(t) factor (early = more weight)
+  // TODO: use actual contract formula
+  const w = Math.floor(amt * state.sFactor * 1e6);
+  document.getElementById('tokenWeight').textContent = fmtM(w) + ' units';
+}
+
+// ════════════════════════════════════════════
+// ACTIONS (mock — replace with contract calls)
+// ════════════════════════════════════════════
+function doApprove() {
+  openModal('approveModal');
+}
+
+function confirmApprove() {
+  closeModal('approveModal');
+  showToast('APPROVING', 'Sending approval transaction...');
+  // TODO: await pyreToken.approve(stakingAddress, MaxUint256)
+  setTimeout(() => {
+    state.approved = true;
+    document.getElementById('approveBtn').style.display = 'none';
+    document.getElementById('stakeBtn').disabled = false;
+    showToast('APPROVED', 'PYRE spending approved.', 2500);
+  }, 1500);
+}
+
+function doStake() {
+  const amt = parseFloat(document.getElementById('stakeInput').value);
+  if (!amt || amt > state.liquid) return;
+  showToast('STAKING', 'Sending stake transaction...');
+  // TODO: await staking.stake(amount)
+  setTimeout(() => {
+    state.staked += amt;
+    state.liquid -= amt;
+    document.getElementById('stakeInput').value = '';
+    renderDashboard();
+    showToast('STAKED', fmt(amt) + ' PYRE staked. Decay stopped.', 3000);
+  }, 1800);
+}
+
+function doUnstake() {
+  const amt = parseFloat(document.getElementById('unstakeInput').value);
+  if (!amt || amt > state.staked) return;
+  showToast('UNSTAKING', 'Initiating drip exit...');
+  // TODO: await staking.unstake(amount)
+  setTimeout(() => {
+    state.dripping = true;
+    state.dripDay = 0;
+    state.dripClaimable = Math.floor(amt * 0.143); // day 1 of 7
+    document.getElementById('unstakeInput').value = '';
+    renderDashboard();
+    showToast('DRIP STARTED', '7-day exit initiated. ~34% decay cost at Era 0.', 3500);
+  }, 1800);
+}
+
+function doClaim() {
+  if (state.pendingYield <= 0) return;
+  showToast('CLAIMING', 'Sending claim transaction...');
+  // TODO: await staking.claimFees()
+  setTimeout(() => {
+    state.totalEarned += state.pendingYield;
+    state.pendingYield = 0;
+    renderDashboard();
+    showToast('CLAIMED', 'ETH sent to your wallet.', 3000);
+  }, 1800);
+}
+
+function claimDrip() {
+  showToast('CLAIMING DRIP', 'Claiming available tokens...');
+  // TODO: await staking.claimDrip()
+  setTimeout(() => {
+    state.liquid += state.dripClaimable;
+    state.dripClaimable = 0;
+    renderDashboard();
+    showToast('DRIP CLAIMED', fmt(state.dripClaimable) + ' PYRE received.', 3000);
+  }, 1800);
+}
+
+let pendingPyrarchType = null;
+function doBecomePyrarch(type) {
+  pendingPyrarchType = type;
+  const details = type === 'lp'
+    ? 'Deposit ETH + PYRE as liquidity. LP shares burned permanently. You receive a Pyrarch NFT with 1.15× LP weight bonus.'
+    : 'Burn PYRE tokens permanently. You receive a tradeable Pyrarch NFT. Yield auto-settles to you when sold.';
+  document.getElementById('pyrarchConfirmDetails').textContent = details;
+  openModal('pyrarchModal');
+}
+
+function confirmPyrarch() {
+  closeModal('pyrarchModal');
+  showToast('PROCESSING', 'Burning tokens permanently...');
+  // TODO: await pyrarchContract.burnTokens(amount) or burnLP(ethAmt, pyreAmt)
+  setTimeout(() => {
+    state.isPyrarch = true;
+    state.totalPyrarchs += 1;
+    state.pyrarchBurnType = pendingPyrarchType;
+    document.getElementById('sb-pyrarch').textContent = 'ACTIVE';
+    renderDashboard();
+    showToast('PYRARCH STATUS ACHIEVED', 'Your NFT has been minted. Perpetual yield active.', 5000);
+  }, 2200);
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ════════════════════════════════════════════
+// DECAY CLOCK
+// ════════════════════════════════════════════
+function startDecayClock() {
+  let seconds = 24 * 60 + 7;
+  const ring = document.getElementById('decayRing');
+  const label = document.getElementById('epochCountdown');
+  const circ = 263.9;
+
+  setInterval(() => {
+    if (seconds <= 0) {
+      seconds = 3600;
+      state.epochNum++;
+      document.getElementById('epochNum').textContent = state.epochNum;
+      document.getElementById('sb-epoch').textContent = state.epochNum;
+      const newEra = Math.floor(state.epochNum / 2500);
+      if (document.getElementById('eraNum')) document.getElementById('eraNum').textContent = newEra;
+      // halving announcement
+      if (state.epochNum % 2500 === 0 && state.epochNum > 0) {
+        showToast('ERA ' + newEra + ' BEGINS', 'Decay rate halved. New rate: ' + (['0.125','0.063','0.031','0.016','0.008'][newEra-1]||'0.005') + '%/hr', 6000);
+      }
+      // Apply decay to liquid balance (mock)
+      state.liquid = Math.floor(state.liquid * 0.9975);
+      renderDashboard();
+      addFeedEvent('rebase');
+    }
+    seconds--;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    label.textContent = m + ':' + String(s).padStart(2,'0');
+    const progress = seconds / 3600;
+    ring.style.strokeDashoffset = circ * (1 - progress);
+  }, 1000);
+}
+
+// ════════════════════════════════════════════
+// BURN CHART
+// ════════════════════════════════════════════
+function initBurnChart() {
+  const ctx = document.getElementById('burnChart').getContext('2d');
+  // Generate mock burn curve data (exponential-ish growth)
+  const labels = [];
+  const data = [];
+  let burned = 0;
+  for (let i = 0; i < 60; i++) {
+    labels.push('D' + (i + 1));
+    const rate = 2000000 * Math.pow(0.998, i);
+    burned += rate * 24;
+    data.push(Math.round(burned / 1e6));
+  }
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: '#C9A96E',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
+          g.addColorStop(0, 'rgba(201,169,110,0.14)');
+          g.addColorStop(1, 'rgba(201,169,110,0)');
+          return g;
+        },
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#0e0a07',
+        borderColor: 'rgba(201,169,110,0.25)',
+        borderWidth: 1,
+        titleColor: '#8A7868',
+        bodyColor: '#F0EBE3',
+        titleFont: { family: 'JetBrains Mono', size: 9 },
+        bodyFont: { family: 'JetBrains Mono', size: 11 },
+        callbacks: { label: ctx => ctx.parsed.y + 'M PYRE burned' }
+      }},
+      scales: {
+        x: { display: false },
+        y: {
+          display: true,
+          grid: { color: 'rgba(201,169,110,0.06)', drawBorder: false },
+          ticks: { color: '#3D3028', font: { family: 'JetBrains Mono', size: 8 }, maxTicksLimit: 4,
+            callback: v => v + 'M' }
+        }
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+// ACTIVITY FEED
+// ════════════════════════════════════════════
+const FEED_TEMPLATES = [
+  (a,n) => `<span class="fire">0x${a}</span> staked <strong>${fmt(n)} PYRE</strong>`,
+  (a,n) => `Fire Spirit <strong>#${n}</strong> evolved to <span class="fire">FLAME</span>`,
+  (a,n) => `<span class="fire">0x${a}</span> claimed <strong>${(n/100).toFixed(2)} ETH</strong> yield`,
+  (a,n) => `Fire Spirit <strong>#${n}</strong> burned — balance decayed below 200K`,
+  (a,n) => `<span class="gold">0x${a}</span> became a <span class="gold">PYRARCH</span> — burned <strong>${fmt(n)} PYRE</strong>`,
+  (a,n) => `<span class="fire">0x${a}</span> began drip exit — <strong>${fmt(n)} PYRE</strong>`,
+  (a,n) => `New Pyrarch NFT <strong>#${n}</strong> transferred — yield settled`,
+];
+
+let feedEvents = [];
+
+function addFeedEvent(type) {
+  if (type === 'rebase') {
+    feedEvents.unshift({ msg: `Epoch <strong>${state.epochNum}</strong> — <strong>${fmtM(Math.floor(state.circSupply * 0.003))} PYRE</strong> burned`, time: 'now', amt: '' });
+  }
+  renderFeed();
+}
+
+function startFeed() {
+  // Seed initial mock events
+  const seed = [
+    { msg: `<span class="fire">0x7f2a···3b19</span> staked <strong>500,000 PYRE</strong>`, time: '12s', amt: '' },
+    { msg: `Fire Spirit <strong>#1,284</strong> burned — balance decayed`, time: '47s', amt: '' },
+    { msg: `<span class="gold">0x91cc···f44e</span> became a <span class="gold">PYRARCH</span>`, time: '2m', amt: '' },
+    { msg: `<span class="fire">0x3d88···a120</span> claimed <strong>1.84 ETH</strong> yield`, time: '4m', amt: '' },
+    { msg: `Fire Spirit <strong>#892</strong> evolved to <span class="fire">FLAME</span>`, time: '7m', amt: '' },
+    { msg: `<span class="fire">0xab44···2201</span> staked <strong>200,000 PYRE</strong>`, time: '11m', amt: '' },
+    { msg: `New Pyrarch NFT <strong>#31</strong> listed on secondary`, time: '18m', amt: '' },
+    { msg: `Fire Spirit <strong>#2,100</strong> burned — balance decayed`, time: '23m', amt: '' },
+  ];
+  feedEvents = seed;
+  renderFeed();
+
+  // Add random events periodically
+  setInterval(() => {
+    const addr = Math.random().toString(16).slice(2,6) + '···' + Math.random().toString(16).slice(2,6);
+    const n = Math.floor(Math.random() * 900000) + 100000;
+    const t = FEED_TEMPLATES[Math.floor(Math.random() * FEED_TEMPLATES.length)];
+    feedEvents.unshift({ msg: t(addr, n), time: 'now', amt: '' });
+    if (feedEvents.length > 20) feedEvents.pop();
+    renderFeed();
+  }, 7000 + Math.random() * 8000);
+}
+
+function renderFeed() {
+  const c = document.getElementById('feedContainer');
+  c.innerHTML = feedEvents.map(e => `
+    <div class="feed-row">
+      <span class="feed-time">${e.time}</span>
+      <span class="feed-msg">${e.msg}</span>
+      <span class="feed-amt">${e.amt}</span>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+let toastTimer = null;
+function showToast(status, msg, duration) {
+  const el = document.getElementById('txToast');
+  document.getElementById('txStatus').textContent = status;
+  document.getElementById('txMsg').textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  if (duration) toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ════════════════════════════════════════════
+// FORMATTERS
+// ════════════════════════════════════════════
+function fmt(n) { return Math.floor(n).toLocaleString(); }
+function fmtM(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.floor(n).toString();
+}
+
+// ════════════════════════════════════════════
+// AUTO-CONNECT if already permitted
+// ════════════════════════════════════════════
+window.addEventListener('load', async () => {
+  if (typeof window.ethereum !== 'undefined') {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        state.address = accounts[0];
+        state.connected = true;
+        onConnected();
+      }
+    } catch (_) {}
+
+    window.ethereum.on('accountsChanged', accs => {
+      if (accs.length === 0) {
+        state.connected = false;
+        document.getElementById('connect-wall').style.display = 'flex';
+        document.getElementById('dash-live').classList.remove('visible');
+        document.getElementById('walletLabel').textContent = 'CONNECT WALLET';
+        document.getElementById('walletDot').classList.remove('live');
+      } else {
+        state.address = accs[0];
+        onConnected();
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>

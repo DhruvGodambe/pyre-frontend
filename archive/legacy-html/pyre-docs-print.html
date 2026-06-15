@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE Protocol — Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080504;
+  --s1:      #0D0A07;
+  --brand:   #C9A96E;
+  --gold:    #E8C88A;
+  --t1:      #EDE8E0;
+  --t2:      #B8A88A;
+  --t3:      #7A6A52;
+  --line:    rgba(201,169,110,0.15);
+  --linef:   rgba(201,169,110,0.30);
+  --display: 'Cormorant Garamond', serif;
+  --sg:      'DM Sans', sans-serif;
+  --mono:    'Fira Code', monospace;
+}
+
+html { background: var(--bg); }
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--sg);
+  font-size: 13px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+/* ── COVER ── */
+.cover {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 0 60px;
+  border-bottom: 1px solid var(--linef);
+  page-break-after: always;
+}
+.cover-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 40px;
+}
+.cover-name {
+  font-family: var(--display);
+  font-size: 96px;
+  font-weight: 300;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--t1);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.cover-sub {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--brand);
+  letter-spacing: .06em;
+  margin-bottom: 48px;
+}
+.cover-rule { height: 1px; background: var(--linef); width: 64px; margin-bottom: 40px; }
+.cover-desc {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--t2);
+  line-height: 1.85;
+  max-width: 480px;
+  margin-bottom: 56px;
+}
+.cover-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+  padding-top: 32px;
+  margin-bottom: 0;
+}
+.cs { text-align: left; padding-right: 24px; }
+.cs-n {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--brand);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.cs-l {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+
+/* ── TOC ── */
+.toc-page {
+  padding: 64px 0 48px;
+  page-break-after: always;
+}
+.toc-title {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 32px;
+}
+.toc-group { margin-bottom: 28px; }
+.toc-group-title {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.toc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--t2);
+  border-bottom: 1px dotted rgba(201,169,110,0.08);
+}
+.toc-item span { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+
+/* ── SECTION ── */
+.section {
+  padding-top: 56px;
+  margin-bottom: 8px;
+}
+.section-break { page-break-before: always; padding-top: 56px; }
+
+.sec-tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,.5);
+  margin-bottom: 10px;
+}
+h1 {
+  font-family: var(--display);
+  font-size: 38px;
+  font-weight: 300;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--t1);
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+h2 {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: var(--t1);
+  line-height: 1.3;
+  margin: 44px 0 14px;
+  padding-top: 44px;
+  border-top: 1px solid var(--line);
+}
+h2.first { border-top: none; padding-top: 0; margin-top: 0; }
+h3 {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 24px 0 8px;
+}
+h4 {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin: 18px 0 5px;
+}
+p {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--t2);
+  line-height: 1.85;
+  margin-bottom: 11px;
+}
+p strong { color: var(--t1); font-weight: 500; }
+ul, ol {
+  margin: 10px 0 13px 18px;
+  color: var(--t2);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.8;
+}
+li { margin-bottom: 3px; }
+code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--brand);
+  background: rgba(201,169,110,0.07);
+  padding: 1px 4px;
+}
+
+/* ── LEAD ── */
+.lead {
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(237,232,224,.78);
+  line-height: 1.9;
+  margin-bottom: 20px;
+}
+
+/* ── NOTE ── */
+.note {
+  border-left: 2px solid rgba(201,169,110,.55);
+  background: rgba(201,169,110,.04);
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+.note p { margin: 0; font-size: 12px; }
+.note-cap {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 4px;
+}
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linef);
+}
+td {
+  padding: 9px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--t2);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  line-height: 1.5;
+}
+td:first-child { color: var(--brand); font-family: var(--sg); font-size: 12px; font-weight: 500; color: var(--t1); }
+.v { color: var(--brand) !important; font-family: var(--mono) !important; }
+
+/* ── CODE BLOCK ── */
+.cb {
+  background: #050301;
+  border: 1px solid rgba(201,169,110,.10);
+  border-left: 2px solid rgba(201,169,110,.28);
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  page-break-inside: avoid;
+}
+.cb pre {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: rgba(237,232,224,.75);
+  line-height: 1.65;
+  white-space: pre;
+}
+.cb-lang {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── FLOW ── */
+.flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 20px 0 32px;
+  gap: 0;
+}
+.flow-step { text-align: center; }
+.flow-num { font-family: var(--mono); font-size: 8px; letter-spacing: .2em; color: var(--t3); margin-bottom: 8px; }
+.flow-word { font-family: var(--display); font-size: 13px; letter-spacing: .08em; color: var(--t1); margin-bottom: 8px; }
+.flow-desc { font-size: 11px; font-weight: 300; color: var(--t2); line-height: 1.5; max-width: 130px; margin: 0 auto; }
+.flow-arr { font-size: 16px; color: var(--brand); opacity: .4; padding: 0 8px; }
+
+/* ── MECH GRID ── */
+.mech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  margin: 20px 0;
+}
+.mech { background: var(--bg); padding: 20px 18px; }
+.mech-idx { font-family: var(--mono); font-size: 8px; letter-spacing: .2em; color: var(--t3); margin-bottom: 10px; }
+.mech-h { font-family: var(--sg); font-weight: 600; font-size: 13px; color: var(--t1); margin-bottom: 6px; }
+.mech-p { font-size: 11.5px; font-weight: 300; color: var(--t2); line-height: 1.7; }
+.mech-code { display: block; margin-top: 8px; font-family: var(--mono); font-size: 10px; color: var(--brand); }
+
+/* ── STAGES ── */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  margin: 16px 0;
+}
+.stage { background: var(--bg); padding: 20px 16px; }
+.stage-bar { height: 2px; margin-bottom: 16px; }
+.stage:nth-child(1) .stage-bar { background: #2a0800; }
+.stage:nth-child(2) .stage-bar { background: #aa1800; }
+.stage:nth-child(3) .stage-bar { background: var(--brand); }
+.stage:nth-child(4) .stage-bar { background: linear-gradient(90deg, var(--brand), var(--gold)); }
+.stage-n { font-family: var(--mono); font-size: 8px; letter-spacing: .2em; color: var(--t3); margin-bottom: 4px; }
+.stage-name { font-family: var(--display); font-size: 13px; letter-spacing: .06em; color: var(--t1); margin-bottom: 6px; }
+.stage-dur { font-family: var(--mono); font-size: 9px; color: var(--brand); margin-bottom: 8px; opacity: .8; }
+.stage-p { font-size: 11px; font-weight: 300; color: var(--t2); line-height: 1.6; }
+
+/* ── MANIFESTO QUOTE ── */
+.manifesto {
+  border-left: 2px solid var(--brand);
+  padding: 24px 28px;
+  margin: 32px 0;
+  background: rgba(201,169,110,.03);
+  page-break-inside: avoid;
+}
+.manifesto p {
+  font-family: var(--display);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--t2);
+  line-height: 1.8;
+  margin-bottom: 10px;
+}
+.manifesto p:last-child { margin-bottom: 0; }
+
+/* ── FOOTER ── */
+.doc-footer {
+  margin-top: 80px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.doc-footer-brand {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+.doc-footer-note {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--t3);
+  letter-spacing: .08em;
+}
+
+/* ── PRINT ── */
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 20mm 18mm 20mm;
+    background: #080504;
+  }
+  html, body { background: #080504 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .section-break { page-break-before: always; }
+  .cover { page-break-after: always; min-height: unset; padding: 40mm 0 20mm; }
+  .toc-page { page-break-after: always; }
+  h2 { page-break-after: avoid; }
+  .cb, table, .mech-grid, .stages { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     COVER
+══════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-label">Protocol Documentation · v0.1</div>
+  <div class="cover-name">PYRE</div>
+  <div class="cover-sub">The Protocol That Burns</div>
+  <div class="cover-rule"></div>
+  <p class="cover-desc">A Uniswap V4 hook system on Ethereum mainnet. Every swap mints $PYRE. Every unstaked token decays at 0.45% per hour. Stake to survive. Burn to transcend. This document covers every mechanic, every contract, and every formula.</p>
+  <div class="cover-stats">
+    <div class="cs">
+      <div class="cs-n">0.45%<span style="font-size:14px;color:var(--t3)">/hr</span></div>
+      <div class="cs-l">Burn Rate</div>
+    </div>
+    <div class="cs">
+      <div class="cs-n">4</div>
+      <div class="cs-l">Spirit Stages</div>
+    </div>
+    <div class="cs">
+      <div class="cs-n">0</div>
+      <div class="cs-l">Pre-mine</div>
+    </div>
+    <div class="cs">
+      <div class="cs-n">1B</div>
+      <div class="cs-l">Hard Supply Cap</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════ -->
+<div class="toc-page">
+  <div class="toc-title">Contents</div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Overview</div>
+    <div class="toc-item">Introduction &amp; How It Works <span>§1</span></div>
+    <div class="toc-item">Protocol Architecture <span>§2</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Token</div>
+    <div class="toc-item">$PYRE Token <span>§3</span></div>
+    <div class="toc-item">Minting <span>§4</span></div>
+    <div class="toc-item">Decay &amp; Halving Schedule <span>§5</span></div>
+    <div class="toc-item">Global Scaling Factor S(t) <span>§6</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Fire Spirits</div>
+    <div class="toc-item">The Fire Spirit NFT <span>§7</span></div>
+    <div class="toc-item">Stages &amp; Evolution <span>§8</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Pyrarch Protocol</div>
+    <div class="toc-item">Overview <span>§9</span></div>
+    <div class="toc-item">Token Burn Path <span>§10</span></div>
+    <div class="toc-item">LP Burn Path <span>§11</span></div>
+    <div class="toc-item">Weight &amp; Yield Distribution <span>§12</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Staking</div>
+    <div class="toc-item">How to Stake <span>§13</span></div>
+    <div class="toc-item">Fee Distribution <span>§14</span></div>
+    <div class="toc-item">The Drip Exit <span>§15</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="toc-group-title">Contracts &amp; Integration</div>
+    <div class="toc-item">PyreHook.sol <span>§16</span></div>
+    <div class="toc-item">PyreToken.sol <span>§17</span></div>
+    <div class="toc-item">PyreNFT.sol <span>§18</span></div>
+    <div class="toc-item">PyreStaking.sol <span>§19</span></div>
+    <div class="toc-item">PyrePyrarch.sol <span>§20</span></div>
+    <div class="toc-item">Deployment &amp; Pool Setup <span>§21</span></div>
+    <div class="toc-item">API Reference <span>§22</span></div>
+    <div class="toc-item">Security Considerations <span>§23</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     §1 — INTRODUCTION
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§1 — Overview</div>
+  <h1>PYRE Protocol</h1>
+  <p class="lead">Technical reference for the PYRE protocol — a Uniswap V4 hook system on Ethereum mainnet. Every swap mints $PYRE. Every unstaked token burns at 0.45%/hr, halving every 2,000 epochs. Staking stops the burn and earns proportional ETH yield. Burn $PYRE to mint a Fire Spirit NFT and earn perpetual yield weighted by how much you've burned.</p>
+  <p>There is one NFT: the Fire Spirit. It is earned by burning, evolves through four stages based on cumulative burns, and carries your yield position on-chain. Fully tradeable — yield auto-settles on transfer. This document covers every mechanic, every contract, and every formula.</p>
+
+  <h2 class="first">How It Works</h2>
+  <p>PYRE compresses the entire protocol into one inevitable loop:</p>
+  <ol>
+    <li>Buy $PYRE by swapping ETH through the V4 hook — the hook mints tokens proportional to your volume</li>
+    <li>Your effective balance immediately begins decaying at 0.45%/hr — stake to stop it</li>
+    <li>Stake to pause decay and earn proportional ETH yield from the fee pool</li>
+    <li>Burn $PYRE to mint a Fire Spirit NFT — burns accumulate, NFT mints at 10,000 cumulative</li>
+    <li>Burn more to evolve: 75k → FLAME (1.5×), 150k → FORGE (2×), 300k → PYRE (3×)</li>
+    <li>Fire Spirit earns perpetual ETH yield proportional to your burn weight × stage multiplier, forever</li>
+  </ol>
+  <p>Every 2,000 epochs (~83 days), the decay rate halves. Era 0 pressure gives way to Era 1 relief — the protocol rewards those who survived the fire.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">Step 01</div>
+      <div class="flow-word">SWAP</div>
+      <p class="flow-desc">Trade on any PYRE-enabled V4 pool</p>
+    </div>
+    <div class="flow-arr">→</div>
+    <div class="flow-step">
+      <div class="flow-num">Step 02</div>
+      <div class="flow-word">MINT</div>
+      <p class="flow-desc">$PYRE minted to your wallet via afterSwap hook</p>
+    </div>
+    <div class="flow-arr">→</div>
+    <div class="flow-step">
+      <div class="flow-num">Step 03</div>
+      <div class="flow-word">BURN OR STAKE</div>
+      <p class="flow-desc">Hold and burn at 0.45%/hr — or stake to shield</p>
+    </div>
+  </div>
+
+  <div class="mech-grid">
+    <div class="mech">
+      <div class="mech-idx">01</div>
+      <div class="mech-h">afterSwap Hook</div>
+      <p class="mech-p">Each trade through a PYRE-enabled V4 pool triggers the hook. $PYRE is minted to the swapper, proportional to volume and the current global scaling factor.</p>
+      <span class="mech-code">afterSwap → mint(sender, amt)</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">02</div>
+      <div class="mech-h">Lazy Burn Decay</div>
+      <p class="mech-p">Unstaked balances decay at 0.45% per hour via global scaling factor. No active loops — burn is applied lazily on next interaction. Halves every 2,000 epochs (~83 days).</p>
+      <span class="mech-code">balance × (0.9955)^Δhours</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">03</div>
+      <div class="mech-h">Staking Immunity</div>
+      <p class="mech-p">Depositing $PYRE into the staking contract pauses the burn clock entirely. Principal is preserved. Earn proportional ETH yield from the fee pool.</p>
+      <span class="mech-code">staked = true → decay halted</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">04</div>
+      <div class="mech-h">Global Scaling</div>
+      <p class="mech-p">Mint rate decays over time via S(t). Early traders earn more per unit of volume. Creates urgency without a hard supply cap or halving events.</p>
+      <span class="mech-code">mintAmt = vol × BASE_RATE × S(t)</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">05</div>
+      <div class="mech-h">Zero Pre-mine</div>
+      <p class="mech-p">Genesis supply is exactly zero. Every circulating $PYRE was minted by real, on-chain trading activity. No team tokens. No treasury. No favored early access.</p>
+      <span class="mech-code">genesis supply: 0</span>
+    </div>
+    <div class="mech">
+      <div class="mech-idx">06</div>
+      <div class="mech-h">Real Yield</div>
+      <p class="mech-p">9% fee on every swap. Buy-side fees flow as ETH to stakers and Fire Spirit holders proportionally. Sell-side fees are burned permanently. No inflationary emissions.</p>
+      <span class="mech-code">9% per swap → ETH yield + burn</span>
+    </div>
+  </div>
+
+  <div class="manifesto">
+    <p>"Hold and burn. Stake and survive. Burn and transcend.</p>
+    <p>There is no passive option. Every unstaked token decays at 0.45%/hr. Staking preserves your balance and earns ETH yield. Burning earns a Fire Spirit and perpetual yield. The protocol enforces commitment mathematically."</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     §2 — ARCHITECTURE
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§2 — Architecture</div>
+  <h2 class="first">Protocol Architecture</h2>
+  <p>Five contracts. One NFT type. No proxies. No upgrade paths. Immutability is a core trust signal.</p>
+  <table>
+    <thead><tr><th>Contract</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>PyreHook.sol</td><td>V4 BaseHook — afterSwap, minting, 8% hook fee capture, fee routing to yield pool</td></tr>
+      <tr><td>PyreToken.sol</td><td>ERC-20 — hook-minted, lazy decay, global scaling factor, halving schedule</td></tr>
+      <tr><td>PyreNFT.sol</td><td>ERC-721 — Fire Spirit, burn-to-mint, on-chain SVG, evolves by cumulative burn weight</td></tr>
+      <tr><td>PyreStaking.sol</td><td>Staking vault, decay immunity, proportional ETH yield distribution, drip exit</td></tr>
+      <tr><td>PyreBurn.sol</td><td>Token burn + LP burn paths, Fire Spirit mint/upgrade, yield by burn weight × multiplier</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════
+     §3 — $PYRE TOKEN
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§3 — Token</div>
+  <h1>$PYRE Token</h1>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Name / Ticker</td><td>Pyre / $PYRE</td></tr>
+      <tr><td>Standard</td><td>ERC-20</td></tr>
+      <tr><td>Chain</td><td>Ethereum mainnet</td></tr>
+      <tr><td>Supply cap</td><td><span class="v">1,000,000,000 $PYRE</span></td></tr>
+      <tr><td>Genesis supply</td><td><span class="v">0</span></td></tr>
+      <tr><td>Minting authority</td><td><span class="v">PyreHook only (immutable)</span></td></tr>
+      <tr><td>Team allocation</td><td><span class="v">0%</span></td></tr>
+    </tbody>
+  </table>
+  <p>No $PYRE exists before the first swap. Supply is entirely demand-driven: it grows from trading activity and contracts from continuous decay. The 1B cap is a hard ceiling — <code>mint()</code> reverts on overflow.</p>
+
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function afterSwap(
+    address sender,
+    PoolKey calldata key,
+    IPoolManager.SwapParams calldata params,
+    BalanceDelta delta,
+    bytes calldata hookData
+) external override onlyPoolManager returns (bytes4) {
+    uint256 vol = uint256(
+        params.amountSpecified &lt; 0
+            ? -params.amountSpecified
+            : params.amountSpecified
+    );
+    uint256 amt = _computeMint(vol);
+    if (amt &gt; 0) IPyreToken(pyreToken).mint(sender, amt);
+    return BaseHook.afterSwap.selector;
+}</pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     §4 — MINTING
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§4 — Minting</div>
+  <h2 class="first">Minting</h2>
+  <p>$PYRE is minted exclusively by the V4 hook on every inbound ETH swap. The amount minted per swap decreases over time as S(t) decays — creating early-mover advantage without a hard cap on participation.</p>
+  <div class="cb">
+    <span class="cb-lang">math</span>
+    <pre>mintAmount = volume × BASE_RATE × S(t)
+
+  volume    = |amountSpecified| from swap params (in wei)
+  BASE_RATE = immutable constant set at deploy (e.g. 1e14)
+  S(t)      = global scaling factor — starts at 1.0, decays toward floor
+
+Example: BASE_RATE=1e14, S(t)=0.8, 1 ETH swap
+  1e18 × 1e14 × 8e17 / 1e36 = 0.00008 $PYRE minted</pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     §5 — DECAY
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§5 — Decay</div>
+  <h2 class="first">Decay &amp; Halving Schedule</h2>
+  <p>Every unstaked token decays continuously. The rate starts at 0.45%/hr and halves every 2,000 epochs. Each epoch is one hour, each halving is approximately 83 days. A floor of 0.01%/hr is enforced permanently.</p>
+  <div class="cb">
+    <span class="cb-lang">math</span>
+    <pre>effectiveBalance = rawBalance × (scalingFactor / 1e18)
+
+scalingFactor updated once per epoch:
+  newScaling = oldScaling × (10000 - currentRate) / 10000
+
+Era rates:
+  Era 0 (epochs    0–2,000):   0.450%/hr  →  ~10.4%/day
+  Era 1 (epochs 2,000–4,000):  0.225%/hr  →  ~5.2%/day
+  Era 2 (epochs 4,000–6,000):  0.113%/hr  →  ~2.6%/day
+  Era 3 (epochs 6,000–8,000):  0.056%/hr  →  ~1.3%/day
+  Era 4 (epochs 8,000–10,000): 0.028%/hr  →  ~0.67%/day
+  Era 5 (epoch 10,000+):       0.014%/hr  →  ~0.34%/day
+  Floor:                       0.010%/hr  →  permanent
+
+Survival rates at Era 0 (0.45%/hr):
+  24 hours  →  89.7% remains
+  7 days    →  47.0% remains   (drip window — ~53% lost)
+  30 days   →   3.9% remains
+  90 days   →   0.0001% remains</pre>
+  </div>
+  <div class="note"><div class="note-cap">Staked tokens are exempt</div><p>The scaling factor only applies to liquid and LP balances. Staked balances are stored as raw values and returned in full — zero decay while staked.</p></div>
+</div>
+
+<!-- ══════════════════════════════════
+     §6 — SCALING FACTOR
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§6 — Scaling Factor</div>
+  <h2 class="first">Global Scaling Factor S(t)</h2>
+  <p>S(t) governs the mint rate over time — separate from the decay scaling factor. As S(t) decreases, each ETH swap mints fewer $PYRE. This creates early-buyer advantage without a vesting cliff.</p>
+  <table>
+    <thead><tr><th>λ / year</th><th>S at 6mo</th><th>S at 1yr</th><th>S at 2yr</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>0.5</td><td>0.78</td><td>0.61</td><td>0.37</td><td>Slow decay, long emission window</td></tr>
+      <tr><td>1.0</td><td>0.61</td><td>0.37</td><td>0.14</td><td>Recommended — mirrors Bitcoin halving intuition</td></tr>
+      <tr><td>2.0</td><td>0.37</td><td>0.14</td><td>0.02</td><td>Fast decay, maximum early-mover advantage</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════
+     §7 — FIRE SPIRIT
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§7 — Fire Spirits</div>
+  <h1>The Fire Spirit</h1>
+  <p class="lead">There is one NFT in the PYRE protocol: the Fire Spirit. It is the only NFT. It is tradeable. It tells the complete story of a wallet's commitment on-chain.</p>
+  <p>A Fire Spirit mints when a wallet's cumulative $PYRE burns cross 10,000. Burns accumulate across every transaction — no burn is ever wasted. As cumulative burns cross higher thresholds the art evolves in place — same token ID, same wallet, changing appearance. No IPFS. Art generated entirely on-chain as SVG.</p>
+  <table>
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Standard</td><td>ERC-721</td></tr>
+      <tr><td>Transferability</td><td>Tradeable — yield auto-settles on transfer</td></tr>
+      <tr><td>Mint trigger</td><td>10,000 $PYRE cumulative burned (any number of transactions)</td></tr>
+      <tr><td>Hard cap</td><td>None — open access forever</td></tr>
+      <tr><td>Art storage</td><td>Fully on-chain SVG — evolves in place as burns accumulate</td></tr>
+      <tr><td>LP burn variant</td><td>Gradient overlay — visually distinct, +20% yield weight</td></tr>
+    </tbody>
+  </table>
+  <p>On secondary transfer: all accrued yield settles to the seller before ownership changes. The new holder inherits the Fire Spirit at its current visual stage but their own burn accumulation starts from 0.</p>
+</div>
+
+<!-- ══════════════════════════════════
+     §8 — STAGES
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§8 — Stages</div>
+  <h2 class="first">Stages &amp; Evolution</h2>
+  <p>The Fire Spirit evolves through four stages based on cumulative $PYRE burned. Burns accumulate permanently — crossing a threshold upgrades the stage automatically. Visual stage ratchets upward and never regresses.</p>
+
+  <div class="stages">
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage I</div>
+      <div class="stage-name">Ember</div>
+      <div class="stage-dur">10,000 $PYRE · 1×</div>
+      <p class="stage-p">A single dim coal. The ritual has begun. You fed the fire — now it works for you.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage II</div>
+      <div class="stage-name">Flame</div>
+      <div class="stage-dur">75,000 $PYRE · 1.5×</div>
+      <p class="stage-p">Volatile and hungry. Your spirit has ignited. The sacrifice is undeniable.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage III</div>
+      <div class="stage-name">Forge</div>
+      <div class="stage-dur">150,000 $PYRE · 2×</div>
+      <p class="stage-p">White-hot. Almost fully revealed. 150,000 tokens permanently removed from existence.</p>
+    </div>
+    <div class="stage">
+      <div class="stage-bar"></div>
+      <div class="stage-n">Stage IV</div>
+      <div class="stage-name">PYRE</div>
+      <div class="stage-dur">300,000 $PYRE · 3×</div>
+      <p class="stage-p">The final form. Your conviction is permanent, on-chain, irreversible.</p>
+    </div>
+  </div>
+
+  <table style="margin-top:16px">
+    <thead><tr><th>Stage</th><th>Name</th><th>Cumulative Burned</th><th>Yield Weight Multiplier</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>EMBER</td><td>10,000 $PYRE</td><td>1×</td></tr>
+      <tr><td>2</td><td>FLAME</td><td>75,000 $PYRE</td><td>1.5×</td></tr>
+      <tr><td>3</td><td>FORGE</td><td>150,000 $PYRE</td><td>2×</td></tr>
+      <tr><td>4</td><td>PYRE</td><td>300,000 $PYRE</td><td>3×</td></tr>
+    </tbody>
+  </table>
+  <p>Stage multipliers apply to Fire Spirit yield weight. Buying a high-stage Fire Spirit on secondary gives you the visual but your own yield weight starts from 0 burns.</p>
+</div>
+
+<!-- ══════════════════════════════════
+     §9 — PYRARCH OVERVIEW
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§9 — Pyrarch Protocol</div>
+  <h1>Pyrarch Protocol</h1>
+  <p class="lead">The deepest layer of commitment. Pyrarchs permanently remove $PYRE from supply and hold a perpetual claim on 25% of all swap fees — forever, regardless of whether they continue staking.</p>
+  <p>Pyrarch status is not a second NFT. It is a permanent mark fused directly onto the existing Fire Spirit. The Fire Spirit's on-chain SVG renders the Pyrarch overlay for all to see.</p>
+  <table>
+    <thead><tr><th>Requirement</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Stage gate</td><td>Stage 3 (FORGE) — 90+ days accumulated staking required</td></tr>
+      <tr><td>Must hold Fire Spirit</td><td>Pyrarch status fuses to an existing Fire Spirit token ID</td></tr>
+      <tr><td>Burn is permanent</td><td>Cannot be undone. No exit from Pyrarch status.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════
+     §10 — TOKEN BURN PATH
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§10 — Token Burn Path</div>
+  <h2 class="first">Token Burn Path</h2>
+  <p>Burn a minimum of 100 $PYRE directly. Tokens are sent to <code>address(0)</code> — permanently removed from supply. Your Fire Spirit receives the Pyrarch mark.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>// Weight = underlying units (pre-scaling) — early burners get more weight
+uint256 weight = amount * 1e18 / scalingFactorWAD;
+
+// e.g. burn 1000 $PYRE at S(t)=0.7:
+//   weight = 1000e18 * 1e18 / 0.7e18 = 1,428 underlying units</pre>
+  </div>
+  <p>Because weight is denominated in underlying units, burning 1,000 $PYRE at Era 0 creates more weight than burning 1,000 $PYRE at Era 3. Early Pyrarchs are permanently and disproportionately rewarded for their conviction.</p>
+</div>
+
+<!-- ══════════════════════════════════
+     §11 — LP BURN PATH
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§11 — LP Burn Path</div>
+  <h2 class="first">LP Burn Path</h2>
+  <p>Deposit ETH + $PYRE into the liquidity pool and burn the resulting LP shares permanently. The liquidity is locked forever — deepening the protocol's permanent floor. LP Pyrarchs receive a <strong>20% weight bonus</strong> on top of their $PYRE-equivalent value, and their Fire Spirit receives a distinct gradient visual treatment.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>// LP weight with bonus
+uint256 baseWeight = pyreAmt * 1e18 / scalingFactorWAD;
+uint256 weight     = baseWeight * 1_200 / 1_000; // +20%
+
+// LP shares burned to address(0) — permanent
+IERC20(lpToken).transfer(address(0), lpReceived);</pre>
+  </div>
+  <div class="note"><div class="note-cap">Irreversible</div><p>ETH and $PYRE deposited via LP burn are locked permanently. The liquidity cannot be withdrawn. LP Pyrarchs are rewarded with higher weight precisely because they have committed deeper.</p></div>
+</div>
+
+<!-- ══════════════════════════════════
+     §12 — WEIGHT & YIELD
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§12 — Weight &amp; Yield</div>
+  <h2 class="first">Weight &amp; Yield Distribution</h2>
+  <p>Pyrarch yield is distributed proportionally to weight. Weight is accumulated — you can burn multiple times into the same Fire Spirit and weight compounds.</p>
+  <div class="cb">
+    <span class="cb-lang">math</span>
+    <pre>// Synthetix-style O(1) distribution
+rewardPerWeight += (newFees * 1e18) / totalPyrarchWeight
+
+// Pending yield for a specific tokenId
+pending = pyrarchWeight[tokenId]
+        * (rewardPerWeight - rewardPerWeightPaid[tokenId])
+        / 1e18</pre>
+  </div>
+  <table>
+    <thead><tr><th>Scenario</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Fewer Pyrarchs</td><td>Each Pyrarch earns a larger share of the 25% pool</td></tr>
+      <tr><td>Higher swap volume</td><td>Larger 25% pool — absolute ETH yield scales with protocol usage</td></tr>
+      <tr><td>Early burn</td><td>More weight per $PYRE — permanent advantage, never diluted retroactively</td></tr>
+      <tr><td>LP burn vs token burn</td><td>+20% weight for LP path — rewards deeper liquidity commitment</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════
+     §13 — STAKING
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§13 — Staking</div>
+  <h1>Staking</h1>
+  <p>Staking is immediate — no warmup, no lockup. Staked balances are completely exempt from decay. Your Fire Spirit evolution clock advances only while staked.</p>
+  <ol>
+    <li>Approve $PYRE spending: <code>pyreToken.approve(stakingContract, amount)</code></li>
+    <li>Call <code>stake(uint256 amount)</code> — tokens transferred, decay paused instantly</li>
+    <li>If this is your first stake and effective balance ≥ 200K, Fire Spirit auto-mints</li>
+    <li>Yield accrues from the moment you stake — claim anytime with <code>claimFees()</code></li>
+  </ol>
+  <div class="note"><div class="note-cap">Top-up allowed</div><p>You can stake additional $PYRE at any time without resetting your evolution clock. Only unstaking pauses the clock — it does not reset it.</p></div>
+</div>
+
+<!-- ══════════════════════════════════
+     §14 — FEE DISTRIBUTION
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§14 — Fee Distribution</div>
+  <h2 class="first">Fee Distribution</h2>
+  <p>100% of swap fees generated by the PYRE pool flow to active participants. Zero protocol cut.</p>
+  <div class="cb">
+    <span class="cb-lang">math</span>
+    <pre>Swap fees (100%)
+├── Stakers:   75%  → split by (stakedBalance × stageMultiplier)
+└── Pyrarchs:  25%  → split by (pyrarchWeight in underlying units)
+
+Staker reward per token:
+  rewardPerToken += (newStakerFees * 1e18) / totalWeightedStake
+
+Effective weight per staker:
+  weight = stakedBalance * stageMultiplier[stage]
+
+Stage multipliers:
+  EMBER (1): 1×   FLAME (2): 2×   FORGE (3): 4×   PYRE (4): 7×</pre>
+  </div>
+  <p>Yield is denominated in ETH — not $PYRE. There is no inflationary APY. If swap volume is low, yield is low. The protocol's health is directly legible from fee distribution.</p>
+</div>
+
+<!-- ══════════════════════════════════
+     §15 — DRIP EXIT
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§15 — Drip Exit</div>
+  <h2 class="first">The Drip Exit</h2>
+  <p>Unstaking does not return tokens immediately. It initiates a 7-day linear drip during which tokens continue decaying at the current epoch rate. The drip is the entire exit cost — there are no additional fees.</p>
+  <div class="cb">
+    <span class="cb-lang">math</span>
+    <pre>claimable = dripAmount × (elapsed / 7 days) × (scalingFactor / 1e18)
+
+Era 0 drip loss (0.250%/hr × 168 hours):
+  0.9975^168 = e^(168 × -0.002503) ≈ 0.656
+  → ~34.4% of tokens lost over full 7-day drip
+
+Era 1 drip loss (0.125%/hr × 168 hours):
+  → ~19.6% of tokens lost (halvings make exit cheaper over time)</pre>
+  </div>
+  <div class="note"><div class="note-cap">Clock behavior</div><p>Unstaking pauses your evolution clock — it does not reset it. Accumulated staking time is preserved. Restaking resumes the clock from where it stopped. You cannot restake until the current drip is fully claimed.</p></div>
+</div>
+
+<!-- ══════════════════════════════════
+     §16–20 — CONTRACTS
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§16 — Contracts</div>
+  <h1>Contract Reference</h1>
+
+  <h2 class="first">PyreHook.sol</h2>
+  <p>Inherits <code>BaseHook</code>. Registers <code>afterSwap</code> only.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function getHookPermissions()
+    public pure override returns (Hooks.Permissions memory)
+{
+    return Hooks.Permissions({
+        beforeInitialize: false, afterInitialize: false,
+        beforeAddLiquidity: false, afterAddLiquidity: false,
+        beforeRemoveLiquidity: false, afterRemoveLiquidity: false,
+        beforeSwap: false, afterSwap: true,
+        beforeDonate: false, afterDonate: false,
+        beforeSwapReturnDelta: false, afterSwapReturnDelta: false,
+        afterAddLiquidityReturnDelta: false,
+        afterRemoveLiquidityReturnDelta: false
+    });
+}
+
+function afterSwap(...) external override onlyPoolManager returns (bytes4, int128) {
+    uint256 vol = uint256(params.amountSpecified &lt; 0
+        ? -params.amountSpecified : params.amountSpecified);
+    uint256 amt = _computeMint(vol);
+    if (amt > 0) IPyreToken(pyreToken).mint(sender, amt);
+    _checkThreshold(sender);   // lazy Fire Spirit mint/burn
+    _routeFees(delta);          // 75% → staking, 25% → pyrarch
+    return (BaseHook.afterSwap.selector, 0);
+}</pre>
+  </div>
+
+  <h2>PyreToken.sol</h2>
+  <p>ERC-20 with global lazy decay. Staked balances skip the scaling factor entirely.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function balanceOf(address a) public view override returns (uint256) {
+    if (isStaked[a]) return rawBalance[a];
+    return rawBalance[a] * scalingFactorWAD / 1e18;
+}
+
+// Called by Chainlink Automation every 3600 seconds
+function _tickEpoch() internal {
+    epochCount++;
+    uint256 era = epochCount / 2500;
+    uint256 r   = 250 >> era;
+    currentDecayRate = r &lt; 5 ? 5 : r;
+    scalingFactorWAD = scalingFactorWAD * (10000 - currentDecayRate) / 10000;
+}</pre>
+  </div>
+
+  <h2>PyreNFT.sol</h2>
+  <p>Tradeable ERC-721. Visual stage + Pyrarch status rendered entirely on-chain. Yield settles on transfer via <code>_beforeTokenTransfer</code>.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function currentStage(address wallet) public view returns (uint8) {
+    uint256 total = accumulatedStakingTime[wallet];
+    if (stakeStart[wallet] != 0)
+        total += block.timestamp - stakeStart[wallet];
+    if (total >= 180 days) return 4; // PYRE
+    if (total >= 90  days) return 3; // FORGE
+    if (total >= 30  days) return 2; // FLAME
+    return 1;                         // EMBER
+}
+
+function _beforeTokenTransfer(address from, address to, uint256 id) internal override {
+    if (from != address(0)) {
+        IPyreStaking(staking).settleYield(from, to, id);
+        IPyrePyrarch(pyrarch).settleYield(from, id, id);
+        peakStage[id] = currentStage(from);
+        accumulatedStakingTime[to] = 0;
+        stakeStart[to] = 0;
+    }
+}</pre>
+  </div>
+
+  <h2>PyreStaking.sol</h2>
+  <p>Synthetix-style O(1) fee distribution. Stage multiplier applied at reward claim time.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function stake(uint256 amount) external nonReentrant {
+    _settleReward(msg.sender);
+    IPyreToken(pyreToken).transferFrom(msg.sender, address(this), amount);
+    IPyreToken(pyreToken).setStaked(msg.sender, true);
+    positions[msg.sender].amount += amount;
+    IPyreNFT(pyreNFT).startClock(msg.sender);
+    totalWeightedStake += amount * stageMultiplier[_stage(msg.sender)] / 1e18;
+}
+
+function unstake(uint256 amount) external nonReentrant {
+    _settleReward(msg.sender);
+    positions[msg.sender].amount -= amount;
+    IPyreToken(pyreToken).setStaked(msg.sender, false);
+    IPyreNFT(pyreNFT).pauseClock(msg.sender);
+    drips[msg.sender] = Drip({ amount: amount, startTime: block.timestamp, claimed: 0 });
+}</pre>
+  </div>
+
+  <h2>PyrePyrarch.sol</h2>
+  <p>Handles both burn paths, weight accounting, and perpetual 25% fee distribution.</p>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>function burnTokens(uint256 amount) external nonReentrant {
+    require(amount >= MIN_BURN);
+    uint256 tokenId = IPyreNFT(pyreNFT).tokenOf(msg.sender);
+    require(IPyreNFT(pyreNFT).currentStage(msg.sender) >= 3, "FORGE required");
+    _settleReward(tokenId);
+    uint256 weight = amount * 1e18 / IPyreToken(pyreToken).scalingFactorWAD();
+    IPyreToken(pyreToken).transferFrom(msg.sender, address(0), amount);
+    pyrarchWeight[tokenId] += weight;
+    totalPyrarchWeight     += weight;
+    IPyreNFT(pyreNFT).setPyrarch(tokenId, false);
+}</pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     §21 — DEPLOYMENT
+══════════════════════════════════ -->
+<div class="section section-break">
+  <div class="sec-tag">§21 — Deployment</div>
+  <h1>Deployment &amp; Pool Setup</h1>
+
+  <h2 class="first">Deploy Order</h2>
+  <div class="cb">
+    <span class="cb-lang">bash</span>
+    <pre>forge create PyreToken   --constructor-args $SUPPLY_CAP $BASE_RATE
+forge create PyreNFT
+forge create PyreStaking --constructor-args $PYRE_TOKEN $PYRE_NFT
+forge create PyrePyrarch --constructor-args $PYRE_TOKEN $PYRE_NFT $LP_TOKEN
+forge create PyreHook    \
+    --constructor-args $POOL_MANAGER $PYRE_TOKEN $PYRE_NFT \
+                       $PYRE_STAKING $PYRE_PYRARCH $BASE_RATE
+
+# Wire permissions
+cast send $PYRE_TOKEN    "setHook(address)"     $PYRE_HOOK
+cast send $PYRE_TOKEN    "setStaking(address)"  $PYRE_STAKING
+cast send $PYRE_NFT      "setHook(address)"     $PYRE_HOOK
+cast send $PYRE_NFT      "setStaking(address)"  $PYRE_STAKING
+cast send $PYRE_NFT      "setPyrarch(address)"  $PYRE_PYRARCH
+cast send $PYRE_STAKING  "setHook(address)"     $PYRE_HOOK
+cast send $PYRE_PYRARCH  "setHook(address)"     $PYRE_HOOK</pre>
+  </div>
+
+  <h2>Pool Setup</h2>
+  <div class="cb">
+    <span class="cb-lang">solidity</span>
+    <pre>PoolKey memory key = PoolKey({
+    currency0:   Currency.wrap(address(0)),       // ETH
+    currency1:   Currency.wrap(PYRE_TOKEN),
+    fee:         3000,                            // 0.3% swap fee
+    tickSpacing: 60,
+    hooks:       IHooks(PYRE_HOOK_ADDRESS)        // must be mined address
+});
+poolManager.initialize(key, sqrtPriceX96, "");</pre>
+  </div>
+  <div class="note"><div class="note-cap">Hook Address Mining</div><p>V4 hooks must be deployed at addresses whose lower bits encode the permission flags. Use <code>HookMiner.find()</code> from v4-periphery or the Foundry hook miner script. Mine before deploying.</p></div>
+</div>
+
+<!-- ══════════════════════════════════
+     §22 — API REFERENCE
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§22 — API Reference</div>
+  <h2 class="first">API Reference</h2>
+
+  <h3>PyreToken</h3>
+  <table>
+    <thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>balanceOf(address)</td><td>public view</td><td>Live post-decay balance (or raw if staked)</td></tr>
+      <tr><td>mint(address, uint256)</td><td>external</td><td>Only callable by authorized hook</td></tr>
+      <tr><td>setStaked(address, bool)</td><td>external</td><td>Only callable by staking contract</td></tr>
+      <tr><td>scalingFactorWAD()</td><td>public view</td><td>Current decay scaling factor as WAD</td></tr>
+      <tr><td>currentDecayRate()</td><td>public view</td><td>Current epoch rate (250 → 5)</td></tr>
+      <tr><td>epochCount()</td><td>public view</td><td>Total epochs elapsed (hours since deploy)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>PyreNFT</h3>
+  <table>
+    <thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>currentStage(address)</td><td>public view</td><td>Returns stage 1–4 for current holder</td></tr>
+      <tr><td>tokenURI(uint256)</td><td>public view</td><td>Base64 JSON + on-chain SVG</td></tr>
+      <tr><td>accumulatedStakingTime(address)</td><td>public view</td><td>Total staked seconds for wallet</td></tr>
+      <tr><td>isPyrarch(uint256)</td><td>public view</td><td>True if tokenId has Pyrarch status</td></tr>
+      <tr><td>peakStage(uint256)</td><td>public view</td><td>Highest stage ever reached by this token</td></tr>
+      <tr><td>tokenOf(address)</td><td>public view</td><td>TokenId held by wallet (0 if none)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>PyreStaking</h3>
+  <table>
+    <thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>stake(uint256)</td><td>external</td><td>Deposit $PYRE; pause decay; advance clock</td></tr>
+      <tr><td>unstake(uint256)</td><td>external</td><td>Initiate 7-day drip; pause clock</td></tr>
+      <tr><td>claimDrip()</td><td>external</td><td>Claim available drip tokens (decay applies)</td></tr>
+      <tr><td>claimFees()</td><td>external</td><td>Claim accumulated ETH yield</td></tr>
+      <tr><td>pendingFees(address)</td><td>external view</td><td>View claimable ETH amount</td></tr>
+      <tr><td>effectiveWeight(address)</td><td>public view</td><td>stakedBalance × stageMultiplier</td></tr>
+    </tbody>
+  </table>
+
+  <h3>PyrePyrarch</h3>
+  <table>
+    <thead><tr><th>Function</th><th>Visibility</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>burnTokens(uint256)</td><td>external</td><td>Token burn path — min 100 $PYRE, Stage 3+ required</td></tr>
+      <tr><td>burnLP(uint256, uint256)</td><td>external payable</td><td>LP burn path — ETH + $PYRE, +20% weight bonus</td></tr>
+      <tr><td>claimYield(uint256)</td><td>external</td><td>Claim pending Pyrarch ETH yield for tokenId</td></tr>
+      <tr><td>pendingYield(uint256)</td><td>external view</td><td>View claimable Pyrarch yield for tokenId</td></tr>
+      <tr><td>pyrarchWeight(uint256)</td><td>public view</td><td>Total burn weight for tokenId</td></tr>
+      <tr><td>totalPyrarchWeight()</td><td>public view</td><td>Sum of all Pyrarch weights</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════
+     §23 — SECURITY
+══════════════════════════════════ -->
+<div class="section">
+  <div class="sec-tag">§23 — Security</div>
+  <h2 class="first">Security Considerations</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Mint authority bypass</td><td><code>hook</code> address is immutable — set once at deploy, cannot be changed</td></tr>
+      <tr><td>Threshold crossing attack</td><td>Burns on downward crossing — self-defeating (costs gas and tokens)</td></tr>
+      <tr><td>Scaling factor manipulation</td><td>Monotonic decrease enforced; floor of 5 prevents division-by-zero</td></tr>
+      <tr><td>Drip gaming</td><td><code>inDrip</code> flag blocks restaking until drip fully claimed</td></tr>
+      <tr><td>Reentrancy</td><td><code>ReentrancyGuard</code> on all state-modifying functions</td></tr>
+      <tr><td>Yield theft on transfer</td><td><code>settleYield()</code> called in <code>_beforeTokenTransfer</code> — settled before ownership changes</td></tr>
+      <tr><td>Pyrarch weight manipulation</td><td>Weight computed from raw underlying units — scaling factor snapshotted at burn time</td></tr>
+      <tr><td>LP burn to wrong address</td><td>LP balance checked before and after burn; verified transfer to <code>address(0)</code></td></tr>
+      <tr><td>Chainlink failure</td><td>Lazy evaluation in hook covers all interactive wallets; Automation is supplemental</td></tr>
+      <tr><td>WAD overflow</td><td>All WAD multiplication paths checked against max expected volume</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="doc-footer">
+  <div class="doc-footer-brand">PYRE</div>
+  <div class="doc-footer-note">pyre.protocol · ethereum mainnet · v0.1</div>
+</div>
+
+</body>
+</html>

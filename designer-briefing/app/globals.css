@@ -1,0 +1,524 @@
+:root {
+  --bg: #080504;
+  --bg-raised: #0e0a07;
+  --gold: #c9a96e;
+  --gold-dim: rgba(201, 169, 110, 0.28);
+  --gold-hairline: rgba(201, 169, 110, 0.16);
+  --ink: #ede8e0;
+  --ink-secondary: #b8a88a;
+  --ink-faint: #6f6354;
+  --ember: #e25822;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* film grain */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.79 0 0 0 0 0.66 0 0 0 0 0.43 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--gold-dim);
+  color: var(--ink);
+}
+
+/* ---------- login ---------- */
+
+.login-stage {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-stage::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -30vh;
+  width: 90vw;
+  height: 70vh;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center bottom, rgba(226, 88, 34, 0.13) 0%, rgba(201, 169, 110, 0.05) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-card {
+  width: min(26rem, 100%);
+  text-align: center;
+  animation: rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-glyph {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--gold);
+  margin-bottom: 2.25rem;
+  letter-spacing: 0.04em;
+}
+
+.login-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-bottom: 1.1rem;
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 8vw, 3.4rem);
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  margin-bottom: 0.75rem;
+}
+
+.login-sub {
+  color: var(--ink-secondary);
+  font-size: 0.92rem;
+  margin-bottom: 3rem;
+  font-style: italic;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--gold-hairline);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-align: center;
+  padding: 0.95rem 1.1rem;
+  outline: none;
+  transition: border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.login-input:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 1px var(--gold-hairline), 0 0 32px rgba(201, 169, 110, 0.06);
+}
+
+.login-input::placeholder {
+  color: var(--ink-faint);
+  letter-spacing: 0.3em;
+}
+
+.login-btn {
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  text-transform: uppercase;
+  padding: 0.95rem;
+  cursor: pointer;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.login-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+.login-error {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--ember);
+  min-height: 1.2rem;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- briefing ---------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  max-width: 78rem;
+  margin: 0 auto;
+  min-height: 100dvh;
+}
+
+.side {
+  border-right: 1px solid var(--gold-hairline);
+  padding: 3rem 2rem;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-mark {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+}
+
+.side-mark span {
+  color: var(--gold);
+}
+
+.side-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-bottom: 3rem;
+}
+
+.toc {
+  list-style: none;
+  display: grid;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.55rem 0.6rem;
+  color: var(--ink-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  border-left: 1px solid transparent;
+  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+
+.toc a:hover {
+  color: var(--ink);
+  border-left-color: var(--gold);
+  background: rgba(201, 169, 110, 0.04);
+}
+
+.toc-num {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--gold);
+  opacity: 0.75;
+}
+
+.side-foot {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gold-hairline);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  line-height: 2;
+}
+
+.main {
+  padding: 4.5rem clamp(1.5rem, 5vw, 5rem) 8rem;
+}
+
+.hero {
+  margin-bottom: 5.5rem;
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.8rem, 6vw, 4.6rem);
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  margin-bottom: 1.6rem;
+  max-width: 18ch;
+}
+
+.hero h1 em {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.hero p {
+  color: var(--ink-secondary);
+  max-width: 56ch;
+  font-size: 1.02rem;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  margin-top: 2.8rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--gold-hairline);
+}
+
+.hero-meta div {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  line-height: 2.2;
+}
+
+.hero-meta strong {
+  display: block;
+  color: var(--ink-secondary);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+
+.section {
+  margin-bottom: 5rem;
+  scroll-margin-top: 3rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+
+.section-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--gold-hairline);
+}
+
+/* markdown prose */
+.prose h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  margin-bottom: 1.4rem;
+}
+
+.prose h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.45rem;
+  letter-spacing: 0.03em;
+  margin: 2.6rem 0 1rem;
+  color: var(--ink);
+}
+
+.prose h3 {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 2.2rem 0 0.9rem;
+}
+
+.prose p {
+  color: var(--ink-secondary);
+  max-width: 64ch;
+  margin-bottom: 1.05rem;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.prose em {
+  font-family: var(--font-display);
+  font-size: 1.06em;
+}
+
+.prose a {
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px solid var(--gold-dim);
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 1.3rem 1.1rem;
+  color: var(--ink-secondary);
+  max-width: 62ch;
+}
+
+.prose li {
+  margin-bottom: 0.45rem;
+  padding-left: 0.3rem;
+}
+
+.prose li::marker {
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+}
+
+.prose blockquote {
+  border-left: 1px solid var(--gold);
+  padding: 0.4rem 0 0.4rem 1.6rem;
+  margin: 2rem 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--ink);
+  max-width: 50ch;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--gold);
+  background: rgba(201, 169, 110, 0.07);
+  border: 1px solid var(--gold-hairline);
+  padding: 0.1em 0.45em;
+}
+
+.prose pre {
+  background: var(--bg-raised);
+  border: 1px solid var(--gold-hairline);
+  padding: 1.3rem 1.5rem;
+  overflow-x: auto;
+  margin: 0 0 1.4rem;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-secondary);
+}
+
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.6rem 0;
+  font-size: 0.88rem;
+}
+
+.prose th {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  text-align: left;
+  padding: 0.7rem 1rem 0.7rem 0;
+  border-bottom: 1px solid var(--gold-dim);
+}
+
+.prose td {
+  padding: 0.65rem 1rem 0.65rem 0;
+  border-bottom: 1px solid var(--gold-hairline);
+  color: var(--ink-secondary);
+}
+
+.prose hr {
+  border: none;
+  height: 1px;
+  background: var(--gold-hairline);
+  margin: 2.6rem 0;
+}
+
+/* swatches: paragraph of `#hex` codes gets rendered chips via JS-free trick — keep simple, designers read hex */
+
+/* mobile-first hard requirement: collapse to single column */
+@media (max-width: 56rem) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--gold-hairline);
+    padding: 2.2rem 1.5rem 1.6rem;
+  }
+
+  .toc {
+    display: none;
+  }
+
+  .side-foot {
+    display: none;
+  }
+
+  .main {
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  .hero-meta {
+    gap: 1.4rem;
+  }
+}

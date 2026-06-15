@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+.next/
+**/.next/
+out/
+build/
+*.tsbuildinfo
+
+# Secrets / env — never commit
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Vercel
+.vercel/
+**/.vercel/
+
+# Local data stores
+.data/
+**/.data/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log

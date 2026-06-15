@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PYRE — Branding Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=Fira+Code:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&family=Source+Code+Pro:wght@400;500&family=Cinzel:wght@400;500;600;700&family=Raleway:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Work+Sans:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+/* ─ SELECTOR NAV ─ */
+.selector {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: #000;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 24px;
+  height: 48px;
+}
+.sel-label {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-right: 20px;
+  white-space: nowrap;
+}
+.sel-btn {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0 16px;
+  height: 48px;
+  background: none;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.sel-btn:hover { color: rgba(255,255,255,0.7); }
+.sel-btn.active { color: #fff; background: rgba(255,255,255,0.05); }
+
+/* ─ OPTION WRAPPER ─ */
+.option {
+  min-height: 100vh;
+  padding-top: 48px;
+}
+
+/* ═══════════════════════════════════════
+   OPTION 1 — THE ALCHEMIST
+   Cormorant Garamond + DM Sans
+   Deep blood burgundy + old gold
+═══════════════════════════════════════ */
+.o1 {
+  background: #080504;
+  color: #EDE8E0;
+  font-family: 'DM Sans', sans-serif;
+}
+.o1-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 62px;
+  border-bottom: 1px solid rgba(180,120,60,0.15);
+  background: rgba(8,5,4,0.92);
+}
+.o1-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #C9A96E;
+}
+.o1-navlinks { display: flex; gap: 32px; list-style: none; }
+.o1-navlinks a {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(237,232,224,0.4);
+  text-decoration: none;
+}
+.o1-connect {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: #C9A96E;
+  border: 1px solid rgba(201,169,110,0.35);
+  background: none;
+  padding: 8px 22px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.o1-hero {
+  padding: 100px 48px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+.o1-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: 96px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #EDE8E0;
+  line-height: 1;
+}
+.o1-title span { color: #C9A96E; }
+.o1-tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: rgba(237,232,224,0.45);
+  max-width: 400px;
+  line-height: 1.9;
+}
+.o1-rule { width: 80px; height: 1px; background: rgba(201,169,110,0.3); }
+.o1-stats { display: flex; gap: 0; border: 1px solid rgba(201,169,110,0.12); }
+.o1-stat { padding: 20px 36px; border-right: 1px solid rgba(201,169,110,0.12); text-align: center; }
+.o1-stat:last-child { border-right: none; }
+.o1-stat-n {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: #C9A96E;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.o1-stat-l {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(237,232,224,0.3);
+}
+.o1-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: rgba(201,169,110,0.08); padding: 0 48px; margin-bottom: 60px; }
+.o1-card { background: #080504; padding: 28px; }
+.o1-card-label { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(201,169,110,0.5); margin-bottom: 10px; }
+.o1-card-val { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: #EDE8E0; }
+.o1-palette { display: flex; gap: 8px; padding: 24px 48px; border-top: 1px solid rgba(201,169,110,0.08); align-items: center; }
+.swatch { width: 32px; height: 32px; border-radius: 2px; }
+.swatch-label { font-family: monospace; font-size: 9px; color: rgba(255,255,255,0.25); margin-left: 12px; }
+.o1-font-specimen { padding: 32px 48px; border-top: 1px solid rgba(201,169,110,0.08); }
+.o1-spec-display { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300; color: #C9A96E; letter-spacing: 0.08em; margin-bottom: 8px; }
+.o1-spec-body { font-family: 'DM Sans', sans-serif; font-size: 13px; color: rgba(237,232,224,0.5); line-height: 1.8; max-width: 500px; }
+.o1-spec-mono { font-family: 'Fira Code', monospace; font-size: 11px; color: rgba(201,169,110,0.6); margin-top: 8px; }
+
+/* ═══════════════════════════════════════
+   OPTION 2 — MONOLITH
+   Syne + Plus Jakarta Sans
+   Pure geometry. Single red accent.
+═══════════════════════════════════════ */
+.o2 {
+  background: #030303;
+  color: #F2F2F2;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.o2-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 62px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.o2-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: #F2F2F2;
+}
+.o2-logo span { color: #CC2200; }
+.o2-navlinks { display: flex; gap: 28px; list-style: none; }
+.o2-navlinks a {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(242,242,242,0.35);
+  text-decoration: none;
+}
+.o2-connect {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #F2F2F2;
+  background: #CC2200;
+  border: none;
+  padding: 9px 20px;
+  cursor: pointer;
+}
+.o2-hero {
+  padding: 80px 48px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 60px;
+}
+.o2-hero-left {}
+.o2-eyebrow {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #CC2200;
+  margin-bottom: 20px;
+}
+.o2-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 88px;
+  letter-spacing: -0.02em;
+  color: #F2F2F2;
+  line-height: 0.95;
+  margin-bottom: 24px;
+}
+.o2-tagline {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.85;
+  color: rgba(242,242,242,0.45);
+  max-width: 380px;
+}
+.o2-hero-right { display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.05); }
+.o2-stat-row {
+  background: #030303;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.o2-stat-k { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(242,242,242,0.3); font-weight: 500; }
+.o2-stat-v { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: #F2F2F2; }
+.o2-stat-v.acc { color: #CC2200; }
+.o2-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: rgba(255,255,255,0.05); padding: 0 48px 1px; }
+.o2-card { background: #030303; padding: 24px; }
+.o2-card-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(242,242,242,0.25); margin-bottom: 12px; font-weight: 600; }
+.o2-card-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 24px; color: #F2F2F2; }
+.o2-palette { display: flex; gap: 8px; padding: 24px 48px; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); }
+.o2-font-specimen { padding: 32px 48px; border-top: 1px solid rgba(255,255,255,0.05); }
+.o2-spec-display { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 52px; letter-spacing: -0.02em; color: #F2F2F2; margin-bottom: 8px; }
+.o2-spec-body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: rgba(242,242,242,0.4); line-height: 1.8; max-width: 500px; }
+.o2-spec-mono { font-family: 'Source Code Pro', monospace; font-size: 11px; color: rgba(204,34,0,0.7); margin-top: 8px; }
+
+/* ═══════════════════════════════════════
+   OPTION 3 — COLD SIGNAL
+   Barlow Condensed + Barlow
+   Military precision. Ice cold.
+═══════════════════════════════════════ */
+.o3 {
+  background: #020408;
+  color: #E8ECF0;
+  font-family: 'Barlow', sans-serif;
+}
+.o3-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 62px;
+  border-bottom: 1px solid rgba(60,120,200,0.15);
+}
+.o3-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #E8ECF0;
+}
+.o3-navlinks { display: flex; gap: 28px; list-style: none; }
+.o3-navlinks a {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(232,236,240,0.35);
+  text-decoration: none;
+}
+.o3-connect {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #4A9EFF;
+  background: none;
+  border: 1px solid rgba(74,158,255,0.3);
+  padding: 7px 20px;
+  cursor: pointer;
+}
+.o3-hero {
+  padding: 80px 48px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.o3-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #4A9EFF;
+}
+.o3-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 110px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #E8ECF0;
+  line-height: 0.9;
+}
+.o3-tagline {
+  font-family: 'Barlow', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+  color: rgba(232,236,240,0.4);
+  max-width: 440px;
+}
+.o3-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: rgba(74,158,255,0.08); padding: 0 48px; }
+.o3-cell { background: #020408; padding: 20px 20px; }
+.o3-cell-l { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(232,236,240,0.25); margin-bottom: 8px; }
+.o3-cell-v { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 600; letter-spacing: 0.02em; color: #E8ECF0; }
+.o3-cell-v.acc { color: #4A9EFF; }
+.o3-palette { display: flex; gap: 8px; padding: 24px 48px; align-items: center; border-top: 1px solid rgba(74,158,255,0.08); }
+.o3-font-specimen { padding: 32px 48px; border-top: 1px solid rgba(74,158,255,0.08); }
+.o3-spec-display { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.06em; text-transform: uppercase; color: #E8ECF0; margin-bottom: 8px; }
+.o3-spec-body { font-family: 'Barlow', sans-serif; font-size: 13px; color: rgba(232,236,240,0.4); line-height: 1.8; max-width: 500px; }
+.o3-spec-mono { font-family: 'Source Code Pro', monospace; font-size: 11px; color: rgba(74,158,255,0.6); margin-top: 8px; }
+
+/* ═══════════════════════════════════════
+   OPTION 4 — SACRAMENT
+   Cinzel + Raleway
+   Roman authority. Eternal ritual.
+═══════════════════════════════════════ */
+.o4 {
+  background: #060404;
+  color: #E8DDD0;
+  font-family: 'Raleway', sans-serif;
+}
+.o4-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 62px;
+  border-bottom: 1px solid rgba(160,60,20,0.2);
+}
+.o4-logo {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #E8DDD0;
+}
+.o4-navlinks { display: flex; gap: 32px; list-style: none; }
+.o4-navlinks a {
+  font-family: 'Raleway', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232,221,208,0.35);
+  text-decoration: none;
+}
+.o4-connect {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #B85C30;
+  background: none;
+  border: 1px solid rgba(184,92,48,0.35);
+  padding: 8px 20px;
+  cursor: pointer;
+}
+.o4-hero {
+  padding: 100px 48px 80px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+.o4-ornament { font-size: 18px; color: rgba(184,92,48,0.4); letter-spacing: 0.3em; }
+.o4-title {
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  font-size: 100px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #E8DDD0;
+  line-height: 1;
+}
+.o4-sub {
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #B85C30;
+}
+.o4-tagline {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 2;
+  color: rgba(232,221,208,0.4);
+  max-width: 380px;
+  letter-spacing: 0.04em;
+}
+.o4-divider { display: flex; align-items: center; gap: 16px; width: 300px; }
+.o4-divider-line { flex: 1; height: 1px; background: rgba(184,92,48,0.2); }
+.o4-divider-mark { color: rgba(184,92,48,0.5); font-size: 14px; }
+.o4-stats { display: flex; gap: 0; }
+.o4-stat { padding: 20px 40px; border-right: 1px solid rgba(184,92,48,0.12); text-align: center; }
+.o4-stat:last-child { border-right: none; }
+.o4-stat-n { font-family: 'Cinzel', serif; font-size: 32px; color: #B85C30; line-height: 1; margin-bottom: 8px; }
+.o4-stat-l { font-family: 'Raleway', sans-serif; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(232,221,208,0.25); }
+.o4-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: rgba(184,92,48,0.08); padding: 0 48px; }
+.o4-card { background: #060404; padding: 28px; }
+.o4-card-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(184,92,48,0.5); margin-bottom: 12px; }
+.o4-card-val { font-family: 'Cinzel', serif; font-size: 26px; color: #E8DDD0; font-weight: 400; }
+.o4-palette { display: flex; gap: 8px; padding: 24px 48px; align-items: center; border-top: 1px solid rgba(184,92,48,0.1); }
+.o4-font-specimen { padding: 32px 48px; border-top: 1px solid rgba(184,92,48,0.1); }
+.o4-spec-display { font-family: 'Cinzel', serif; font-weight: 400; font-size: 52px; letter-spacing: 0.18em; color: #E8DDD0; text-transform: uppercase; margin-bottom: 8px; }
+.o4-spec-body { font-family: 'Raleway', sans-serif; font-size: 13px; color: rgba(232,221,208,0.4); line-height: 1.9; max-width: 500px; font-weight: 300; }
+.o4-spec-mono { font-family: 'Space Mono', monospace; font-size: 11px; color: rgba(184,92,48,0.6); margin-top: 8px; }
+
+/* ═══════════════════════════════════════
+   OPTION 5 — BRUTAL IMPACT
+   Bebas Neue + Work Sans
+   Poster energy. No compromise.
+═══════════════════════════════════════ */
+.o5 {
+  background: #0A0A0A;
+  color: #F5F5F5;
+  font-family: 'Work Sans', sans-serif;
+}
+.o5-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 62px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.o5-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.18em;
+  color: #F5F5F5;
+}
+.o5-navlinks { display: flex; gap: 28px; list-style: none; }
+.o5-navlinks a {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(245,245,245,0.3);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.o5-connect {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: #0A0A0A;
+  background: #F5F5F5;
+  border: none;
+  padding: 8px 22px;
+  cursor: pointer;
+}
+.o5-hero {
+  padding: 60px 48px 40px;
+}
+.o5-label {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(245,245,245,0.25);
+  margin-bottom: 12px;
+}
+.o5-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 160px;
+  letter-spacing: 0.04em;
+  color: #F5F5F5;
+  line-height: 0.88;
+  margin-bottom: 28px;
+}
+.o5-title span { color: #D94F00; }
+.o5-tagline {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: rgba(245,245,245,0.4);
+  line-height: 1.8;
+  max-width: 420px;
+  margin-bottom: 40px;
+}
+.o5-row { display: flex; gap: 1px; background: rgba(255,255,255,0.06); margin: 0 48px; }
+.o5-cell { background: #0A0A0A; flex: 1; padding: 24px; }
+.o5-cell-l { font-family: 'Work Sans', sans-serif; font-weight: 600; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,245,245,0.2); margin-bottom: 8px; }
+.o5-cell-v { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 0.04em; color: #F5F5F5; }
+.o5-cell-v.acc { color: #D94F00; }
+.o5-palette { display: flex; gap: 8px; padding: 24px 48px; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 1px; }
+.o5-font-specimen { padding: 32px 48px; border-top: 1px solid rgba(255,255,255,0.06); }
+.o5-spec-display { font-family: 'Bebas Neue', sans-serif; font-size: 72px; letter-spacing: 0.04em; color: #F5F5F5; margin-bottom: 8px; }
+.o5-spec-body { font-family: 'Work Sans', sans-serif; font-size: 13px; color: rgba(245,245,245,0.4); line-height: 1.8; max-width: 500px; }
+.o5-spec-mono { font-family: 'Roboto Mono', monospace; font-size: 11px; color: rgba(217,79,0,0.7); margin-top: 8px; }
+
+/* ─ SECTION TAG ─ */
+.option-tag {
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.3;
+  padding: 10px 48px 4px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- SELECTOR -->
+<div class="selector">
+  <span class="sel-label">PYRE — Branding</span>
+  <button class="sel-btn active" onclick="scrollTo(0)">01 — Alchemist</button>
+  <button class="sel-btn" onclick="scrollTo(1)">02 — Monolith</button>
+  <button class="sel-btn" onclick="scrollTo(2)">03 — Cold Signal</button>
+  <button class="sel-btn" onclick="scrollTo(3)">04 — Sacrament</button>
+  <button class="sel-btn" onclick="scrollTo(4)">05 — Impact</button>
+</div>
+
+<!-- ══════════════════════════════════
+     OPTION 1 — THE ALCHEMIST
+══════════════════════════════════ -->
+<div class="option o1" id="opt-0">
+  <div class="option-tag">Option 01 — The Alchemist · Cormorant Garamond + DM Sans · Blood gold on void black</div>
+  <nav class="o1-nav">
+    <div class="o1-logo">PYRE</div>
+    <ul class="o1-navlinks">
+      <li><a href="#">Mechanism</a></li>
+      <li><a href="#">Fire Spirits</a></li>
+      <li><a href="#">The Immolated</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <button class="o1-connect">Connect Wallet</button>
+  </nav>
+  <div class="o1-hero">
+    <div class="o1-rule"></div>
+    <div class="o1-title">P<span>Y</span>RE</div>
+    <p class="o1-tagline">The fire does not ask permission. Every token that isn't staked burns — slowly, continuously, forever.</p>
+    <div class="o1-stats">
+      <div class="o1-stat"><div class="o1-stat-n">0.45<span style="font-size:18px">%</span></div><div class="o1-stat-l">Initial Burn</div></div>
+      <div class="o1-stat"><div class="o1-stat-n">300<span style="font-size:18px">k</span></div><div class="o1-stat-l">Stage IV Burn</div></div>
+      <div class="o1-stat"><div class="o1-stat-n">3<span style="font-size:18px">×</span></div><div class="o1-stat-l">Stage IV Yield</div></div>
+      <div class="o1-stat"><div class="o1-stat-n">0</div><div class="o1-stat-l">Pre-mine</div></div>
+    </div>
+  </div>
+  <div class="o1-cards">
+    <div class="o1-card"><div class="o1-card-label">Your Balance</div><div class="o1-card-val">432,000 PYRE</div></div>
+    <div class="o1-card"><div class="o1-card-label">Pending Yield</div><div class="o1-card-val" style="color:#C9A96E">2.41 ETH</div></div>
+    <div class="o1-card"><div class="o1-card-label">Fire Spirit Stage</div><div class="o1-card-val">FLAME — II</div></div>
+  </div>
+  <div class="o1-palette">
+    <div class="swatch" style="background:#080504"></div>
+    <div class="swatch" style="background:#C9A96E"></div>
+    <div class="swatch" style="background:#EDE8E0"></div>
+    <div class="swatch" style="background:#5C3A1E"></div>
+    <div class="swatch" style="background:#1A0E08"></div>
+    <span class="swatch-label">#080504 · #C9A96E · #EDE8E0 · #5C3A1E · #1A0E08</span>
+  </div>
+  <div class="o1-font-specimen">
+    <div class="o1-spec-display">Cormorant Garamond — Display</div>
+    <div class="o1-spec-body">DM Sans for body and UI. Clean, modern, pairs with the elegance of Cormorant without competing. The contrast between the two is the identity.</div>
+    <div class="o1-spec-mono">Fira Code — 0x9Ec2···f5c6 · 432,000 $PYRE · Epoch 312</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     OPTION 2 — MONOLITH
+══════════════════════════════════ -->
+<div class="option o2" id="opt-1">
+  <div class="option-tag">Option 02 — Monolith · Syne + Plus Jakarta Sans · Geometric. Architectural. One red slash.</div>
+  <nav class="o2-nav">
+    <div class="o2-logo">PY<span>R</span>E</div>
+    <ul class="o2-navlinks">
+      <li><a href="#">Mechanism</a></li>
+      <li><a href="#">Fire Spirits</a></li>
+      <li><a href="#">The Immolated</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <button class="o2-connect">Connect</button>
+  </nav>
+  <div class="o2-hero">
+    <div class="o2-hero-left">
+      <div class="o2-eyebrow">Uniswap V4 · Ethereum</div>
+      <div class="o2-title">PYRE</div>
+      <p class="o2-tagline">Every swap mints. Every idle token burns. Stake and the protocol pays you. Don't stake and the fire takes everything.</p>
+    </div>
+    <div class="o2-hero-right">
+      <div class="o2-stat-row"><span class="o2-stat-k">Burn Rate</span><span class="o2-stat-v acc">0.45%/hr</span></div>
+      <div class="o2-stat-row"><span class="o2-stat-k">Stage IV Burn</span><span class="o2-stat-v">300,000 $PYRE</span></div>
+      <div class="o2-stat-row"><span class="o2-stat-k">Stage IV Multiplier</span><span class="o2-stat-v acc">3×</span></div>
+      <div class="o2-stat-row"><span class="o2-stat-k">Pre-mine</span><span class="o2-stat-v">Zero</span></div>
+      <div class="o2-stat-row"><span class="o2-stat-k">Swap Fee</span><span class="o2-stat-v">9% total</span></div>
+    </div>
+  </div>
+  <div class="o2-cards">
+    <div class="o2-card"><div class="o2-card-label">Staked Balance</div><div class="o2-card-val">432,000 PYRE</div></div>
+    <div class="o2-card"><div class="o2-card-label">Pending Yield</div><div class="o2-card-val" style="color:#CC2200">2.41 ETH</div></div>
+    <div class="o2-card"><div class="o2-card-label">Fire Spirit Stage</div><div class="o2-card-val">FLAME — 2×</div></div>
+  </div>
+  <div class="o2-palette">
+    <div class="swatch" style="background:#030303"></div>
+    <div class="swatch" style="background:#CC2200"></div>
+    <div class="swatch" style="background:#F2F2F2"></div>
+    <div class="swatch" style="background:#1A1A1A"></div>
+    <div class="swatch" style="background:#FF4422"></div>
+    <span class="swatch-label">#030303 · #CC2200 · #F2F2F2 · #1A1A1A · #FF4422</span>
+  </div>
+  <div class="o2-font-specimen">
+    <div class="o2-spec-display">Syne — Display</div>
+    <div class="o2-spec-body">Plus Jakarta Sans for body. Geometric and confident — the kind of font that doesn't apologize. Syne at heavy weight is a statement, not a whisper.</div>
+    <div class="o2-spec-mono">Source Code Pro — 0x9Ec2···f5c6 · 432,000 $PYRE · Epoch 312</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     OPTION 3 — COLD SIGNAL
+══════════════════════════════════ -->
+<div class="option o3" id="opt-2">
+  <div class="option-tag">Option 03 — Cold Signal · Barlow Condensed + Barlow · Military cold. Electric blue on near-black.</div>
+  <nav class="o3-nav">
+    <div class="o3-logo">PYRE</div>
+    <ul class="o3-navlinks">
+      <li><a href="#">Mechanism</a></li>
+      <li><a href="#">Fire Spirits</a></li>
+      <li><a href="#">The Immolated</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <button class="o3-connect">Connect Wallet</button>
+  </nav>
+  <div class="o3-hero">
+    <div class="o3-eyebrow">Uniswap V4 Protocol · Ethereum Mainnet</div>
+    <div class="o3-title">PYRE</div>
+    <p class="o3-tagline">Every token that isn't staked burns at 0.45% per hour. The protocol measures commitment with the precision of a burning clock.</p>
+  </div>
+  <div class="o3-grid">
+    <div class="o3-cell"><div class="o3-cell-l">Burn Rate</div><div class="o3-cell-v acc">0.45%</div></div>
+    <div class="o3-cell"><div class="o3-cell-l">Full Evolution</div><div class="o3-cell-v">180d</div></div>
+    <div class="o3-cell"><div class="o3-cell-l">Stage IV Mult.</div><div class="o3-cell-v acc">3×</div></div>
+    <div class="o3-cell"><div class="o3-cell-l">Swap Fee</div><div class="o3-cell-v">9% total</div></div>
+  </div>
+  <div class="o3-palette" style="margin-top:1px">
+    <div class="swatch" style="background:#020408"></div>
+    <div class="swatch" style="background:#4A9EFF"></div>
+    <div class="swatch" style="background:#E8ECF0"></div>
+    <div class="swatch" style="background:#0D1520"></div>
+    <div class="swatch" style="background:#1A3A6A"></div>
+    <span class="swatch-label">#020408 · #4A9EFF · #E8ECF0 · #0D1520 · #1A3A6A</span>
+  </div>
+  <div class="o3-font-specimen">
+    <div class="o3-spec-display">BARLOW CONDENSED</div>
+    <div class="o3-spec-body">Barlow for body text. Technical, legible, no-nonsense. The condensed weight at display size reads like a readout from mission control.</div>
+    <div class="o3-spec-mono">Source Code Pro — 0x9Ec2···f5c6 · 432,000 $PYRE · Epoch 312</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     OPTION 4 — SACRAMENT
+══════════════════════════════════ -->
+<div class="option o4" id="opt-3">
+  <div class="option-tag">Option 04 — Sacrament · Cinzel + Raleway · Roman authority. Ancient ritual. Ember on ash.</div>
+  <nav class="o4-nav">
+    <div class="o4-logo">PYRE</div>
+    <ul class="o4-navlinks">
+      <li><a href="#">Mechanism</a></li>
+      <li><a href="#">Fire Spirits</a></li>
+      <li><a href="#">The Immolated</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <button class="o4-connect">Connect</button>
+  </nav>
+  <div class="o4-hero">
+    <div class="o4-ornament">— ◈ —</div>
+    <div class="o4-title">PYRE</div>
+    <div class="o4-sub">The Protocol That Burns</div>
+    <div class="o4-divider">
+      <div class="o4-divider-line"></div>
+      <div class="o4-divider-mark">◈</div>
+      <div class="o4-divider-line"></div>
+    </div>
+    <p class="o4-tagline">Tokens that do not commit to the fire are consumed by it. Stake and evolve. Burn and transcend. There is no middle ground.</p>
+    <div class="o4-stats">
+      <div class="o4-stat"><div class="o4-stat-n">0.45%</div><div class="o4-stat-l">Hourly Burn</div></div>
+      <div class="o4-stat"><div class="o4-stat-n">300k</div><div class="o4-stat-l">Stage IV Burn</div></div>
+      <div class="o4-stat"><div class="o4-stat-n">3×</div><div class="o4-stat-l">Stage IV Yield</div></div>
+    </div>
+  </div>
+  <div class="o4-cards">
+    <div class="o4-card"><div class="o4-card-label">Staked Balance</div><div class="o4-card-val">432,000 PYRE</div></div>
+    <div class="o4-card"><div class="o4-card-label">Pending Yield</div><div class="o4-card-val" style="color:#B85C30">2.41 ETH</div></div>
+    <div class="o4-card"><div class="o4-card-label">Fire Spirit Stage</div><div class="o4-card-val">FLAME — II</div></div>
+  </div>
+  <div class="o4-palette">
+    <div class="swatch" style="background:#060404"></div>
+    <div class="swatch" style="background:#B85C30"></div>
+    <div class="swatch" style="background:#E8DDD0"></div>
+    <div class="swatch" style="background:#2A1510"></div>
+    <div class="swatch" style="background:#6B3020"></div>
+    <span class="swatch-label">#060404 · #B85C30 · #E8DDD0 · #2A1510 · #6B3020</span>
+  </div>
+  <div class="o4-font-specimen">
+    <div class="o4-spec-display">Cinzel — Display</div>
+    <div class="o4-spec-body">Raleway for body — elegant, geometric, with just enough character to feel intentional without being decorative. Together they feel ancient and modern simultaneously.</div>
+    <div class="o4-spec-mono">Space Mono — 0x9Ec2···f5c6 · 432,000 $PYRE · Epoch 312</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     OPTION 5 — IMPACT
+══════════════════════════════════ -->
+<div class="option o5" id="opt-4">
+  <div class="option-tag" style="color:#666">Option 05 — Impact · Bebas Neue + Work Sans · Poster energy. No compromise. Maximum presence.</div>
+  <nav class="o5-nav">
+    <div class="o5-logo">PYRE</div>
+    <ul class="o5-navlinks">
+      <li><a href="#">Mechanism</a></li>
+      <li><a href="#">Fire Spirits</a></li>
+      <li><a href="#">The Immolated</a></li>
+      <li><a href="#">Docs</a></li>
+    </ul>
+    <button class="o5-connect">Connect</button>
+  </nav>
+  <div class="o5-hero">
+    <div class="o5-label">Uniswap V4 — Ethereum Mainnet</div>
+    <div class="o5-title">PY<span>R</span>E</div>
+    <p class="o5-tagline">Every swap mints. Every idle token burns at 0.45% per hour. Stake or disappear.</p>
+  </div>
+  <div class="o5-row">
+    <div class="o5-cell"><div class="o5-cell-l">Burn Rate</div><div class="o5-cell-v acc">0.45%</div></div>
+    <div class="o5-cell"><div class="o5-cell-l">Evolution</div><div class="o5-cell-v">180d</div></div>
+    <div class="o5-cell"><div class="o5-cell-l">Stage IV</div><div class="o5-cell-v acc">3×</div></div>
+    <div class="o5-cell"><div class="o5-cell-l">Pre-mine</div><div class="o5-cell-v">0</div></div>
+  </div>
+  <div class="o5-palette">
+    <div class="swatch" style="background:#0A0A0A"></div>
+    <div class="swatch" style="background:#D94F00"></div>
+    <div class="swatch" style="background:#F5F5F5"></div>
+    <div class="swatch" style="background:#1E1E1E"></div>
+    <div class="swatch" style="background:#FF6622"></div>
+    <span class="swatch-label" style="color:#555">#0A0A0A · #D94F00 · #F5F5F5 · #1E1E1E · #FF6622</span>
+  </div>
+  <div class="o5-font-specimen">
+    <div class="o5-spec-display">BEBAS NEUE</div>
+    <div class="o5-spec-body">Work Sans for body. Athletic, direct, no-nonsense. Bebas Neue at large sizes is like a burning billboard — you can't ignore it.</div>
+    <div class="o5-spec-mono">Roboto Mono — 0x9Ec2···f5c6 · 432,000 $PYRE · Epoch 312</div>
+  </div>
+</div>
+
+<script>
+const opts = document.querySelectorAll('.option');
+const btns = document.querySelectorAll('.sel-btn');
+
+function scrollTo(i) {
+  opts[i].scrollIntoView({ behavior: 'smooth' });
+}
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting && e.intersectionRatio > 0.4) {
+      const i = [...opts].indexOf(e.target);
+      btns.forEach((b,j) => b.classList.toggle('active', j === i));
+    }
+  });
+}, { threshold: 0.4 });
+
+opts.forEach(o => obs.observe(o));
+</script>
+</body>
+</html>
