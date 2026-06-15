@@ -133,8 +133,22 @@ export function EmberkeeperIntro() {
   const identity = useIdentity();
 
   // First visit → open at the saved step (resumable). Runs client-side only.
+  //
+  // Escape hatch for review: visiting with `?intro=1` (or `#intro`) FORCES the
+  // intro open from the start, regardless of the "seen" flag and regardless of
+  // mock/live mode. This is how the team and the designer re-watch the whole
+  // flow on demand without clearing storage or hunting for the replay button —
+  // it skips otherwise because it's deliberately first-visit-only.
   useEffect(() => {
     setReady(true);
+    const force =
+      new URLSearchParams(window.location.search).has("intro") ||
+      window.location.hash === "#intro";
+    if (force) {
+      setStep(0);
+      setOpen(true);
+      return;
+    }
     if (localStorage.getItem(SEEN_KEY)) return;
     const saved = Number(localStorage.getItem(STEP_KEY) ?? 0);
     setStep(Number.isFinite(saved) ? Math.min(saved, SCENES.length - 1) : 0);
@@ -150,16 +164,25 @@ export function EmberkeeperIntro() {
     // Mock-only replay control, so the look can be re-tested without clearing
     // storage. Bottom-centre — clear of the DesignerIntro "?" (bottom-right) and
     // the Preview switcher (bottom-left). Never ships to the real app.
+    //
+    // FULL first-time reset: identity now persists server-side (Supabase, keyed
+    // by the session cookie), so just reopening would show the "You're in"
+    // identity scene instead of the virgin connect-vs-guest fork. identity.reset()
+    // clears the guest choice (local + server) and disconnects the mock wallet,
+    // so the designer sees the true first-visit experience on every replay.
     return ready && USE_MOCK ? (
       <button
         onClick={() => {
+          identity.reset(); // clears guest (local + server) + disconnects wallet
+          localStorage.removeItem(SEEN_KEY);
+          localStorage.removeItem(STEP_KEY);
           setStep(0);
           setOpen(true);
         }}
         className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
-        title="Replay the first-time intro (mock only)"
+        title="Replay the full first-time intro from scratch — resets identity so the connect-vs-guest fork shows fresh (mock only)"
       >
-        ↺ Replay intro
+        ↺ Replay first-time intro
       </button>
     ) : null;
   }
