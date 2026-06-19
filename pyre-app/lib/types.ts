@@ -31,7 +31,7 @@ export interface ProtocolStats {
   nextEpochAt: number; // ms timestamp of next hourly decay tick
   scalingFactor: number; // S(t), starts 1.0, falls over time
   stakingRatio: number; // 0..1 share of supply staked
-  activeFireSpirits: number;
+  activeAcolytes: number;
   totalEthDistributed: bigint; // all-time ETH paid to participants (wei)
   volume24h: bigint; // 24h swap volume (wei of ETH)
   bonfire: BonfireState;
@@ -43,8 +43,8 @@ export interface SeriesPoint {
   value: number; // tokens (human units) burned in that bucket
 }
 
-/* --- The Amber Vault: the connected user's Fire Spirit + position -------- */
-export interface FireSpirit {
+/* --- The Amber Vault: the connected user's Pyre Acolyte + position ------- */
+export interface Acolyte {
   exists: boolean; // false until 10k cumulative burned
   tokenId: number | null;
   stage: Stage;
@@ -104,17 +104,131 @@ export interface LeaderboardEntry {
 }
 
 /* --- The Grand Exchange: swap ------------------------------------------- */
-export type SwapDirection = "buy" | "sell"; // buy = ETH->PYRE, sell = PYRE->ETH
+/* The full data model behind a Uniswap-style swap, mapped onto our single
+   PYRE↔ETH v4 pool. The mock returns realistic values for every field so the
+   designer can design (and the dev can drive) the exact swap experience today;
+   ChainDataSource fills the same shapes from V4Quoter/StateView/Universal Router.
+   buy = ETH→PYRE, sell = PYRE→ETH. */
+export type SwapDirection = "buy" | "sell";
+
+/** Which side the user fixed by typing: exact-input (typed "you pay") or
+    exact-output (typed "you receive"). Uniswap supports both. */
+export type SwapKind = "exactIn" | "exactOut";
+
+/** A token in the pair. `address: null` + `isNative: true` denotes native ETH
+    (currency address(0) in the v4 PoolKey). */
+export interface TokenInfo {
+  symbol: string; // "PYRE" | "ETH"
+  name: string; // "Pyre" | "Ether"
+  address: Address | null; // null = native ETH
+  decimals: number;
+  logoURI: string | null;
+  isNative: boolean;
+}
+
+/** An amount of a token plus its fiat value, for the two swap rows. */
+export interface TokenAmount {
+  token: TokenInfo;
+  amount: bigint; // base units (token.decimals)
+  usd: number; // fiat value of `amount`
+}
+
+/** Honest fee breakdown. lp = pool fee tier, hook = our Diamond hook fee,
+    launch = buy-side launch fee that decays to 0 over the launch window. */
+export interface SwapFeeBreakdown {
+  lpFeeBps: number;
+  hookFeeBps: number;
+  launchFeeBps: number; // 0 on sells and after the launch window
+  totalFeeBps: number;
+  feeAmount: bigint; // total fee, denominated in the input token
+  feeUsd: number;
+  disposition: string; // "burned permanently" (sell) | "to the reward pool" (buy)
+}
+
+/** One hop of the order route. We're single-pool, but model a route like
+    Uniswap so the UI's "Order routing" panel is real, not faked. */
+export interface SwapRouteHop {
+  poolId: string; // keccak256(abi.encode(poolKey))
+  feeTier: number; // pool LP fee in bps
+  isDynamicFee: boolean;
+  hook: Address | null; // the Diamond hook on this pool
+  tokenIn: string; // symbol
+  tokenOut: string; // symbol
+}
+
+export type SwapWarning =
+  | { kind: "highPriceImpact"; impact: number } // impact above the safe threshold
+  | { kind: "insufficientLiquidity" } // pool can't fill this size
+  | { kind: "minimalOutput" }; // output rounds to ~0
 
 export interface SwapQuote {
+  kind: SwapKind;
   direction: SwapDirection;
-  amountIn: bigint;
-  amountOut: bigint;
+  input: TokenAmount; // what you pay
+  output: TokenAmount; // what you receive (estimated)
+  executionPrice: number; // output per input, after impact (PYRE/ETH or ETH/PYRE)
+  midPrice: number; // pool spot price before impact (same unit as executionPrice)
   priceImpact: number; // 0..1
-  feeBps: number; // effective fee incl. launch fee if buy
-  feeDisposition: string; // human note: "burned" | "to reward pool"
-  pricePyreInEth: number;
+  fee: SwapFeeBreakdown;
+  minReceived: bigint; // exactIn: output floor after slippage (output token units)
+  maxSold: bigint; // exactOut: input ceiling after slippage (input token units)
+  slippageBps: number; // effective slippage applied
+  route: SwapRouteHop[];
+  gasEstimate: bigint; // wei
+  gasUsd: number;
+  expiresAt: number; // ms; quote refresh deadline (~30s, like Uniswap)
+  warning: SwapWarning | null;
 }
+
+/** Parameters for a quote/swap request. `amount` is the amount on the side the
+    user fixed (`kind`). */
+export interface SwapQuoteParams {
+  direction: SwapDirection;
+  kind: SwapKind;
+  amount: bigint;
+  slippageBps: number;
+}
+
+/** Persisted swap preferences (slippage + deadline), like Uniswap's settings. */
+export interface SwapSettings {
+  slippageMode: "auto" | "custom";
+  slippageBps: number; // used when slippageMode === "custom"
+  deadlineMinutes: number;
+}
+
+/** Live pool context from StateView + the hook (TVL, spot price, liquidity). */
+export interface PoolState {
+  poolId: string;
+  currency0: TokenInfo;
+  currency1: TokenInfo;
+  feeTier: number; // LP fee bps
+  isDynamicFee: boolean;
+  tickSpacing: number;
+  hook: Address | null;
+  sqrtPriceX96: bigint;
+  tick: number;
+  liquidity: bigint; // active liquidity
+  tvlUsd: number;
+  pricePyreInEth: number;
+  pricePyreUsd: number;
+  ethUsd: number;
+}
+
+/** The connected wallet's balances of the pair, for the rows + Max/50%. */
+export interface SwapBalances {
+  pyre: bigint;
+  eth: bigint;
+  pyreUsd: number;
+  ethUsd: number;
+}
+
+/** ERC-20 (PYRE/sell-side) allowance state for the Permit2 flow. Native ETH
+    (buy-side) is always "not-required". */
+export type ApprovalState =
+  | { status: "not-required" } // native ETH input
+  | { status: "needs-approval" } // no ERC-20 allowance to Permit2 yet
+  | { status: "needs-permit" } // approved to Permit2, needs a signature
+  | { status: "ready" }; // good to swap
 
 /* --- The Ashen Cup: community feeds ------------------------------------- */
 export type ActivityKind = "burn" | "stake" | "mint" | "claim" | "swap";
@@ -136,7 +250,7 @@ export interface Announcement {
   at: number;
 }
 
-/* --- The Black Market: Fire Spirit listings (wrapped OpenSea/Blur) ------- */
+/* --- The Black Market: Pyre Acolyte listings (wrapped OpenSea/Blur) ------ */
 export interface MarketListing {
   tokenId: number;
   stage: Stage;

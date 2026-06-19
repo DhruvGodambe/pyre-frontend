@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { useProtocolStats, useActivityFeed } from "@/lib/hooks";
 import { StateView } from "@/components/ui/state";
+import { NavCta } from "@/components/ui/nav-cta";
 import { formatToken, formatAgo, shortAddress } from "@/lib/format";
 import type { ActivityEvent } from "@/lib/types";
 import type { BonfireState } from "@/lib/constants";
@@ -47,6 +48,10 @@ export function BonfirePanel() {
               <StateView query={feed} loading={null}>
                 {(events) => <BurnTicker events={events} />}
               </StateView>
+            </div>
+
+            <div className="mt-4 max-w-xs mx-auto">
+              <NavCta to="forge" tab="burn">Feed the fire · Burn $PYRE</NavCta>
             </div>
           </div>
         );

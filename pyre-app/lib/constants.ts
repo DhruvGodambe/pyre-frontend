@@ -30,7 +30,7 @@ export const EPOCH_SECONDS = 3600; // 1 hour
 export const DRIP_DURATION_DAYS = 7;
 export const DRIP_DURATION_SECONDS = DRIP_DURATION_DAYS * 24 * 3600;
 
-/* --- Fire Spirit stages --------------------------------------------------
+/* --- Pyre Acolyte stages -------------------------------------------------
    NOTE FOR DEV: stage is driven by CUMULATIVE BURN WEIGHT (not staking time).
    The currentStage() sample in DEV_BRIEF.md uses accumulatedStakingTime — that
    is flagged in the brief as leftover OLD-architecture code. The authoritative
@@ -61,7 +61,7 @@ export function stageFromWeight(weight: bigint): {
     return { stage: 2, nextThreshold: STAGES[3].threshold };
   if (weight >= STAGES[1].threshold)
     return { stage: 1, nextThreshold: STAGES[2].threshold };
-  // Below EMBER: no Fire Spirit yet; next target is the EMBER mint threshold.
+  // Below EMBER: no Pyre Acolyte yet; next target is the EMBER mint threshold.
   return { stage: 1, nextThreshold: STAGES[1].threshold };
 }
 

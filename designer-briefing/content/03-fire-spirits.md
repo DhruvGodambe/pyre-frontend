@@ -1,6 +1,6 @@
-# Fire Spirit NFTs
+# Pyre Acolyte NFTs
 
-The Fire Spirit is PYRE's NFT — minted by **burning** tokens (not sold directly at mint). It **evolves in place**: the *same* token transforms as the holder's cumulative burn crosses each threshold — no new token per stage, the art just changes. The contract picks which artwork to show from the wallet's live burn total, so upgrades are automatic and instant.
+The Pyre Acolyte is PYRE's NFT — minted by **burning** tokens (not sold directly at mint). It **evolves in place**: the *same* token transforms as the holder's cumulative burn crosses each threshold — no new token per stage, the art just changes. The contract picks which artwork to show from the wallet's live burn total, so upgrades are automatic and instant.
 
 ## The four stages (locked)
 
@@ -23,7 +23,7 @@ The Fire Spirit is PYRE's NFT — minted by **burning** tokens (not sold directl
 **Leading direction — static images per stage:** one fixed artwork per stage —
 every EMBER looks the same as every other EMBER, and so on. Tiers must read
 instantly and look dramatically different from each other; within a tier,
-identical. Rationale: Fire Spirits are held for their yield, and identical art per
+identical. Rationale: Pyre Acolytes are held for their yield, and identical art per
 tier keeps market value tied to that yield.
 
 **If this path is chosen, no technical format constraints** — full creative
@@ -53,10 +53,10 @@ The first concept pass delivered character art, but it does **not** yet match th
 
 **One decision blocks everything — please resolve first:**
 
-- ⚠️ **Fire entity vs. robed figure.** This spec describes an evolving *fire spirit* (a flame-being gaining power). The delivered concept shows **hooded human acolytes**. Both are valid — the acolyte look fits "the Immolated / inner order" — but we must pick one and align this page *and* the concept art to it. Everything else (LP variant, glyph, the 4 stages) hangs off this call.
+- ⚠️ **Fire entity vs. robed figure.** This spec describes an evolving *Pyre Acolyte* (a flame-being gaining power). The delivered concept shows **hooded human acolytes**. Both are valid — the acolyte look fits "the Immolated / inner order" — but we must pick one and align this page *and* the concept art to it. Everything else (LP variant, glyph, the 4 stages) hangs off this call.
 - ⚠️ **Trait grid is on hold, not dropped.** The delivered "NFT Traits" sheet (skin tones × cloak colors) is a **generative** approach. Static-per-tier was the leading direction, but the static-vs-generative decision is now reopened (see "Art approach" above) — so don't invest in a combinatorial trait system yet, but keep the trait exploration; it becomes relevant if the generative path is chosen.
 
-**Open contract/dev question (not a design task — flagged for the build):** the art is derived from the *holder's* live cumulative burn. That needs reconciling with the Black Market — if a Fire Spirit is bought, does it keep the seller's stage or recompute to the buyer's burn? And can a wallet hold more than one? Unresolved as of 2026-06-12.
+**Open contract/dev question (not a design task — flagged for the build):** the art is derived from the *holder's* live cumulative burn. That needs reconciling with the Black Market — if a Pyre Acolyte is bought, does it keep the seller's stage or recompute to the buyer's burn? And can a wallet hold more than one? Unresolved as of 2026-06-12.
 
 ## Delivery
 

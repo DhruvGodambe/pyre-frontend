@@ -8,7 +8,7 @@
 
 PYRE is a Uniswap V4 hook project built around one inescapable truth: uncommitted tokens burn.
 
-Every swap through the PYRE hook mints $PYRE. Every $PYRE token that sits unstaked loses 0.45% of its value every hour — continuously, without mercy. The only protection is commitment: stake to preserve your balance and earn yield, or burn to forge a Fire Spirit and earn perpetual yield forever.
+Every swap through the PYRE hook mints $PYRE. Every $PYRE token that sits unstaked loses 0.45% of its value every hour — continuously, without mercy. The only protection is commitment: stake to preserve your balance and earn yield, or burn to forge a Pyre Acolyte and earn perpetual yield forever.
 
 There is no neutral position. Every holder is either feeding the pyre or becoming part of it.
 
@@ -18,7 +18,7 @@ There is no neutral position. Every holder is either feeding the pyre or becomin
 
 Every inbound ETH swap through the PYRE V4 hook is a minting event. The hook mints $PYRE to the swapper proportional to ETH volume × BASE_RATE × S(t), where S(t) is the global scaling factor that decays over time. The same ETH volume mints fewer tokens as time passes — early buyers are disproportionately rewarded.
 
-The hook also collects swap fees and routes them to the staking and Fire Spirit yield pools.
+The hook also collects swap fees and routes them to the staking and Pyre Acolyte yield pools.
 
 ---
 
@@ -39,13 +39,13 @@ LP positions decay identically to liquid tokens. No exemptions.
 
 ---
 
-## The Fire Spirit — Burn to Mint
+## The Pyre Acolyte — Burn to Mint
 
-The only way to receive a Fire Spirit is to burn $PYRE permanently.
+The only way to receive a Pyre Acolyte is to burn $PYRE permanently.
 
-Burns accumulate across every transaction. No burn is ever wasted. When a wallet's cumulative total crosses 10,000 $PYRE burned, a Fire Spirit ERC-721 mints automatically. As cumulative burns continue and cross higher thresholds, the Fire Spirit evolves — its art changes, its yield weight multiplies.
+Burns accumulate across every transaction. No burn is ever wasted. When a wallet's cumulative total crosses 10,000 $PYRE burned, a Pyre Acolyte ERC-721 mints automatically. As cumulative burns continue and cross higher thresholds, the Pyre Acolyte evolves — its art changes, its yield weight multiplies.
 
-**There is no cap on Fire Spirits.** Anyone who burns crosses the threshold and earns one, forever. Every new Fire Spirit holder is a new community member who has permanently committed to the protocol.
+**There is no cap on Pyre Acolytes.** Anyone who burns crosses the threshold and earns one, forever. Every new Pyre Acolyte holder is a new community member who has permanently committed to the protocol.
 
 **Two burn paths:**
 
@@ -53,17 +53,33 @@ Burns accumulate across every transaction. No burn is ever wasted. When a wallet
 Permanently destroy $PYRE tokens. Weight is denominated in underlying units (pre-scaling factor) — early burners receive disproportionately more weight per token destroyed, because their burn uses a lower scaling factor.
 
 ### LP Burn
-Deposit ETH + $PYRE into the liquidity pool, then permanently burn the resulting LP shares. Liquidity is locked in the pool forever, deepening the permanent trading floor. LP burners receive a **20% weight bonus** on their $PYRE-equivalent value — meaning they accumulate weight faster and reach stage thresholds sooner. These Fire Spirits receive a distinct gradient overlay in their art at every stage — a permanent visible mark of the deeper commitment.
+Deposit ETH + $PYRE into the liquidity pool to lock liquidity permanently. LP burners
+receive a **20% weight bonus** on their $PYRE-equivalent value — meaning they accumulate
+weight faster and reach stage thresholds sooner. These Pyre Acolytes receive a distinct
+gradient overlay in their art at every stage — a permanent visible mark of the deeper
+commitment.
 
 LP burners progress through the same four stages as token burners (EMBER → FLAME → FORGE → PYRE), using the same cumulative weight thresholds. The gradient overlay is the only visual distinction between the two paths at any given stage.
 
-The locked liquidity continues generating swap fees indefinitely. Rather than losing those fees to the null address, the hook captures them and redirects them into the yield pool — distributed to all stakers and Fire Spirit holders like any other swap fee revenue. LP burners therefore contribute two permanent yield streams to the protocol: the initial burn weight, and ongoing fee generation from permanently locked liquidity.
+> ⚠️ **MECHANISM UNDER REVISION (2026-06-15).** "Burn the resulting LP shares" does not
+> work in Uniswap V4 — V4 mints **no fungible LP tokens** (a position is an ERC-721 NFT).
+> The two outcomes this section promises — *liquidity stays in the pool forever* and *the
+> hook captures the ongoing swap fees and redirects them to the yield pool* — are only
+> achievable by locking the **position NFT** in a locker contract that collects fees to the
+> yield pool. A simpler alternative (let the user exit and burn the ETH + $PYRE proceeds)
+> is a pure supply burn that keeps **no** liquidity in the pool and generates **no** ongoing
+> fees. The path is **not yet locked.** Decide before build — see
+> `dev/LP_BURN_AND_REBASE_V4.md`.
+>
+> This was originally framed as a "design advantage over Yugen." That framing was wrong:
+> the on-chain Yugen has no LP or fee mechanism at all (it's a negative-rebase ERC-20).
+> See `research/yugen-onchain/ANALYSIS.md`.
 
 ---
 
-## Fire Spirit Evolution
+## Pyre Acolyte Evolution
 
-The Fire Spirit advances through four stages based on **cumulative burn weight** — applicable to both token burns and LP burns equally. Burns accumulate permanently — partial burns are saved and count toward the next stage. Both paths share one unified collection and one set of thresholds.
+The Pyre Acolyte advances through four stages based on **cumulative burn weight** — applicable to both token burns and LP burns equally. Burns accumulate permanently — partial burns are saved and count toward the next stage. Both paths share one unified collection and one set of thresholds.
 
 | Stage | Name | Cumulative Weight | Yield Multiplier | Visual |
 |---|---|---|---|---|
@@ -81,7 +97,7 @@ LP burns count at 120% weight — an LP burn of 10,000 $PYRE-equivalent contribu
 > "evolves in place by burn weight" behavior hold either way. See
 > `dev/DEV_BRIEF.md` §3.
 
-**Art (candidate: fully on-chain and generative).** No IPFS. The SVG is generated deterministically from a seed locked permanently at EMBER mint — every Fire Spirit's full final form is already determined the moment it first mints, it just cannot be seen yet. The seed is derived from the tokenId and block data at mint time.
+**Art (candidate: fully on-chain and generative).** No IPFS. The SVG is generated deterministically from a seed locked permanently at EMBER mint — every Pyre Acolyte's full final form is already determined the moment it first mints, it just cannot be seen yet. The seed is derived from the tokenId and block data at mint time.
 
 **Trait system (only applies if the generative path is chosen):**
 - **EMBER** — No generative traits. The silhouette and structure are hardcoded. The fire coloration is generative (pulled from the seed at mint — e.g. warm orange, deep crimson, cold blue-white, pale gold, ashen purple). Every EMBER is structurally the same entity, uniquely colored.
@@ -91,7 +107,7 @@ LP burns count at 120% weight — an LP burn of 10,000 $PYRE-equivalent contribu
 
 As weight accumulates and thresholds are crossed, the art updates automatically — same token ID, same seed, new traits revealed.
 
-**On transfer**: the Fire Spirit carries its current visual stage and all unlocked traits. The new holder's accumulated burns begin at 0 — stage progression is earned, not inherited. Yield settles automatically to the seller at time of transfer.
+**On transfer**: the Pyre Acolyte carries its current visual stage and all unlocked traits. The new holder's accumulated burns begin at 0 — stage progression is earned, not inherited. Yield settles automatically to the seller at time of transfer.
 
 ---
 
@@ -141,10 +157,10 @@ function _launchFee() internal view returns (uint256) {
 
 ## Yield Distribution
 
-The ETH yield pool is shared proportionally across all participants by weight. No fixed split between stakers and Fire Spirit holders — the ratio emerges dynamically from total weight at any given moment.
+The ETH yield pool is shared proportionally across all participants by weight. No fixed split between stakers and Pyre Acolyte holders — the ratio emerges dynamically from total weight at any given moment.
 
 - **Staker weight** = raw staked balance
-- **Fire Spirit weight** = cumulative burn weight (underlying units) × stage multiplier
+- **Pyre Acolyte weight** = cumulative burn weight (underlying units) × stage multiplier
 
 ```
 ETH fees (100%)
@@ -173,7 +189,7 @@ This is purely from swap fees. Price appreciation from supply decay and PYRE bur
 | Action | Score | Effect |
 |---|---|---|
 | **Stake** | +3 | Balance preserved, yield earned, protocol strengthens |
-| **Burn** | +3 | Supply reduced permanently, Fire Spirit minted, perpetual yield claimed |
+| **Burn** | +3 | Supply reduced permanently, Pyre Acolyte minted, perpetual yield claimed |
 | **Hold liquid** | +1 | Tokens decay slowly, no yield, no identity |
 | **Sell** | −3 | Supply pressure, decay accelerates for remaining holders |
 
@@ -185,14 +201,14 @@ Unlike Olympus DAO's (3,3) which was enforced only by narrative, PYRE's (3,3) is
 
 | Attack | Protection |
 |---|---|
-| Burn dust to mint Fire Spirit | Minimum cumulative 10,000 $PYRE before mint |
+| Burn dust to mint Pyre Acolyte | Minimum cumulative 10,000 $PYRE before mint |
 | Buy → LP instead of stake | LP positions decay at the same epoch rate |
-| Sell after minting Fire Spirit | Fire Spirit persists — but the seller earned it and it now trades freely |
+| Sell after minting Pyre Acolyte | Pyre Acolyte persists — but the seller earned it and it now trades freely |
 | Rapid small burns to game weight | Weight in underlying units — each burn records actual underlying, no timing advantage beyond S(t) |
 | Chainlink Automation failure | Lazy epoch evaluation on every protocol interaction |
 | Large sell affecting others | Decay is time-based, not price-based |
 | Drip gaming | Cannot restake until full drip is completed |
-| Buy Fire Spirit on secondary market | New holder's burns begin at 0; stage multiplier on yield uses new holder's own weight |
+| Buy Pyre Acolyte on secondary market | New holder's burns begin at 0; stage multiplier on yield uses new holder's own weight |
 
 ---
 
@@ -214,17 +230,17 @@ Unlike Olympus DAO's (3,3) which was enforced only by narrative, PYRE's (3,3) is
 | Staking decay | 0% |
 | Drip duration | 7 days |
 | Drip decay loss (Era 0) | ~53% |
-| Fire Spirit mint threshold | 10,000 $PYRE cumulative burned |
+| Pyre Acolyte mint threshold | 10,000 $PYRE cumulative burned |
 | EMBER stage | 10,000 $PYRE burned |
 | FLAME stage | 75,000 $PYRE burned |
 | FORGE stage | 150,000 $PYRE burned |
 | PYRE stage | 300,000 $PYRE burned |
 | Stage multipliers | 1× / 1.5× / 2× / 3× |
-| Fire Spirit hard cap | None — open access forever |
+| Pyre Acolyte hard cap | None — open access forever |
 | Yield split | Fully proportional by weight — no fixed % |
 | No yield during drip | Confirmed |
 | LP burn weight bonus | +20% |
 | NFT art rendering | **OPEN — static-per-stage vs on-chain generative SVG (see DEV_BRIEF §3). Evolves in place by burn weight either way.** |
 | Team allocation | 0% |
-| Seed LP | Burned to address(0) |
+| Seed LP | Permanently locked (V4: position NFT locked — see `dev/LP_BURN_AND_REBASE_V4.md`) |
 | Chain | Ethereum mainnet |

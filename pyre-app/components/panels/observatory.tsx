@@ -49,7 +49,7 @@ export function ObservatoryPanel() {
               <Stat label="Supply remaining" value={formatToken(s.totalSupply)} />
               <Stat label="Burned all-time" value={formatToken(s.totalBurned)} accent />
               <Stat label="Staking ratio" value={formatPercent(s.stakingRatio)} />
-              <Stat label="Active Fire Spirits" value={s.activeFireSpirits.toLocaleString()} />
+              <Stat label="Active Acolytes" value={s.activeAcolytes.toLocaleString()} />
               <Stat label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />
               <Stat label="ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />
             </div>

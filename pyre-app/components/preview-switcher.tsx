@@ -11,7 +11,7 @@ import { USE_MOCK } from "@/lib/config";
 import type { Persona } from "@/lib/datasource";
 
 const OPTIONS: { id: Persona; label: string; hint: string }[] = [
-  { id: "newcomer", label: "New wallet", hint: "Empty & locked states: no Fire Spirit, Hall sealed" },
+  { id: "newcomer", label: "New wallet", hint: "Empty & locked states: Pyre Acolyte, Hall sealed" },
   { id: "burner", label: "Burning", hint: "Mid-progression: FLAME, staked, climbing" },
   { id: "veteran", label: "Immolated", hint: "Everything unlocked: PYRE stage, Hall member" },
 ];

@@ -18,13 +18,18 @@ import {
   pyre,
   WAD,
   IMMOLATED_MIN_BURN,
-  TOTAL_FEE_BPS,
   LP_WEIGHT_BONUS,
+  POOL_FEE_BPS,
+  HOOK_FEE_BPS,
+  LAUNCH_FEE_MAX_BPS,
+  LAUNCH_WINDOW_HOURS,
 } from "../constants";
+import { toNumber } from "../format";
+import { TOKENS, POOL } from "../config";
 import type {
   Address,
   ProtocolStats,
-  FireSpirit,
+  Acolyte,
   StakingPosition,
   ImmolatedPosition,
   LeaderboardEntry,
@@ -32,11 +37,15 @@ import type {
   Announcement,
   MarketListing,
   SwapQuote,
+  SwapQuoteParams,
   SwapDirection,
+  PoolState,
+  SwapBalances,
+  ApprovalState,
   QuestTask,
   SeriesPoint,
 } from "../types";
-import type { DataSource, TxResult, MarketFilter } from "./types";
+import type { DataSource, TxResult, MarketFilter, SwapParams } from "./types";
 import {
   fetchQuestTasks,
   completeQuestTask as completeQuestTaskApi,
@@ -46,9 +55,9 @@ import {
 /* Preview personas — switchable at runtime via the on-screen Design Preview
    control (lib/preview.tsx + components/preview-switcher.tsx), so the designer
    can see EVERY state without meeting on-chain thresholds:
-   "newcomer" → empty / locked states (no Fire Spirit, nothing staked, Hall sealed).
+   "newcomer" → empty / locked states (Pyre Acolyte, nothing staked, Hall sealed).
    "burner"   → mid-progression (FLAME, climbing, staked).
-   "veteran"  → full: Fire Spirit, staked, PYRE stage, Immolated member unlocked. */
+   "veteran"  → full: Pyre Acolyte, staked, PYRE stage, Immolated member unlocked. */
 export type Persona = "newcomer" | "burner" | "veteran";
 const DEFAULT_PERSONA: Persona = "veteran";
 
@@ -62,10 +71,146 @@ const randHex = (n: number) =>
   ).join("");
 const addr = (): Address => `0x${randHex(40)}` as Address;
 
+/* ============================================================================
+   Grand Exchange — mock swap "backend"
+   ----------------------------------------------------------------------------
+   A real constant-product (x·y=k) AMM over a seeded PYRE↔ETH pool, so the swap
+   UI behaves like an actual swap: outputs, price impact, slippage floors and
+   fees all respond to trade size. On-chain this is replaced by V4Quoter; the
+   shapes returned here are identical, so the UI is unchanged. All pool math is
+   done in human float (display-only); ChainDataSource returns exact integers.
+   ========================================================================== */
+const ETH_USD = 3000; // mock fiat price of ETH
+const RESERVE_ETH = 2_000; // ETH in the pool (human)
+const RESERVE_PYRE = 950_000_000; // PYRE in the pool (human)
+const POOL_K = RESERVE_ETH * RESERVE_PYRE; // x·y invariant
+const PRICE_ETH_PER_PYRE = RESERVE_ETH / RESERVE_PYRE; // ~2.105e-6
+const PYRE_USD = PRICE_ETH_PER_PYRE * ETH_USD;
+const TVL_USD = RESERVE_ETH * ETH_USD * 2;
+const HIGH_IMPACT = 0.05; // 5%+ → warn (like Uniswap)
+const QUOTE_TTL_MS = 30_000; // quote refresh window
+const GAS_UNITS = 180_000; // ~v4 single-hop swap
+const GAS_GWEI = 12;
+/** Hours since launch (mock). Drives the decaying buy-side launch fee so the
+    designer sees a non-zero launch fee in the breakdown. */
+const LAUNCH_ELAPSED_HOURS = 20;
+/** Stable mock identifiers so the route panel shows a real pool id + the
+    Diamond hook chip. On-chain: poolId = keccak256(abi.encode(poolKey)),
+    hook = CONTRACTS.hook. */
+const MOCK_POOL_ID = `0x${"7f".repeat(32)}`;
+const MOCK_HOOK = `0x${"d1a".repeat(13)}0` as Address; // 40 hex, clearly a placeholder
+
+/** Human number → 18-decimal base units, exponent-safe (toFixed avoids 1e-7). */
+function toWei(human: number): bigint {
+  if (!isFinite(human) || human <= 0) return 0n;
+  const [w, f] = human.toFixed(18).split(".");
+  return BigInt(w) * WAD + BigInt(f);
+}
+
+/** The core AMM quote. Pure function of the request — same call the V4Quoter
+    answers on-chain. Returns everything the swap UI displays. */
+function computePoolQuote(p: SwapQuoteParams): SwapQuote {
+  const isBuy = p.direction === "buy";
+  const slip = Math.max(0, p.slippageBps) / 10_000;
+
+  // Fees: pool LP fee + hook fee always; launch fee only on buys, decaying to 0.
+  const launchBps = isBuy
+    ? Math.round(
+        LAUNCH_FEE_MAX_BPS *
+          Math.max(0, (LAUNCH_WINDOW_HOURS - LAUNCH_ELAPSED_HOURS) / LAUNCH_WINDOW_HOURS)
+      )
+    : 0;
+  const totalBps = POOL_FEE_BPS + HOOK_FEE_BPS + launchBps;
+  const feeRate = totalBps / 10_000;
+
+  // in/out reserves for this direction
+  const reserveIn = isBuy ? RESERVE_ETH : RESERVE_PYRE;
+  const reserveOut = isBuy ? RESERVE_PYRE : RESERVE_ETH;
+  const spotOutPerIn = reserveOut / reserveIn; // ideal price, fee-excluded
+
+  let amountIn: number;
+  let amountOut: number;
+  let warning: SwapQuote["warning"] = null;
+
+  if (p.kind === "exactIn") {
+    amountIn = toNumber(p.amount);
+    const inAfterFee = amountIn * (1 - feeRate);
+    amountOut = reserveOut - POOL_K / (reserveIn + inAfterFee);
+  } else {
+    amountOut = toNumber(p.amount);
+    if (amountOut >= reserveOut * 0.95) {
+      warning = { kind: "insufficientLiquidity" };
+      amountOut = reserveOut * 0.95; // clamp so the curve stays finite
+    }
+    const inAfterFee = POOL_K / (reserveOut - amountOut) - reserveIn;
+    amountIn = inAfterFee / (1 - feeRate);
+  }
+
+  const inAfterFee = amountIn * (1 - feeRate);
+  const idealOut = inAfterFee * spotOutPerIn;
+  const priceImpact = idealOut > 0 ? Math.max(0, (idealOut - amountOut) / idealOut) : 0;
+  const feeAmountIn = amountIn * feeRate; // fee, denominated in the input token
+  const inUsdRate = isBuy ? ETH_USD : PYRE_USD;
+  const outUsdRate = isBuy ? PYRE_USD : ETH_USD;
+
+  if (!warning && priceImpact >= HIGH_IMPACT) {
+    warning = { kind: "highPriceImpact", impact: priceImpact };
+  } else if (!warning && amountOut > 0 && toWei(amountOut) === 0n) {
+    warning = { kind: "minimalOutput" };
+  }
+
+  const gasEth = (GAS_UNITS * GAS_GWEI) / 1e9;
+
+  return {
+    kind: p.kind,
+    direction: p.direction,
+    input: {
+      token: isBuy ? TOKENS.eth : TOKENS.pyre,
+      amount: toWei(amountIn),
+      usd: amountIn * inUsdRate,
+    },
+    output: {
+      token: isBuy ? TOKENS.pyre : TOKENS.eth,
+      amount: toWei(amountOut),
+      usd: amountOut * outUsdRate,
+    },
+    executionPrice: amountIn > 0 ? amountOut / amountIn : spotOutPerIn,
+    midPrice: spotOutPerIn,
+    priceImpact,
+    fee: {
+      lpFeeBps: POOL_FEE_BPS,
+      hookFeeBps: HOOK_FEE_BPS,
+      launchFeeBps: launchBps,
+      totalFeeBps: totalBps,
+      feeAmount: toWei(feeAmountIn),
+      feeUsd: feeAmountIn * inUsdRate,
+      disposition: isBuy ? "to the reward pool" : "burned permanently",
+    },
+    minReceived: p.kind === "exactIn" ? toWei(amountOut * (1 - slip)) : 0n,
+    maxSold: p.kind === "exactOut" ? toWei(amountIn * (1 + slip)) : 0n,
+    slippageBps: p.slippageBps,
+    route: [
+      {
+        poolId: MOCK_POOL_ID,
+        feeTier: POOL.feeTier,
+        isDynamicFee: POOL.isDynamicFee,
+        hook: MOCK_HOOK,
+        tokenIn: isBuy ? "ETH" : "PYRE",
+        tokenOut: isBuy ? "PYRE" : "ETH",
+      },
+    ],
+    gasEstimate: toWei(gasEth),
+    gasUsd: gasEth * ETH_USD,
+    expiresAt: Date.now() + QUOTE_TTL_MS,
+    warning,
+  };
+}
+
 /* --- The in-memory world ------------------------------------------------- */
 interface World {
   liquid: bigint;
   staked: bigint;
+  ethBalance: bigint; // native ETH, for the Grand Exchange rows + buys
   pendingRewardsEth: bigint;
   cumulativeBurnWeight: bigint;
   immolatedWeight: bigint;
@@ -75,7 +220,13 @@ interface World {
   boost: StakingPosition["boost"];
   totalBurned: bigint;
   scalingFactor: number;
+  /** Permit2 approval progress for selling PYRE: 0 = none (needs-approval),
+      1 = approved to Permit2 (needs-permit), 2 = permit signed (ready). */
+  pyrePermitPhase: 0 | 1 | 2;
 }
+
+/** ETH amount (human) → wei. */
+const eth = (amount: number): bigint => toWei(amount);
 
 // Quest-completer boost, ~5 days left (shown only to the earner).
 const questBoost = (): StakingPosition["boost"] => ({
@@ -90,6 +241,7 @@ function seedWorld(persona: Persona): World {
       return {
         liquid: pyre(4_200),
         staked: 0n,
+        ethBalance: eth(0.42),
         pendingRewardsEth: 0n,
         cumulativeBurnWeight: 0n,
         immolatedWeight: 0n,
@@ -99,11 +251,13 @@ function seedWorld(persona: Persona): World {
         boost: null, // hasn't completed the quests
         totalBurned: pyre(2_400_000),
         scalingFactor: 0.91,
+        pyrePermitPhase: 0,
       };
     case "veteran":
       return {
         liquid: pyre(128_500),
         staked: pyre(540_000),
+        ethBalance: eth(18.6),
         pendingRewardsEth: 318_000_000_000_000_000n, // 0.318 ETH
         cumulativeBurnWeight: pyre(320_000),
         immolatedWeight: pyre(45_000),
@@ -113,12 +267,14 @@ function seedWorld(persona: Persona): World {
         boost: questBoost(),
         totalBurned: pyre(2_400_000),
         scalingFactor: 0.91,
+        pyrePermitPhase: 0,
       };
     case "burner":
     default:
       return {
         liquid: pyre(61_300),
         staked: pyre(180_000),
+        ethBalance: eth(3.2),
         pendingRewardsEth: 74_000_000_000_000_000n, // 0.074 ETH
         cumulativeBurnWeight: pyre(92_000), // FLAME, climbing to FORGE
         immolatedWeight: 0n,
@@ -128,6 +284,7 @@ function seedWorld(persona: Persona): World {
         boost: questBoost(),
         totalBurned: pyre(2_400_000),
         scalingFactor: 0.91,
+        pyrePermitPhase: 0,
       };
   }
 }
@@ -167,7 +324,7 @@ export class MockDataSource implements DataSource {
       nextEpochAt: nextHourBoundary(),
       scalingFactor: w.scalingFactor,
       stakingRatio: 0.37,
-      activeFireSpirits: 1_284,
+      activeAcolytes: 1_284,
       totalEthDistributed: pyre(2_190).valueOf(), // ~2190 ETH all-time (display only)
       volume24h: 940_000_000_000_000_000_000n, // ~940 ETH
       bonfire: bonfireState(w.totalBurned),
@@ -175,7 +332,7 @@ export class MockDataSource implements DataSource {
     };
   }
 
-  async getFireSpirit(_address: Address): Promise<FireSpirit> {
+  async getAcolyte(_address: Address): Promise<Acolyte> {
     await wait(LATENCY_MS);
     const w = this.world;
     const exists = w.cumulativeBurnWeight >= STAGES[1].threshold;
@@ -333,23 +490,65 @@ export class MockDataSource implements DataSource {
     );
   }
 
-  async getSwapQuote(direction: SwapDirection, amountIn: bigint): Promise<SwapQuote> {
-    await wait(120);
-    const price = 0.0000021; // PYRE price in ETH (placeholder)
-    const out =
-      direction === "buy"
-        ? (amountIn * WAD) / BigInt(Math.round(price * 1e18)) // eth->pyre
-        : (amountIn * BigInt(Math.round(price * 1e18))) / WAD; // pyre->eth
-    const feeBps = TOTAL_FEE_BPS; // launch fee layered on in ChainDataSource later
+  async getSwapQuote(params: SwapQuoteParams): Promise<SwapQuote> {
+    await wait(120); // quote latency (V4Quoter eth_call round-trip on-chain)
+    return computePoolQuote(params);
+  }
+
+  async getPoolState(): Promise<PoolState> {
+    await wait(LATENCY_MS);
+    // sqrtPriceX96 / tick are display approximations here; on-chain they come
+    // straight from StateView.getSlot0(poolId).
+    const price1per0 = RESERVE_PYRE / RESERVE_ETH; // currency1(PYRE) per currency0(ETH)
+    const sqrtPriceX96 = BigInt(Math.floor(Math.sqrt(price1per0) * 2 ** 96));
+    const tick = Math.floor(Math.log(price1per0) / Math.log(1.0001));
     return {
-      direction,
-      amountIn,
-      amountOut: (out * BigInt(10_000 - feeBps)) / 10_000n,
-      priceImpact: Number(amountIn) / 1e24, // tiny placeholder
-      feeBps,
-      feeDisposition: direction === "sell" ? "burned permanently" : "to the reward pool",
-      pricePyreInEth: price,
+      poolId: MOCK_POOL_ID,
+      currency0: TOKENS.eth, // address(0) sorts first
+      currency1: TOKENS.pyre,
+      feeTier: POOL.feeTier,
+      isDynamicFee: POOL.isDynamicFee,
+      tickSpacing: POOL.tickSpacing,
+      hook: MOCK_HOOK,
+      sqrtPriceX96,
+      tick,
+      liquidity: toWei(Math.sqrt(POOL_K)), // ~active liquidity proxy
+      tvlUsd: TVL_USD,
+      pricePyreInEth: PRICE_ETH_PER_PYRE,
+      pricePyreUsd: PYRE_USD,
+      ethUsd: ETH_USD,
     };
+  }
+
+  async getSwapBalances(_address: Address): Promise<SwapBalances> {
+    await wait(LATENCY_MS);
+    const w = this.world;
+    return {
+      pyre: w.liquid,
+      eth: w.ethBalance,
+      pyreUsd: toNumber(w.liquid) * PYRE_USD,
+      ethUsd: toNumber(w.ethBalance) * ETH_USD,
+    };
+  }
+
+  async getApprovalState(
+    _address: Address,
+    direction: SwapDirection,
+    amount: bigint
+  ): Promise<ApprovalState> {
+    await wait(90);
+    // Buying spends native ETH → no ERC-20 allowance needed.
+    if (direction === "buy") return { status: "not-required" };
+    if (amount <= 0n) return { status: "ready" };
+    // Selling PYRE goes through Permit2: approve once, then sign a permit.
+    switch (this.world.pyrePermitPhase) {
+      case 0:
+        return { status: "needs-approval" };
+      case 1:
+        return { status: "needs-permit" };
+      default:
+        return { status: "ready" };
+    }
   }
 
   // Quests are off-chain + permanent — real backend in every mode (see
@@ -429,8 +628,35 @@ export class MockDataSource implements DataSource {
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 
-  async swap(_address: Address, _direction: SwapDirection, _amountIn: bigint): Promise<TxResult> {
+  /** Permit2 flow for the sell side: first call = approve PYRE to Permit2
+      (an on-chain tx), second call = sign the permit (gasless on-chain, modeled
+      as instant here). Each call advances one phase so the designer sees every
+      step. ETH buys never reach here. */
+  async approveToken(_address: Address): Promise<TxResult> {
     await wait(TX_MS);
+    if (this.world.pyrePermitPhase < 2) {
+      this.world.pyrePermitPhase = (this.world.pyrePermitPhase + 1) as 0 | 1 | 2;
+    }
+    return { ok: true, hash: `0x${randHex(64)}` };
+  }
+
+  async swap(_address: Address, params: SwapParams): Promise<TxResult> {
+    await wait(TX_MS);
+    const quote = computePoolQuote(params);
+    if (quote.warning?.kind === "insufficientLiquidity") {
+      return { ok: false, error: "Insufficient liquidity for this trade" };
+    }
+    const payIn = quote.input.amount;
+    const getOut = quote.output.amount;
+    if (params.direction === "buy") {
+      if (payIn > this.world.ethBalance) return { ok: false, error: "Insufficient ETH balance" };
+      this.world.ethBalance -= payIn;
+      this.world.liquid += getOut;
+    } else {
+      if (payIn > this.world.liquid) return { ok: false, error: "Insufficient $PYRE balance" };
+      this.world.liquid -= payIn;
+      this.world.ethBalance += getOut;
+    }
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 

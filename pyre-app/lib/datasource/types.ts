@@ -15,7 +15,7 @@
 import type {
   Address,
   ProtocolStats,
-  FireSpirit,
+  Acolyte,
   StakingPosition,
   ImmolatedPosition,
   LeaderboardEntry,
@@ -23,7 +23,11 @@ import type {
   Announcement,
   MarketListing,
   SwapQuote,
+  SwapQuoteParams,
   SwapDirection,
+  PoolState,
+  SwapBalances,
+  ApprovalState,
   QuestTask,
 } from "../types";
 
@@ -40,10 +44,19 @@ export interface MarketFilter {
   immolatedOnly?: boolean;
 }
 
+/** Everything the swap write needs: the user-fixed amount/side, the slippage
+    floor (minReceived/maxSold), and the deadline. Mirrors what Universal
+    Router's V4_SWAP command is built from. */
+export interface SwapParams extends SwapQuoteParams {
+  /** exactIn: floor on output. exactOut: ceiling on input. Base units. */
+  limitAmount: bigint;
+  deadlineMinutes: number;
+}
+
 export interface DataSource {
   /* --- Reads ----------------------------------------------------------- */
   getProtocolStats(): Promise<ProtocolStats>;
-  getFireSpirit(address: Address): Promise<FireSpirit>;
+  getAcolyte(address: Address): Promise<Acolyte>;
   getStakingPosition(address: Address): Promise<StakingPosition>;
   getImmolatedPosition(address: Address): Promise<ImmolatedPosition>;
   getUserHistory(address: Address): Promise<ActivityEvent[]>;
@@ -52,7 +65,15 @@ export interface DataSource {
   getActivityFeed(): Promise<ActivityEvent[]>;
   getAnnouncements(): Promise<Announcement[]>;
   getMarketListings(filter?: MarketFilter): Promise<MarketListing[]>;
-  getSwapQuote(direction: SwapDirection, amountIn: bigint): Promise<SwapQuote>;
+  /* --- The Grand Exchange (Uniswap-v4 swap) ---------------------------- */
+  getSwapQuote(params: SwapQuoteParams): Promise<SwapQuote>;
+  getPoolState(): Promise<PoolState>;
+  getSwapBalances(address: Address): Promise<SwapBalances>;
+  getApprovalState(
+    address: Address,
+    direction: SwapDirection,
+    amount: bigint
+  ): Promise<ApprovalState>;
   getQuestTasks(address: Address | null): Promise<QuestTask[]>;
 
   /* --- Writes (transactions) ------------------------------------------- */
@@ -64,7 +85,9 @@ export interface DataSource {
   claimStakingRewards(address: Address): Promise<TxResult>;
   immolatedBurn(address: Address, amount: bigint): Promise<TxResult>;
   claimImmolatedYield(address: Address): Promise<TxResult>;
-  swap(address: Address, direction: SwapDirection, amountIn: bigint): Promise<TxResult>;
+  /** Approve PYRE to Permit2 (sell side). No-op/native on the buy side. */
+  approveToken(address: Address): Promise<TxResult>;
+  swap(address: Address, params: SwapParams): Promise<TxResult>;
 
   /* --- Quest funnel ---------------------------------------------------- */
   completeQuestTask(taskId: string): Promise<TxResult>;

@@ -11,6 +11,7 @@ import { VillageShell } from "./village-shell";
 import { PreviewSwitcher } from "@/components/preview-switcher";
 import { DesignerIntro } from "@/components/designer-intro";
 import { EmberkeeperIntro } from "@/components/emberkeeper-intro";
+import { PyreIntro } from "@/components/pyre-intro";
 import { captureReferral } from "@/lib/quests/client";
 
 export function AppShell() {
@@ -31,6 +32,9 @@ export function AppShell() {
     <>
       {isDesktop ? <VillageShell /> : <MobileShell />}
       <PreviewSwitcher />
+      {/* The cinematic brand film — plays first on arrival, over everything,
+          with a Skip. When it ends/skips, the Emberkeeper onboarding takes over. */}
+      <PyreIntro />
       {/* The real, user-facing first-time onboarding (shows in every mode). */}
       <EmberkeeperIntro />
       {/* The mock-only design-preview aid (different audience: the designer). */}

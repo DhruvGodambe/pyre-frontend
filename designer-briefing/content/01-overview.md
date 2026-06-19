@@ -1,6 +1,6 @@
 # What PYRE Is
 
-PYRE is a deflationary token protocol on Ethereum. The core idea: every unstaked token **decays** — burning away hour by hour like fuel in a fire. Holders escape decay by **staking** (which earns real ETH yield), or lean into it by **burning** tokens deliberately, which earns them an evolving on-chain NFT called a **Fire Spirit**. The most committed burners pass through a final gate and join **The Immolated** — the protocol's inner circle.
+PYRE is a deflationary token protocol on Ethereum. The core idea: every unstaked token **decays** — burning away hour by hour like fuel in a fire. Holders escape decay by **staking** (which earns real ETH yield), or lean into it by **burning** tokens deliberately, which earns them an evolving on-chain NFT called a **Pyre Acolyte**. The most committed burners pass through a final gate and join **The Immolated** — the protocol's inner circle.
 
 > Everything in PYRE is sacrifice and reward. The brand must feel like a ritual, not a casino.
 

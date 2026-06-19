@@ -1,9 +1,9 @@
-/* Placeholder for the Fire Spirit's on-chain SVG. When the NFT contract ships,
+/* Placeholder for the Pyre Acolyte's on-chain SVG. When the NFT contract ships,
    `svg` (from tokenURI) renders here instead of the placeholder. Stage colour,
    LP gradient and Immolated sigil markers are shown so the variants are visible
    in the skeleton. */
 
-import type { FireSpirit } from "@/lib/types";
+import type { Acolyte } from "@/lib/types";
 import { Badge } from "./primitives";
 
 const STAGE_COLOR: Record<number, string> = {
@@ -13,19 +13,19 @@ const STAGE_COLOR: Record<number, string> = {
   4: "var(--color-stage-pyre)",
 };
 
-export function FireSpiritArt({
-  spirit,
+export function AcolyteArt({
+  acolyte,
   size = 200,
 }: {
-  spirit: FireSpirit;
+  acolyte: Acolyte;
   size?: number;
 }) {
-  if (spirit.svg) {
+  if (acolyte.svg) {
     // Real on-chain SVG markup.
     return (
       <div
         style={{ width: size, height: size }}
-        dangerouslySetInnerHTML={{ __html: spirit.svg }}
+        dangerouslySetInnerHTML={{ __html: acolyte.svg }}
       />
     );
   }
@@ -35,24 +35,24 @@ export function FireSpiritArt({
       style={{
         width: size,
         height: size,
-        background: `radial-gradient(circle at 50% 60%, ${STAGE_COLOR[spirit.stage]}55, var(--color-surface) 70%)`,
+        background: `radial-gradient(circle at 50% 60%, ${STAGE_COLOR[acolyte.stage]}55, var(--color-surface) 70%)`,
       }}
     >
       <span className="text-6xl" aria-hidden>
         🔥
       </span>
-      {spirit.isLP && (
+      {acolyte.isLP && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: "linear-gradient(135deg, transparent, var(--color-brand-soft)22)" }}
         />
       )}
       <div className="absolute bottom-2 left-2 flex gap-1">
-        {spirit.isLP && <Badge tone="brand">LP</Badge>}
-        {spirit.isImmolated && <Badge tone="danger">Immolated</Badge>}
+        {acolyte.isLP && <Badge tone="brand">LP</Badge>}
+        {acolyte.isImmolated && <Badge tone="danger">Immolated</Badge>}
       </div>
       <span className="absolute top-2 right-2 text-text-3 text-[10px] tabular">
-        #{spirit.tokenId}
+        #{acolyte.tokenId}
       </span>
     </div>
   );

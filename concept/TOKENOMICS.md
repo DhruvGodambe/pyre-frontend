@@ -25,13 +25,13 @@ No $PYRE exists before the first swap. Supply grows from actual demand and contr
 
 ## Token States
 
-| State | Decay | Yield | Fire Spirit |
+| State | Decay | Yield | Pyre Acolyte |
 |---|---|---|---|
 | **Liquid** | Yes — epoch rate | None | Not affected |
 | **Staked** | 0% | Yes — proportional by staked weight | Not affected |
 | **Dripping** | Yes — epoch rate | None | Not affected |
 
-Fire Spirit is earned by burning, not staking. LP positions decay at the same epoch rate as liquid wallet tokens.
+Pyre Acolyte is earned by burning, not staking. LP positions decay at the same epoch rate as liquid wallet tokens.
 
 ---
 
@@ -78,11 +78,11 @@ The exit cost decreases meaningfully as the protocol matures — rewarding patie
 
 ---
 
-## Fire Spirit — Burn to Mint
+## Pyre Acolyte — Burn to Mint
 
-The Fire Spirit ERC-721 is earned by permanently burning $PYRE. Burns accumulate across multiple transactions — no single burn needs to meet the full threshold. When a wallet's cumulative total crosses 10,000 $PYRE burned, a Fire Spirit mints automatically. Subsequent burns upgrade the stage automatically.
+The Pyre Acolyte ERC-721 is earned by permanently burning $PYRE. Burns accumulate across multiple transactions — no single burn needs to meet the full threshold. When a wallet's cumulative total crosses 10,000 $PYRE burned, a Pyre Acolyte mints automatically. Subsequent burns upgrade the stage automatically.
 
-**No hard cap.** Any wallet that reaches the threshold receives a Fire Spirit, forever.
+**No hard cap.** Any wallet that reaches the threshold receives a Pyre Acolyte, forever.
 
 **Stage thresholds (cumulative burn weight — both paths unified):**
 
@@ -97,7 +97,7 @@ The Fire Spirit ERC-721 is earned by permanently burning $PYRE. Burns accumulate
 
 | Path | Weight | Stages | Visual |
 |---|---|---|---|
-| Token burn | Underlying units at burn time | EMBER → FLAME → FORGE → PYRE | Standard Fire Spirit SVG |
+| Token burn | Underlying units at burn time | EMBER → FLAME → FORGE → PYRE | Standard Pyre Acolyte SVG |
 | LP burn | Underlying units × 120% (+20% bonus) | EMBER → FLAME → FORGE → PYRE | Gradient overlay at every stage |
 
 Both paths share one collection and one set of thresholds. LP burns accumulate weight 20% faster — reaching each stage sooner than an equivalent token burn. Weight is denominated in underlying units (pre-scaling factor). Early burners receive more weight per token because the scaling factor is higher at launch.
@@ -110,7 +110,23 @@ Both paths share one collection and one set of thresholds. LP burns accumulate w
 - PYRE: 3 traits total (all prior retained + 1 final unlock)
 - LP gradient overlay and Immolated glyph are rendered as additional layers on top of whatever stage/traits the NFT holds.
 
-**LP burn fee capture:** When LP shares are burned, the underlying ETH + $PYRE liquidity remains in the pool permanently and continues generating swap fees. These fees are captured by the hook and redirected into the yield pool — not lost to address(0). LP burners therefore contribute two permanent yield streams: their initial burn weight, and ongoing fee generation from locked liquidity. This is PYRE's design advantage over YUGEN, which does not capture these orphaned fees.
+**LP burn fee capture — ⚠️ MECHANISM UNDER REVISION (2026-06-15):** The original
+description here ("burn LP shares, liquidity stays in the pool, hook captures the
+orphaned fees, unlike YUGEN") rests on two errors:
+
+1. **Uniswap V4 mints no fungible LP tokens** — there are no "LP shares" to burn to
+   `address(0)`. A position is an ERC-721 NFT. Keeping liquidity in the pool *and*
+   capturing its fees requires an **NFT-locker** contract, not a burn.
+2. **YUGEN has no LP or fee mechanism to out-do.** The verified on-chain Yugen
+   (`research/yugen-onchain/`) is a negative-rebase ERC-20 — it does no LP burning and
+   captures no fees. The "design advantage over YUGEN" claim was comparing against a
+   mechanism Yugen never had. PYRE's real Yugen lineage is the **S(t) decay + staking
+   protection + Pyre Acolyte burn-weight**, which PYRE already implements.
+
+The intended "permanent liquidity + fee capture into the yield pool" outcome is still
+achievable, but only via the locker pattern. The path (locker vs. a simpler
+exit-and-burn-proceeds with no ongoing fees) is **not yet locked** — see
+`dev/LP_BURN_AND_REBASE_V4.md`.
 
 ---
 
@@ -137,15 +153,15 @@ ETH fee revenue (100%)
 ├── Team treasury     — 20%
 └── Yield pool        — 80%
     ├── Stakers         proportional to staked balance
-    └── Fire Spirits    proportional to burn weight × stage multiplier
+    └── Pyre Acolytes    proportional to burn weight × stage multiplier
 
 Sell-side $PYRE fees  — 100% burned
 Burned LP fees        — 100% to yield pool
 ```
 
-No fixed split between stakers and Fire Spirit holders — determined dynamically by relative weight.
+No fixed split between stakers and Pyre Acolyte holders — determined dynamically by relative weight.
 
-**Stage multipliers on Fire Spirit yield weight:**
+**Stage multipliers on Pyre Acolyte yield weight:**
 
 | Stage | Multiplier | Effect |
 |---|---|---|
@@ -175,8 +191,8 @@ All burns are permanent. Tokens removed from supply are never re-minted.
 |---|---|
 | **Liquid decay** | Epoch rate on all unstaked + LP tokens — continuous |
 | **Drip decay** | Epoch rate during 7-day exit window |
-| **Fire Spirit token burn** | Minimum 10,000 $PYRE cumulative to mint EMBER — permanent |
-| **Fire Spirit LP burn** | ETH + $PYRE LP shares burned to address(0) — permanent |
+| **Pyre Acolyte token burn** | Minimum 10,000 $PYRE cumulative to mint EMBER — permanent |
+| **Pyre Acolyte LP burn** | ⚠️ No LP shares exist in V4 — implemented via NFT-locker or exit-and-burn (path open; see `dev/LP_BURN_AND_REBASE_V4.md`) |
 
 Liquid decay is the dominant sink. It is continuous, cannot be paused, and affects every uncommitted token in existence — including LP positions.
 
@@ -209,7 +225,9 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 
 - Funded by the team at launch using their own ETH
 - Zero $PYRE team allocation used
-- LP tokens burned to `address(0)` — permanently locked
+- Liquidity permanently locked — ⚠️ in V4 this means the **position NFT** is locked
+  (held by a locker / sent to a dead address), not "LP tokens burned to address(0)"
+  (no LP tokens exist in V4). See `dev/LP_BURN_AND_REBASE_V4.md`.
 - External LPs may add liquidity organically
 - Seed LP creates the permanent trading floor — the pool cannot be drained
 
@@ -224,13 +242,13 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - [x] Drip duration: **7 days**
 - [x] Drip loss (Era 0): **~53%**
 - [x] No yield during drip: **confirmed**
-- [x] Fire Spirit mint: **burn-to-mint, 10,000 $PYRE cumulative**
+- [x] Pyre Acolyte mint: **burn-to-mint, 10,000 $PYRE cumulative**
 - [x] EMBER threshold: **10,000 $PYRE burned**
 - [x] FLAME threshold: **75,000 $PYRE burned**
 - [x] FORGE threshold: **150,000 $PYRE burned**
 - [x] PYRE threshold: **300,000 $PYRE burned**
 - [x] Stage multipliers: **1× / 1.5× / 2× / 3×**
-- [x] Fire Spirit hard cap: **None**
+- [x] Pyre Acolyte hard cap: **None**
 - [x] Hook fee: **4% (buy and sell)**
 - [x] Pool swap fee: **1%**
 - [x] Total effective fee: **5% each way**
@@ -239,8 +257,8 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - [x] Sell-side fee: **100% burned**
 - [x] Yield split: **fully proportional by weight, no fixed %**
 - [x] LP burn bonus: **+20% weight**
-- [x] NFT: **single type (Fire Spirit), tradeable ERC-721** · [ ] rendering approach **OPEN** (static-per-stage vs on-chain generative SVG — see DEV_BRIEF §3)
+- [x] NFT: **single type (Pyre Acolyte), tradeable ERC-721** · [ ] rendering approach **OPEN** (static-per-stage vs on-chain generative SVG — see DEV_BRIEF §3)
 - [x] Staker visual identity: **None — staking is financial only**
 - [x] Team allocation: **0%**
-- [x] Seed LP: **burned to address(0)**
+- [x] Seed LP: **permanently locked** (V4: position NFT locked, not "LP tokens to address(0)" — see `dev/LP_BURN_AND_REBASE_V4.md`)
 - [x] Chain: **Ethereum mainnet**

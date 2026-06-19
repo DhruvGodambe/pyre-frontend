@@ -29,6 +29,7 @@
    ========================================================================== */
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { ProgressBar, Button, Field } from "@/components/ui/primitives";
 import { QUEST_CATALOG } from "@/lib/quests/catalog";
@@ -38,7 +39,7 @@ import { useNavigation } from "@/lib/navigation";
 import { useWallet } from "@/lib/wallet";
 import { shortAddress } from "@/lib/format";
 import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
-import { USE_MOCK } from "@/lib/config";
+import { USE_MOCK, asset } from "@/lib/config";
 
 /* localStorage keys — "seen" gates the auto-show; "step" makes it resumable. */
 const SEEN_KEY = "pyre_intro_seen";
@@ -69,15 +70,15 @@ const TOUR_LINE: Record<BuildingId, string> = {
   bonfire:
     "The heart of it all. Every $PYRE fed to the fire feeds this flame. Watch the burn climb, live.",
   forge:
-    "Where you act. Stake to shield your $PYRE from the decay, or burn it to forge and grow your Fire Spirit.",
+    "Where you act. Stake your $PYRE to earn ETH yield and shield it from the decay — then burn $PYRE to forge your Pyre Acolyte, which multiplies that yield up to 3×.",
   vault:
-    "Your own hold. Your Fire Spirit, your balances, your standing in the fire. Everything here is yours.",
+    "Your own hold. Your Pyre Acolyte, your balances, your yield, your standing in the fire. Everything here is yours.",
   observatory:
     "The watchtower. Read the whole protocol at a glance: supply, decay, burns, yield. No wallet needed to look.",
   exchange:
     "The trading floor. Swap ETH and $PYRE, every fee shown to you honestly. Nothing is hidden in the dark.",
   market:
-    "The bazaar. Browse and claim the Fire Spirits that other wallets have forged in the flame.",
+    "The bazaar. Browse and claim the Pyre Acolytes that other wallets have forged in the flame.",
   immolated:
     "The inner order. Reach the Pyre, burn once more, and these doors open to a deeper share of the fire.",
   tavern:
@@ -105,7 +106,7 @@ const SCENES: Scene[] = [
     kind: "lore",
     title: "The fire & the decay.",
     body:
-      "Every $PYRE left idle slowly decays away. But what you burn is never lost. It forges a Fire Spirit that is yours, and it grows each time you feed the flame.",
+      "Every $PYRE left idle slowly decays away. Stake it to earn ETH and hold back the decay — and what you burn is never lost: it forges a Pyre Acolyte that is yours, multiplying your yield each time you feed the flame.",
   },
   {
     kind: "lore",
@@ -335,15 +336,26 @@ function BuildingScene({ id }: { id: BuildingId }) {
   const n = TOUR.indexOf(id) + 1;
   return (
     <div className="space-y-4">
-      {/* Exterior close-up — placeholder for the designer's building art. */}
+      {/* Exterior close-up — the designer's building art (glyph fallback until
+          a building's art is delivered, e.g. the Observatory). */}
       <div
-        className="h-32 rounded-md flex items-center justify-center text-5xl border border-surface-3/60"
+        className="relative h-36 rounded-md flex items-end justify-center overflow-hidden border border-surface-3/60"
         style={{
           background:
-            "radial-gradient(circle at 50% 70%, #221a12, var(--color-surface) 75%)",
+            "radial-gradient(circle at 50% 75%, #221a12, var(--color-surface) 78%)",
         }}
       >
-        {glyph(id)}
+        {b.art ? (
+          <Image
+            src={asset(b.art)}
+            alt={b.name}
+            width={1000}
+            height={855}
+            className="max-h-[92%] w-auto object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+          />
+        ) : (
+          <span className="text-5xl pb-4">{glyph(id)}</span>
+        )}
       </div>
       <div>
         <div className="text-text-3 text-[11px] uppercase tracking-widest mb-1">

@@ -25,9 +25,9 @@ Warm amber/orange lighting. Candles, lanterns, ivy, cobblestone, chimney smoke. 
 | The Grand Exchange | Token swap (PYRE/ETH) |
 | The Forge | Staking & burning — fire particle effects |
 | Hall of the Immolated | Inner-circle panel + leaderboard |
-| The Amber Vault | Personal wallet view — holdings, Fire Spirit, tier |
+| The Amber Vault | Personal wallet view — holdings, Pyre Acolyte, tier |
 | The Ashen Cup (Tavern) | Community board — announcements, burn feed + pre-launch quest funnel |
-| The Black Market | **Live at launch** — Fire Spirit marketplace (browse + buy; listings sourced from OpenSea/Blur, wrapped in PYRE's UI) |
+| The Black Market | **Live at launch** — Pyre Acolyte marketplace (browse + buy; listings sourced from OpenSea/Blur, wrapped in PYRE's UI) |
 
 The full UI panel behind each building is specified in **UI Screens**.
 
@@ -43,10 +43,10 @@ The world is shown **zoomed in enough that every building's nameplate is readabl
 | The Grand Exchange | Buy & sell $PYRE |
 | The Forge | Stake & burn |
 | Hall of the Immolated | The inner order |
-| The Amber Vault | Your position & Fire Spirit |
+| The Amber Vault | Your position & Pyre Acolyte |
 | The Ashen Cup | Community & news |
 | The Bonfire | Live burn counter |
-| The Black Market | Buy & sell Fire Spirits |
+| The Black Market | Buy & sell Pyre Acolytes |
 | The Gate | Connect wallet |
 
 The system is deliberately simple: **read the plaque → click to enter.** Names give personality, taglines give clarity. (No attention-pulsing, no live-stat badges floating on the map — the world stays a calm painting until you reach for it.)

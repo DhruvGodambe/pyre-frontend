@@ -20,5 +20,5 @@ export function setMockPersona(persona: Persona) {
   if (inst instanceof MockDataSource) inst.setPersona(persona);
 }
 
-export type { DataSource, TxResult, MarketFilter } from "./types";
+export type { DataSource, TxResult, MarketFilter, SwapParams } from "./types";
 export type { Persona } from "./mock";

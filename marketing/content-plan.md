@@ -14,7 +14,7 @@
 
 Manifesto creates curiosity. Posts 2–6 answer the questions it raises, one layer at a time.
 Never explain everything in one post. Let each piece make people want the next one.
-Comments asking "what's a Fire Spirit?" are engagement signals — answer them as pinned replies, not in the thread.
+Comments asking "what's a Pyre Acolyte?" are engagement signals — answer them as pinned replies, not in the thread.
 
 ---
 
@@ -29,7 +29,7 @@ The mechanic explained simply. No jargon. One clear analogy.
 "Every hour you hold $PYRE liquid, it loses 0.45% of its value. That's not a bug. Here's why it exists."
 No graphic needed — strong text post.
 
-**Post 3 — Fire Spirit First Reveal**
+**Post 3 — Pyre Acolyte First Reveal**
 The NFT visual does the work. Minimal text. This is the post people screenshot and share.
 Show the art — EMBER stage — with almost no explanation. Let the visual create the question.
 
@@ -59,7 +59,7 @@ One KOL burns PYRE live on-screen.
 | Wave 1 | L − ~16 to −11 days | DeFi educators | "Here's a mechanic I haven't seen before" |
 | Wave 2 | L − ~10 to −4 days | Mid-tier conviction | "Here's why I'm watching this" |
 | Wave 3 | L − ~3 days to L | Full activation | Countdown, mechanical reason to be early |
-| Wave 4 | L + 7 days | Post-burn authentic | "Here's my Fire Spirit" |
+| Wave 4 | L + 7 days | Post-burn authentic | "Here's my Pyre Acolyte" |
 
 All KOLs must disclose (#ad). Contractual requirement.
 
@@ -70,6 +70,6 @@ All KOLs must disclose (#ad). Contractual requirement.
 | Asset | Brief |
 |-------|-------|
 | Manifesto graphic (static + video) | designer-brief-manifesto-graphic.md |
-| Fire Spirit EMBER reveal image | TBD |
+| Pyre Acolyte EMBER reveal image | TBD |
 | Four stages progression graphic | TBD |
 | Completion screen share image | Dark card, "The fire starts soon" (no hardcoded date — launch TBD), partial wallet address |

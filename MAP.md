@@ -14,10 +14,10 @@ flowchart TD
     WALLET -->|"0.45%/hr decay"| DECAY["Tokens Burned\n(permanent)"]
     WALLET -->|"Stake"| STAKED["Staked\n(0% decay, earns yield)"]
     WALLET -->|"Provide LP"| LP["LP Position\n(0.45%/hr decay)"]
-    WALLET -->|"Burn tokens"| BURN["Token Burn\n→ Fire Spirit weight"]
-    LP -->|"Burn LP shares"| LPBURN["LP Burn\n→ Fire Spirit weight +20%"]
+    WALLET -->|"Burn tokens"| BURN["Token Burn\n→ Pyre Acolyte weight"]
+    LP -->|"Lock LP position (NFT)"| LPBURN["LP Burn\n→ Pyre Acolyte weight +20%"]
 
-    BURN --> SPIRIT["Fire Spirit NFT\n(mints at 10k cumulative)"]
+    BURN --> SPIRIT["Pyre Acolyte NFT\n(mints at 10k cumulative)"]
     LPBURN --> SPIRIT
 
     STAKED -->|"Unstake → 7-day drip"| DRIP["Dripping\n(0.45%/hr decay, no yield)"]
@@ -30,7 +30,7 @@ flowchart TD
 
 ---
 
-## 2. Fire Spirit Evolution
+## 2. Pyre Acolyte Evolution
 
 ```mermaid
 flowchart LR
@@ -60,7 +60,7 @@ flowchart TD
     SELL --> BURN["Burned Forever\n100% of $PYRE fees"]
 
     POOL --> S["Stakers\nproportional to staked balance"]
-    POOL --> FS["Fire Spirits\nproportional to burn weight × stage multiplier"]
+    POOL --> FS["Pyre Acolytes\nproportional to burn weight × stage multiplier"]
 ```
 
 **Fee layers (no UI warnings — hook + pool level only):**
@@ -77,7 +77,7 @@ flowchart TD
 stateDiagram-v2
     [*] --> Liquid: Hook mints on swap
     Liquid --> Staked: stake()
-    Liquid --> Burned: burn() → Fire Spirit weight
+    Liquid --> Burned: burn() → Pyre Acolyte weight
     Staked --> Dripping: unstake() → 7-day drip begins
     Dripping --> Liquid: 7 days elapsed
     Liquid --> [*]: Decay burns to 0 or sell
@@ -86,7 +86,7 @@ stateDiagram-v2
     note right of Liquid: 0.45%/hr decay\nNo yield, no identity
     note right of Staked: 0% decay\nEarns yield (proportional)\nNo NFT
     note right of Dripping: 0.45%/hr decay\n~53% lost over 7 days\nNo yield
-    note right of Burned: Permanent removal\nFire Spirit mints/upgrades
+    note right of Burned: Permanent removal\nPyre Acolyte mints/upgrades
 ```
 
 ---
@@ -104,14 +104,14 @@ Staking and burning are both dominant strategies. Unlike Olympus DAO where (3,3)
 
 ---
 
-## 6. Fire Spirit Burn Path
+## 6. Pyre Acolyte Burn Path
 
 ```mermaid
 flowchart TD
     W["$PYRE Wallet"] --> B1["Token Burn Path\nburn() ≥ any amount"]
-    W --> B2["LP Burn Path\ndeposit ETH + $PYRE\nburn LP shares permanently"]
+    W --> B2["LP Burn Path\ndeposit ETH + $PYRE\nlock LP position NFT (no LP tokens in V4)"]
 
-    B1 -->|"Cumulative crosses 10k"| MINT["Fire Spirit Mints\n(EMBER — 1× yield)"]
+    B1 -->|"Cumulative crosses 10k"| MINT["Pyre Acolyte Mints\n(EMBER — 1× yield)"]
     B2 -->|"Cumulative crosses 10k\n+20% weight bonus"| MINT
 
     MINT -->|"75k cumulative"| FL["FLAME — 1.5× yield"]
@@ -142,13 +142,13 @@ flowchart TD
 | Drip duration | 7 days |
 | Drip decay loss (Era 0) | ~53% |
 | No yield during drip | Confirmed |
-| Fire Spirit mint | Burn-to-mint — 10,000 $PYRE cumulative |
+| Pyre Acolyte mint | Burn-to-mint — 10,000 $PYRE cumulative |
 | EMBER threshold | 10,000 $PYRE burned |
 | FLAME threshold | 75,000 $PYRE burned |
 | FORGE threshold | 150,000 $PYRE burned |
 | PYRE threshold | 300,000 $PYRE burned |
 | Stage multipliers | 1× / 1.5× / 2× / 3× |
-| Fire Spirit hard cap | None |
+| Pyre Acolyte hard cap | None |
 | Hook fee | **4% (buy and sell)** |
 | Pool swap fee | **1%** |
 | Total effective fee | **5% each way** |
@@ -159,7 +159,7 @@ flowchart TD
 | LP burn weight bonus | +20% |
 | Staker visual identity | None |
 | NFT art rendering | **OPEN — static-per-stage vs on-chain generative SVG not yet decided. Evolves in place by burn weight regardless. See dev/DEV_BRIEF.md §3.** |
-| Seed LP | Burned to address(0) at launch |
+| Seed LP | Permanently locked at launch (V4: position NFT locked — see dev/LP_BURN_AND_REBASE_V4.md) |
 | Auto-stake on mint | No |
 
 ### Open Parameters (Pre-Build)
@@ -167,6 +167,8 @@ flowchart TD
 | Parameter | Status |
 |---|---|
 | **NFT art rendering approach** | **OPEN — static-per-stage vs on-chain generative SVG. Blocks PyreNFT render layer + final art. Highest priority.** |
+| **LP-burn mechanism (V4)** | **OPEN — no LP tokens in V4. NFT-locker (keeps liquidity + fee capture) vs exit-and-burn proceeds (pure burn, no fees). Blocks `burnLP()` + seed-LP. See dev/LP_BURN_AND_REBASE_V4.md.** |
+| **S(t) rebase × V4 concentrated liquidity** | **OPEN — needs a spike; rebase supply is hostile to V4 ranges and there is no V2 `pair.sync()`. See dev/LP_BURN_AND_REBASE_V4.md §4.** |
 | Art style per stage | TBD (depends on rendering decision above) |
 | LP burn / Immolated overlay design | TBD |
 | Initial seed LP ETH amount | TBD |

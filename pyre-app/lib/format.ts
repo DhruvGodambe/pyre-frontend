@@ -32,6 +32,17 @@ export function formatEth(value: bigint, maxFrac = 4): string {
   )} ETH`;
 }
 
+/** 12.5 → "$12.50"; 1_284_500 → "$1.28M". Small values keep cents. */
+export function formatUsd(value: number, maxFrac = 2): string {
+  const compact = Math.abs(value) >= 100_000;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: compact ? "compact" : "standard",
+    maximumFractionDigits: compact ? 2 : maxFrac,
+  }).format(value);
+}
+
 /** 0.0045 → "0.45%". ratio=true treats input as already a fraction. */
 export function formatPercent(value: number, maxFrac = 2): string {
   return `${new Intl.NumberFormat("en-US", {

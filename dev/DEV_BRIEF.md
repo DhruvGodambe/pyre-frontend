@@ -5,7 +5,7 @@
 >
 > Cleaned 2026-06-15: all superseded "OLD architecture" code was removed (it lives
 > in git history / `archive/`, not inline). Every parameter and behavior below is
-> the live decision. The one genuinely undecided item — Fire Spirit art rendering —
+> the live decision. The one genuinely undecided item — Pyre Acolyte art rendering —
 > is called out explicitly in §3 and must be resolved before that contract is built.
 
 ---
@@ -17,10 +17,10 @@ PYRE is a Uniswap V4 hook-based protocol on Ethereum mainnet.
 - Swap ETH → the hook **mints** $PYRE to the swapper, proportional to ETH volume × `BASE_RATE` × `S(t)` (a global scaling factor that decays over time, so the same ETH mints fewer tokens later).
 - Liquid (unstaked) $PYRE **decays at 0.45%/hr**, halving every 2,000 epochs (~83 days), down to a 0.01%/hr floor.
 - **Staking** stops decay and earns a proportional share of swap-fee yield.
-- The **Fire Spirit** ERC-721 is earned by **burning $PYRE permanently** — never by holding or staking. Burns accumulate across transactions; when a wallet's cumulative burn weight crosses 10,000, a Fire Spirit mints, and further burns upgrade its stage automatically (75k → FLAME, 150k → FORGE, 300k → PYRE). No hard cap. No stage gate to burn.
-- Stakers and Fire Spirit holders share **one** swap-fee yield pool, proportionally by weight. No fixed split.
+- The **Pyre Acolyte** ERC-721 is earned by **burning $PYRE permanently** — never by holding or staking. Burns accumulate across transactions; when a wallet's cumulative burn weight crosses 10,000, a Pyre Acolyte mints, and further burns upgrade its stage automatically (75k → FLAME, 150k → FORGE, 300k → PYRE). No hard cap. No stage gate to burn.
+- Stakers and Pyre Acolyte holders share **one** swap-fee yield pool, proportionally by weight. No fixed split.
   - Staker weight = raw staked balance.
-  - Fire Spirit weight = cumulative burn weight (underlying units) × stage multiplier.
+  - Pyre Acolyte weight = cumulative burn weight (underlying units) × stage multiplier.
 
 ---
 
@@ -32,9 +32,9 @@ Five contracts. One NFT type.
 |---|---|
 | `PyreHook.sol` | V4 BaseHook — `afterSwap`: mint $PYRE, collect & route swap fees, tick the epoch/scaling factor. **No threshold detection, no NFT mint/burn logic.** |
 | `PyreToken.sol` | ERC-20 — hook-minted, supply-capped, lazy decay via global scaling factor, halving schedule. Staked balances exempt from decay. |
-| `PyreNFT.sol` | ERC-721 Fire Spirit — burn-to-mint, evolves in place by cumulative burn weight, tradeable. **Art rendering approach is an open decision — see §3.** |
+| `PyreNFT.sol` | ERC-721 Pyre Acolyte — burn-to-mint, evolves in place by cumulative burn weight, tradeable. **Art rendering approach is an open decision — see §3.** |
 | `PyreStaking.sol` | Staking vault — decay immunity, proportional yield, 7-day drip exit. Hosts the whitelist yield boost (see `whitelist-boost-spec.md`). |
-| `PyreImmolated.sol` | Token-burn + LP-burn paths, Fire Spirit mint/upgrade trigger, burn-weight yield accounting. |
+| `PyreImmolated.sol` | Token-burn + LP-burn paths, Pyre Acolyte mint/upgrade trigger, burn-weight yield accounting. |
 
 > **Yield pool is single and shared.** Both `PyreStaking` and `PyreImmolated`
 > read from one fee pool and pay out proportionally by total weight. There is
@@ -53,7 +53,7 @@ Five contracts. One NFT type.
 
 **Key hook flag:** `AFTER_SWAP_FLAG` only.
 
-The hook does **not** detect balance thresholds and does **not** mint or burn Fire Spirits. Fire Spirits are minted/upgraded exclusively through the burn paths in `PyreImmolated.sol`.
+The hook does **not** detect balance thresholds and does **not** mint or burn Pyre Acolytes. Pyre Acolytes are minted/upgraded exclusively through the burn paths in `PyreImmolated.sol`.
 
 **Launch fee — declining buy-side tax (locked).**
 An additional hook fee of up to 20% applies to **buy-side** swaps at deployment, declining linearly to 0 over exactly 24 hours. Sell-side is unaffected. **All** launch-fee revenue routes to the yield pool — the team takes no cut of it.
@@ -117,15 +117,15 @@ Rate halves every `HALVING_INTERVAL = 2_000` epochs, clamped to the `0.010%/hr` 
 
 ---
 
-## 3. `PyreNFT.sol` — ERC-721 (Fire Spirit)
+## 3. `PyreNFT.sol` — ERC-721 (Pyre Acolyte)
 
 One NFT type. Tradeable. Burn-to-mint, evolves in place by **cumulative burn weight**.
 
 **Responsibilities:**
 - Mint/upgrade driven by `PyreImmolated` as cumulative burn weight crosses thresholds.
 - Track per-token stage; stage **ratchets up only** — it never regresses, including on transfer.
-- `tokenOf[wallet]` → the wallet's Fire Spirit tokenId (0 if none).
-- On transfer: yield settles to the seller first (via `PyreStaking` and `PyreImmolated` `settleYield`), then ownership moves. The Fire Spirit carries its current visual stage; the new holder's *own* future burns start at 0.
+- `tokenOf[wallet]` → the wallet's Pyre Acolyte tokenId (0 if none).
+- On transfer: yield settles to the seller first (via `PyreStaking` and `PyreImmolated` `settleYield`), then ownership moves. The Pyre Acolyte carries its current visual stage; the new holder's *own* future burns start at 0.
 
 **Stage by cumulative burn weight (NOT staking time):**
 
@@ -140,7 +140,7 @@ Stage is a pure function of the holder's accumulated burn weight, evaluated from
 
 ### ⛔ OPEN DECISION — art rendering approach (do NOT build this layer yet)
 
-The visual/rendering architecture of the Fire Spirit is **not yet decided**. The
+The visual/rendering architecture of the Pyre Acolyte is **not yet decided**. The
 two contract shapes are fundamentally different, so **do not implement
 `tokenURI`/rendering until this is locked.** Everything else in this contract
 (mint trigger, stage math, transfer/settlement) is stable and can be built now.
@@ -174,11 +174,11 @@ on the token so the chosen renderer can read them.
 - Accept $PYRE deposits; mark staked (decay-exempt) in `PyreToken`.
 - Distribute the staker share of the single yield pool by weight, `rewardPerToken`-style (O(1)).
 - 7-day **drip** on unstake; tokens **continue decaying** during the drip; **no yield** accrues during drip; cannot restake until the drip completes.
-- Settle yield on Fire Spirit transfer.
+- Settle yield on Pyre Acolyte transfer.
 - Host the pre-launch **whitelist yield boost** (separate spec: `whitelist-boost-spec.md`).
 
-**Weighting:** staker weight = raw staked balance. (The Fire Spirit stage multiplier
-applies to the *Fire Spirit* weight in `PyreImmolated`, not to plain staking weight.)
+**Weighting:** staker weight = raw staked balance. (The Pyre Acolyte stage multiplier
+applies to the *Pyre Acolyte* weight in `PyreImmolated`, not to plain staking weight.)
 
 **Drip:** linear release over 7 days; the claimable amount is scaled by the current
 scaling factor at claim time, so decay during the drip is realized on the holder.
@@ -187,14 +187,18 @@ scaling factor at claim time, so decay during the drip is realized on the holder
 
 ## 5. `PyreImmolated.sol` — The Immolated Protocol
 
-Manages permanent burn commitments, Fire Spirit mint/upgrade, and burn-weight yield.
+Manages permanent burn commitments, Pyre Acolyte mint/upgrade, and burn-weight yield.
 
 **Responsibilities:**
-- `burnTokens(amount)`: burn $PYRE permanently, record weight, mint/upgrade the caller's Fire Spirit as cumulative weight crosses thresholds.
-- `burnLP(ethAmt, pyreAmt)`: add liquidity, burn the LP shares permanently, record weight with the **+20%** bonus, mark the token's LP variant flag.
+- `burnTokens(amount)`: burn $PYRE permanently, record weight, mint/upgrade the caller's Pyre Acolyte as cumulative weight crosses thresholds.
+- `burnLP(ethAmt, pyreAmt)`: ⚠️ **V4 has no LP shares to burn.** Add liquidity, then either
+  lock the resulting **position NFT** (keeps liquidity in the pool + fees collectible to the
+  yield pool) or exit-and-burn the proceeds (pure supply burn, no fees). Record weight with the
+  **+20%** bonus, mark the token's LP variant flag. Path not yet locked — see
+  `dev/LP_BURN_AND_REBASE_V4.md` before implementing.
 - Weight is denominated in **underlying units** (snapshot of the scaling factor at burn time) — early burners get more weight per token.
-- Distribute the Fire Spirit share of the single yield pool by `weight × stageMultiplier`.
-- Settle yield on Fire Spirit transfer.
+- Distribute the Pyre Acolyte share of the single yield pool by `weight × stageMultiplier`.
+- Settle yield on Pyre Acolyte transfer.
 
 **Constants:**
 ```solidity
@@ -209,7 +213,7 @@ uint256 public constant BONUS_DENOM     = 100;
 > There is **no PYRE-stage gate** on burning — any wallet can burn any amount ≥ the
 > minimum and progress through stages by cumulative weight.
 
-**The "Immolated" overlay** is a status marker layered onto a Fire Spirit's art
+**The "Immolated" overlay** is a status marker layered onto a Pyre Acolyte's art
 (see §3 open decision for how art is rendered). LP-path and token-path burns share
 one collection and one set of thresholds; the LP path differs only by its +20%
 weight bonus and its visual variant flag.
@@ -228,7 +232,7 @@ scalingFactor updated once per epoch (1 hour):
 - **Interactive wallets:** decay applied lazily on any interaction.
 - **Passive wallets:** Chainlink Automation ticks the epoch / scaling factor hourly. Automation is a *supplement* to lazy evaluation, not the sole mechanism.
 
-There is **no balance-threshold NFT burn.** A Fire Spirit, once minted, persists
+There is **no balance-threshold NFT burn.** A Pyre Acolyte, once minted, persists
 permanently regardless of the holder's balance. (Earlier drafts had a
 `checkAndBurn`/200K-balance mechanism — that belonged to the abandoned hold-to-mint
 model and must not be implemented.)
@@ -248,11 +252,12 @@ Buy side (collected in ETH):
 Sell side (collected in $PYRE):
     100% burned permanently — never distributed.
 
-Burned-LP fees (orphaned fees from permanently-locked LP):
-    100% → Yield pool   (see Open Questions — non-trivial to capture)
+Burned-LP fees (fees from permanently-locked LP):
+    100% → Yield pool   ⚠️ ONLY exists under the NFT-locker path; the exit-and-burn
+                        path generates no ongoing fees. See dev/LP_BURN_AND_REBASE_V4.md.
 ```
 
-The yield pool is shared by stakers and Fire Spirit holders, proportional to total
+The yield pool is shared by stakers and Pyre Acolyte holders, proportional to total
 weight. Fee routing is atomic with the swap in `afterSwap`.
 
 ---
@@ -294,7 +299,7 @@ cast send $PYRE_IMMOLATED "setHook(address)"      $PYRE_HOOK
 | NFT transfer yield theft | `settleYield()` runs before ownership changes (in `_beforeTokenTransfer`). |
 | Immolated weight units | Scaling factor snapshotted at burn time; stored as underlying units. |
 | Chainlink failure | Lazy evaluation covers interactive wallets; Automation is a supplement. |
-| LP burn to address(0) | Verify burn to dead address; balance-check before/after. |
+| LP "burn" (V4 has no LP token) | Lock the position **NFT** (locker or dead address); verify principal is unwithdrawable; balance-check before/after. See `dev/LP_BURN_AND_REBASE_V4.md`. |
 
 ---
 
@@ -304,8 +309,8 @@ cast send $PYRE_IMMOLATED "setHook(address)"      $PYRE_HOOK
 |---|---|
 | Supply cap | 1,000,000,000 $PYRE |
 | Minting | Hook-only, no pre-mine, 0% team allocation |
-| Fire Spirit mint trigger | Burn-based — 10,000 $PYRE cumulative weight |
-| Fire Spirit hard cap | None |
+| Pyre Acolyte mint trigger | Burn-based — 10,000 $PYRE cumulative weight |
+| Pyre Acolyte hard cap | None |
 | Initial decay rate | **0.450%/hr** |
 | Halving interval | **2,000 epochs (~83 days)** |
 | Decay floor | **0.010%/hr** |
@@ -326,11 +331,11 @@ cast send $PYRE_IMMOLATED "setHook(address)"      $PYRE_HOOK
 | Burned-LP fees | 100% to yield pool |
 | Yield distribution | Single shared pool, proportional by weight — **no fixed split** |
 | Staker weight | Raw staked balance |
-| Fire Spirit weight | Burn weight (underlying units) × stage multiplier |
+| Pyre Acolyte weight | Burn weight (underlying units) × stage multiplier |
 | LP burn weight bonus | **+20%** (120/100) |
-| NFT type | Single Fire Spirit, tradeable ERC-721 |
+| NFT type | Single Pyre Acolyte, tradeable ERC-721 |
 | **NFT art rendering** | **OPEN — see §3. Do not build the render layer yet.** |
-| Seed LP | Burned to address(0) at launch |
+| Seed LP | Permanently locked at launch (V4: position NFT locked — see `dev/LP_BURN_AND_REBASE_V4.md`) |
 | Chain | Ethereum mainnet |
 | Launch date | **TBD** (date-agnostic; do not hardcode) |
 
@@ -338,12 +343,21 @@ cast send $PYRE_IMMOLATED "setHook(address)"      $PYRE_HOOK
 
 ## Open Questions (Resolve Before Build)
 
-- [ ] **Fire Spirit art rendering approach** (see §3) — blocks `PyreNFT` render layer and final art production. Highest priority.
+- [ ] **Pyre Acolyte art rendering approach** (see §3) — blocks `PyreNFT` render layer and final art production. Highest priority.
 - [ ] `BASE_RATE` — tokens minted per ETH; calibrate to the target supply curve (model before locking).
 - [ ] Initial seed LP ETH amount.
 - [ ] Single shared yield accumulator vs two Synthetix-style accumulators for the one pool.
-- [ ] **LP fee capture from burned positions** — when LP shares are burned to address(0), the underlying liquidity stays in the pool and keeps generating fees that currently accrue to address(0) and are lost. The hook MUST track and redirect these orphaned fees into the yield pool. Non-trivial — needs a design spike before build.
-- [ ] Exact V4 fee-capture mechanism (`afterSwap` delta vs dedicated fee flag).
+- [ ] **LP-burn mechanism path (BLOCKS `burnLP()` + seed-LP step)** — V4 has no LP tokens.
+      Choose: (C) lock the position NFT in a locker that collects fees to the yield pool
+      [keeps the "permanent liquidity + fee capture" narrative], or (A) exit-and-burn the
+      ETH + $PYRE proceeds [pure supply burn, no ongoing fees → must rewrite the fee-capture
+      claims]. Full analysis: `dev/LP_BURN_AND_REBASE_V4.md`.
+- [ ] Exact V4 fee-capture mechanism if path C (locker `collectFees()` vs `afterSwap` return-delta hook).
+- [ ] **S(t) rebase × V4 concentrated liquidity (likely the harder problem)** — Yugen works
+      as a V2 rebase token via `pair.sync()`; V4 has no equivalent and rebase/elastic supply
+      is hostile to concentrated liquidity. Decide whether pool-held $PYRE decays or is
+      excluded from S(t), and how the pool/hook reconcile it. Spike before audit — see
+      `dev/LP_BURN_AND_REBASE_V4.md` §4.
 - [ ] Chainlink Automation upkeep budget + LINK refill mechanism.
 - [ ] Whether to enforce the drip restake-lock in-contract or by incentive alignment.
 - [ ] KOL lock period (deferred — decide before launch).

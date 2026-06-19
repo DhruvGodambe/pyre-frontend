@@ -17,15 +17,15 @@ import {
 import { getDataSource } from "./datasource";
 import { useWallet } from "./wallet";
 import { fetchQuestLeaderboard, fetchReferral } from "./quests/client";
-import type { MarketFilter } from "./datasource";
-import type { Address, SwapDirection } from "./types";
+import type { MarketFilter, SwapParams } from "./datasource";
+import type { Address, SwapDirection, SwapQuoteParams } from "./types";
 
 const ds = () => getDataSource();
 
 /* Keys all live data depends on; write hooks invalidate the relevant ones. */
 const KEY = {
   stats: ["protocolStats"] as const,
-  fireSpirit: (a: Address | null) => ["fireSpirit", a] as const,
+  acolyte: (a: Address | null) => ["acolyte", a] as const,
   staking: (a: Address | null) => ["staking", a] as const,
   immolated: (a: Address | null) => ["immolated", a] as const,
   history: (a: Address | null) => ["history", a] as const,
@@ -34,7 +34,12 @@ const KEY = {
   activity: ["activity"] as const,
   announcements: ["announcements"] as const,
   market: (f?: MarketFilter) => ["market", f ?? {}] as const,
-  quote: (d: SwapDirection, a: string) => ["quote", d, a] as const,
+  quote: (p: SwapQuoteParams) =>
+    ["quote", p.direction, p.kind, p.amount.toString(), p.slippageBps] as const,
+  poolState: ["poolState"] as const,
+  swapBalances: (a: Address | null) => ["swapBalances", a] as const,
+  approval: (a: Address | null, d: SwapDirection, amt: string) =>
+    ["approval", a, d, amt] as const,
   quests: (a: Address | null) => ["quests", a] as const,
 };
 
@@ -44,11 +49,11 @@ export function useProtocolStats() {
   return useQuery({ queryKey: KEY.stats, queryFn: () => ds().getProtocolStats(), refetchInterval: 15_000 });
 }
 
-export function useFireSpirit() {
+export function useAcolyte() {
   const { address } = useWallet();
   return useQuery({
-    queryKey: KEY.fireSpirit(address),
-    queryFn: () => ds().getFireSpirit(address!),
+    queryKey: KEY.acolyte(address),
+    queryFn: () => ds().getAcolyte(address!),
     enabled: !!address,
   });
 }
@@ -100,11 +105,37 @@ export function useMarketListings(filter?: MarketFilter) {
   return useQuery({ queryKey: KEY.market(filter), queryFn: () => ds().getMarketListings(filter) });
 }
 
-export function useSwapQuote(direction: SwapDirection, amountIn: bigint) {
+/* The Grand Exchange (Uniswap-v4 swap) ------------------------------------ */
+
+export function useSwapQuote(params: SwapQuoteParams) {
   return useQuery({
-    queryKey: KEY.quote(direction, amountIn.toString()),
-    queryFn: () => ds().getSwapQuote(direction, amountIn),
-    enabled: amountIn > 0n,
+    queryKey: KEY.quote(params),
+    queryFn: () => ds().getSwapQuote(params),
+    enabled: params.amount > 0n,
+    // Quotes expire (~30s) — refetch so price stays fresh, like Uniswap.
+    refetchInterval: 15_000,
+  });
+}
+
+export function usePoolState() {
+  return useQuery({ queryKey: KEY.poolState, queryFn: () => ds().getPoolState(), refetchInterval: 20_000 });
+}
+
+export function useSwapBalances() {
+  const { address } = useWallet();
+  return useQuery({
+    queryKey: KEY.swapBalances(address),
+    queryFn: () => ds().getSwapBalances(address!),
+    enabled: !!address,
+  });
+}
+
+export function useApprovalState(direction: SwapDirection, amount: bigint) {
+  const { address } = useWallet();
+  return useQuery({
+    queryKey: KEY.approval(address, direction, amount.toString()),
+    queryFn: () => ds().getApprovalState(address!, direction, amount),
+    enabled: !!address,
   });
 }
 
@@ -129,7 +160,7 @@ export function useReferral() {
    Takes a single `variables` value (use an object when a call needs >1 value),
    matching react-query's mutate(variables) signature. */
 function useTx<V = void>(
-  run: (address: Address, variables: V) => Promise<{ ok: boolean; error?: string }>,
+  run: (address: Address, variables: V) => Promise<{ ok: boolean; hash?: string; error?: string }>,
   invalidate: (a: Address | null) => readonly (readonly unknown[])[]
 ) {
   const { address } = useWallet();
@@ -149,11 +180,21 @@ function useTx<V = void>(
 
 const POSITION_KEYS = (a: Address | null) => [
   KEY.stats,
-  KEY.fireSpirit(a),
+  KEY.acolyte(a),
   KEY.staking(a),
   KEY.immolated(a),
   KEY.history(a),
   KEY.activity,
+];
+
+/* Swap touches balances, the pool, and invalidates the live quote/approval
+   (broad prefixes — react-query matches by key prefix). */
+const SWAP_KEYS = (a: Address | null): readonly (readonly unknown[])[] => [
+  ...POSITION_KEYS(a),
+  KEY.swapBalances(a),
+  KEY.poolState,
+  ["approval", a],
+  ["quote"],
 ];
 
 // mutate(amount)
@@ -175,11 +216,12 @@ export const useClaimImmolatedYield = () =>
 // mutate({ eth, pyre }) / mutate({ direction, amountIn })
 export const useBurnLP = () =>
   useTx<{ eth: bigint; pyre: bigint }>((a, v) => ds().burnLP(a, v.eth, v.pyre), POSITION_KEYS);
+// mutate() — advances the Permit2 approval for the PYRE (sell) side
+export const useApproveToken = () =>
+  useTx((a) => ds().approveToken(a), (a) => [KEY.swapBalances(a), ["approval", a]]);
+// mutate(SwapParams)
 export const useSwap = () =>
-  useTx<{ direction: SwapDirection; amountIn: bigint }>(
-    (a, v) => ds().swap(a, v.direction, v.amountIn),
-    POSITION_KEYS
-  );
+  useTx<SwapParams>((a, params) => ds().swap(a, params), SWAP_KEYS);
 
 /* --- Quest funnel (no wallet required — uses an anonymous session) -------- */
 

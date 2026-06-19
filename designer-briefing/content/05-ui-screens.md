@@ -24,7 +24,7 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 - Total supply remaining
 - Total burned all-time
 - Staking ratio (% of supply protected)
-- Active Fire Spirits (total NFTs in existence)
+- Active Pyre Acolytes (total NFTs in existence)
 - S(t) scaling factor (starts 1.0, falls over time)
 - Total ETH distributed all-time
 - 24h swap volume
@@ -33,7 +33,7 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 ### The Amber Vault — your position
 *Personal. Requires wallet. Everything about you in one place.*
 
-- Your Fire Spirit NFT — large, current stage art
+- Your Pyre Acolyte NFT — large, current stage art
 - Stage name + number (e.g. "FLAME — Stage II")
 - Cumulative $PYRE burned (your all-time total)
 - Progress ring to next stage + tokens remaining
@@ -42,7 +42,7 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 - Drip status (if unstaking)
 - Immolated badge — standard or LP variant, if applicable
 - Personal transaction history (your burns, stakes, claims)
-- **Empty state:** stone pedestal + flame silhouette — "X,XXX $PYRE until your Fire Spirit wakes."
+- **Empty state:** stone pedestal + flame silhouette — "X,XXX $PYRE until your Pyre Acolyte wakes."
 
 ### The Forge — stake & burn
 *The action room. Two tabs.*
@@ -56,9 +56,9 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 
 **Burn tab**
 - Liquid balance · cumulative burned so far
-- Progress bar to next Fire Spirit stage
+- Progress bar to next Pyre Acolyte stage
 - Amount input · burn button (fire particle effect)
-- LP burn option — deposit ETH + $PYRE, burn the LP shares (+20% weight, gradient Fire Spirit variant)
+- LP burn option — deposit ETH + $PYRE, burn the LP shares (+20% weight, gradient Pyre Acolyte variant)
 
 **States:** "cold unlit forge" when nothing staked; the drip-draining visual takes over the panel while a drip is in progress (can't restake until it completes).
 
@@ -107,13 +107,13 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 - Real-time ticker of burns happening now
 - Optional: quick-burn shortcut — throw tokens straight into the fire
 
-### The Black Market — Fire Spirit marketplace *(live at launch)*
-*Open from day one. Fire Spirits are standard ERC-721, so listings come from existing marketplaces (OpenSea/Blur) wrapped in PYRE's own branded UI — no separate marketplace contract.*
+### The Black Market — Pyre Acolyte marketplace *(live at launch)*
+*Open from day one. Pyre Acolytes are standard ERC-721, so listings come from existing marketplaces (OpenSea/Blur) wrapped in PYRE's own branded UI — no separate marketplace contract.*
 
-- Browse Fire Spirits — filter by stage, LP variant, Immolated
+- Browse Pyre Acolytes — filter by stage, LP variant, Immolated
 - Each listing card: stage + yield multiplier, price, burn-progress toward next stage
 - Buy flow (settles via the underlying marketplace) + link out to the full listing
-- **Empty-market state (launch):** at launch no Fire Spirits exist yet — none are minted until wallets burn. Design an intentional "the market is cold, no spirits have risen yet" state that fills as mints happen. This is the screen most users see first, so make the emptiness feel like anticipation, not breakage.
+- **Empty-market state (launch):** at launch no Pyre Acolytes exist yet — none are minted until wallets burn. Design an intentional "the market is cold, no spirits have risen yet" state that fills as mints happen. This is the screen most users see first, so make the emptiness feel like anticipation, not breakage.
 
 ### The Gate — enter / connect wallet
 *The entry moment, not a feature panel.*
@@ -128,7 +128,7 @@ Each heading is a Village building **and** a Dashboard zone. The name in parenth
 On mobile, the panels above become one scrolling page, in this priority order:
 
 1. **The Bonfire counter** — a slim live burn header at the top
-2. **The Amber Vault** — your Fire Spirit + position (the thing people open the app to see)
+2. **The Amber Vault** — your Pyre Acolyte + position (the thing people open the app to see)
 3. **The Forge** — stake / burn controls
 4. **The Observatory** — global stats
 5. **Hall of the Immolated** — full panel for members, teaser for everyone else
@@ -142,7 +142,7 @@ On mobile, the panels above become one scrolling page, in this priority order:
 - Wallet not connected / connected
 - Loading & transaction-pending — **make waiting feel ritual, not broken**
 - Error / rejected transaction
-- Empty states (no Fire Spirit yet, nothing staked, no drip)
+- Empty states (no Pyre Acolyte yet, nothing staked, no drip)
 
 ---
 
@@ -151,7 +151,7 @@ On mobile, the panels above become one scrolling page, in this priority order:
 **Mobile first, desktop second**, in this order:
 
 1. **Wallet-connect moment** (the Gate / village waking)
-2. **The Amber Vault** (your position + Fire Spirit)
+2. **The Amber Vault** (your position + Pyre Acolyte)
 3. **The Forge** (stake + burn flow)
 4. **The Observatory** (stats)
 5. **Hall of the Immolated** (member + locked states)

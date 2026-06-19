@@ -63,7 +63,7 @@ styles every screen simultaneously.
 - [ ] Success (staked / confirmed) · [ ] Danger (decay loss / rejected)
 - [ ] Warning (pending / drip) · [ ] Info (neutral)
 
-**Colour — Fire Spirit stages** (one each)
+**Colour — Pyre Acolyte stages** (one each)
 - [ ] EMBER · [ ] FLAME · [ ] FORGE · [ ] PYRE
 
 **Type**
@@ -98,7 +98,7 @@ styles every screen simultaneously.
 - [ ] **The Gate / waking sequence** — dormant (dim, misty) state + the "dawn
       breaks, fires ignite" transition when a wallet connects.
 
-### The Fire Spirit (the NFT — also rendered in-app)
+### The Pyre Acolyte (the NFT — also rendered in-app)
 - [ ] **Per-stage art:** EMBER, FLAME, FORGE, PYRE (the in-app render frame — we
       need your visual direction per stage). ⚠️ Final rendering approach is **not
       yet locked** (static-per-stage vs on-chain generative SVG — see section 03);
@@ -114,7 +114,7 @@ styles every screen simultaneously.
 ### System & states (used across every screen)
 - [ ] **Loading / "ritual" moment** — what waiting looks like ("ritual, not
       broken"): the transition between door and interior, and tx-pending.
-- [ ] **Empty-state illustrations** — no Fire Spirit yet · nothing staked · cold
+- [ ] **Empty-state illustrations** — no Pyre Acolyte yet · nothing staked · cold
       forge · cold market · locked Hall.
 - [ ] **Icon / glyph set** — stage marks, LP & Immolated badges, action icons
       (stake, burn, swap, claim), feed/activity glyphs.
@@ -131,7 +131,7 @@ the skeleton to see the exact layout and every state live.
 | Screen | Design | States to give a look |
 |---|---|---|
 | **The Gate** | Dormant village + single lit lantern; the waking sequence | dormant · connecting · awake |
-| **The Amber Vault** | Fire Spirit hero render; your-position layout | not-connected · loading · **empty (no spirit)** · populated · drip-active |
+| **The Amber Vault** | Pyre Acolyte hero render; your-position layout | not-connected · loading · **empty (no spirit)** · populated · drip-active |
 | **The Forge** | Stake/Burn tabbed action room; fire particle on burn | cold (nothing staked) · active · **drip-draining (locks restake)** · tx pending/confirmed/failed |
 | **Hall of the Immolated** | Member view + the **sealed/locked** outsider screen (sigil) | not-connected · **locked outsider** · member · tx states |
 | **The Observatory** | Stat-dense readout; the live burn-rate chart | loading · live (no wallet needed) |
@@ -163,7 +163,7 @@ building.
 ## Delivery format
 
 - **Style values:** a simple list (hex / font / px) — or a Figma styles page.
-- **Art:** SVG where it can scale (icons, glyphs, nameplates, Fire Spirit);
+- **Art:** SVG where it can scale (icons, glyphs, nameplates, Pyre Acolyte);
   high-res PNG/WebP for painted scenes (village, interiors, exteriors).
 - **Layered source** (Figma / PSD) for anything that needs separable layers
   (LP & Immolated overlays, the Gate waking sequence, bonfire states).

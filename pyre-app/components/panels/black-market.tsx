@@ -1,25 +1,26 @@
 "use client";
 
-/* THE BLACK MARKET — Fire Spirit marketplace, live at launch. A branded window
+/* THE BLACK MARKET — Pyre Acolyte marketplace, live at launch. A branded window
    over external listings (OpenSea/Blur) — no separate contract.
    Spec: 05-ui-screens.md → "The Black Market". Key state: empty market at launch
-   ("the market is cold, no spirits have risen yet"). */
+   ("the market is cold, no Acolytes have risen yet"). */
 
 import { useState } from "react";
 import { useMarketListings } from "@/lib/hooks";
 import { Panel, Badge } from "@/components/ui/primitives";
 import { StateView, EmptyState } from "@/components/ui/state";
-import { FireSpiritArt } from "@/components/ui/fire-spirit-art";
+import { NavCta } from "@/components/ui/nav-cta";
+import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { formatEth } from "@/lib/format";
 import type { MarketFilter } from "@/lib/datasource";
-import type { FireSpirit } from "@/lib/types";
+import type { Acolyte } from "@/lib/types";
 
 export function BlackMarketPanel() {
   const [filter, setFilter] = useState<MarketFilter>({});
   const listings = useMarketListings(filter);
 
   return (
-    <Panel title="The Black Market" tagline="Buy & sell Fire Spirits">
+    <Panel title="The Black Market" tagline="Buy & sell Acolytes">
       <div className="flex gap-2 mb-4 text-xs">
         <FilterChip active={!filter.lpOnly && !filter.immolatedOnly} onClick={() => setFilter({})}>
           All
@@ -38,12 +39,17 @@ export function BlackMarketPanel() {
             <EmptyState
               icon="🜂"
               title="The market is cold"
-              message="No Fire Spirits have risen yet. They appear here the moment wallets begin to burn."
+              message="No Acolytes have risen yet. They appear here the moment wallets begin to burn — be the first to forge one."
+              action={
+                <NavCta to="forge" tab="burn" className="">
+                  Forge the first Acolyte
+                </NavCta>
+              }
             />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {rows.map((l) => {
-                const spirit: FireSpirit = {
+                const acolyte: Acolyte = {
                   exists: true,
                   tokenId: l.tokenId,
                   stage: l.stage,
@@ -64,7 +70,7 @@ export function BlackMarketPanel() {
                     rel="noreferrer"
                     className="block rounded-md bg-surface-2 p-2 hover:bg-surface-3 transition-colors duration-fast"
                   >
-                    <FireSpiritArt spirit={spirit} size={120} />
+                    <AcolyteArt acolyte={acolyte} size={120} />
                     <div className="flex items-center justify-between mt-2">
                       <Badge tone="brand">{l.stageName}</Badge>
                       <span className="tabular text-text text-sm">{formatEth(l.priceEth)}</span>
