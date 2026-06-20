@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — ChainDataSource (STUB — fill in at contract handoff)
+   PYRE, ChainDataSource (STUB, fill in at contract handoff)
    ----------------------------------------------------------------------------
    This is where the real on-chain reads/writes go once the developer ships the
    contract ABIs + addresses. Each method maps 1:1 to a contract call:
@@ -13,7 +13,7 @@
    panels and hooks do not change at all when this goes live. Wire wagmi here.
 
    ────────────────────────────────────────────────────────────────────────────
-   THE GRAND EXCHANGE — Uniswap v4 swap wiring (the dev's checklist)
+   THE GRAND EXCHANGE, Uniswap v4 swap wiring (the dev's checklist)
    ────────────────────────────────────────────────────────────────────────────
    We trade PYRE↔ETH against our own v4 pool (the pool that carries the PYRE
    Diamond hook). Contract addresses for the active chain are in
@@ -21,7 +21,7 @@
    PoolKey once:
 
      poolKey = {
-       currency0: POOL.nativeCurrency,   // address(0) — native ETH sorts first
+       currency0: POOL.nativeCurrency,   // address(0), native ETH sorts first
        currency1: POOL.currency1,        // CONTRACTS.token (PYRE)
        fee:       POOL.isDynamicFee ? DYNAMIC_FEE_FLAG : POOL.feeTier, // 0x800000 or 100
        tickSpacing: POOL.tickSpacing,
@@ -38,7 +38,7 @@
                   returns (amountIn,  gasEstimate)
        NOTE: these functions are state-mutating in signature (they unlock the
        PoolManager and revert to return). Call them OFF-CHAIN via eth_call /
-       viem `simulateContract` / `publicClient.call` — never send a tx.
+       viem `simulateContract` / `publicClient.call`, never send a tx.
        hookData: bytes the Diamond hook's beforeSwap expects (likely 0x).
        Derive priceImpact from amountOut vs the spot price (StateView slot0),
        fees from POOL_FEE_BPS + HOOK_FEE_BPS (+ launch fee from the hook's
@@ -119,7 +119,7 @@ export class ChainDataSource implements DataSource {
   getPoolState(): Promise<PoolState> { return NOT_WIRED(); } // → StateView
   getSwapBalances(_a: Address): Promise<SwapBalances> { return NOT_WIRED(); } // → balanceOf + getBalance
   getApprovalState(_a: Address, _d: SwapDirection, _amt: bigint): Promise<ApprovalState> { return NOT_WIRED(); } // → Permit2
-  // Quests are off-chain + permanent — already live, even before contracts ship.
+  // Quests are off-chain + permanent, already live, even before contracts ship.
   getQuestTasks(_a: Address | null): Promise<QuestTask[]> { return fetchQuestTasks(); }
   stake(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
   unstake(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }

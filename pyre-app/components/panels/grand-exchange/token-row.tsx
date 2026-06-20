@@ -2,7 +2,7 @@
 
 /* One side of the swap (pay / receive). Styled like a Uniswap token row:
    big amount input, token chip, USD value underneath, and (pay side) the
-   wallet balance with Max / 50% shortcuts. Both rows are editable — typing in
+   wallet balance with Max / 50% shortcuts. Both rows are editable, typing in
    "receive" flips the quote to exact-output, exactly like Uniswap. */
 
 import type { TokenInfo } from "@/lib/types";

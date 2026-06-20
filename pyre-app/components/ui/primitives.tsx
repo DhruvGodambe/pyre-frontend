@@ -1,9 +1,9 @@
 /* ============================================================================
-   PYRE — UI primitives (token-driven, intentionally plain)
+   PYRE, UI primitives (token-driven, intentionally plain)
    ----------------------------------------------------------------------------
    The shared building blocks every panel is made of. They reference ONLY design
    tokens (bg-surface, text-brand, rounded-panel…), so when the designer's look
-   lands in globals.css, these — and therefore the whole app — restyle at once.
+   lands in globals.css, these, and therefore the whole app, restyle at once.
    Deliberately rough now: this is the skeleton, not the final paint.
    ========================================================================== */
 

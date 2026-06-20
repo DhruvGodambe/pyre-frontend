@@ -1,4 +1,4 @@
-/* GET /api/quests — the visitor's quest tasks (catalog ⨉ their session state).
+/* GET /api/quests, the visitor's quest tasks (catalog ⨉ their session state).
    Mints the session cookie on first hit. Returns QuestTask[] (see lib/types). */
 
 import { NextResponse } from "next/server";

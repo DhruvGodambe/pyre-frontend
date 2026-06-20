@@ -1,7 +1,7 @@
 "use client";
 
-/* VILLAGE SHELL — the desktop experience. A top-down village rendered on the
-   designer's world map (used AS DELIVERED — original files, no resizing). Every
+/* VILLAGE SHELL, the desktop experience. A top-down village rendered on the
+   designer's world map (used AS DELIVERED, original files, no resizing). Every
    building is a clickable hotspot. Two-step entry:
      1. Click a building → "at the door" preview: its exterior art + Enter button.
      2. Click Enter → step inside: the feature panel, framed by interior art.
@@ -15,6 +15,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { ConnectButton } from "@/components/connect-button";
+import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
+import { TourNarration, TourHighlight } from "@/components/tour-ui";
+import { useTour } from "@/lib/tour";
 import { GatePanel } from "@/components/panels/gate";
 import { useWallet } from "@/lib/wallet";
 import { useIdentity } from "@/lib/identity";
@@ -27,7 +30,7 @@ type Layout = Record<string, Placement>;
 
 const enterLabel = (name: string) => `Enter ${name.replace(/^The /, "the ")}`;
 
-/* The world map's aspect ratio — the full, original Pyre_World_Clean.png
+/* The world map's aspect ratio, the full, original Pyre_World_Clean.png
    (6688×3764). The stage COVERS the viewport at this ratio so building
    %-coords track the artwork however the window is shaped. */
 const MAP_RATIO = 6688 / 3764; // ≈ 1.777
@@ -49,10 +52,14 @@ const defaultLayout = (): Layout =>
 
 export function VillageShell() {
   const [view, setView] = useState<View>(null);
+  // A normal building click zooms in on it (like the tour) and shows its blurb +
+  // an Enter button, instead of a flat popup.
+  const [focusId, setFocusId] = useState<BuildingId | null>(null);
   const { status } = useWallet();
   const { isSet } = useIdentity();
   const { pending, clearPending } = useNavigation();
   const awake = status === "connected" || isSet;
+  const tour = useTour();
 
   // --- Layout editor state ------------------------------------------------
   const worldRef = useRef<HTMLDivElement>(null);
@@ -129,7 +136,54 @@ export function VillageShell() {
     }
   }, [pending, clearPending]);
 
+  // --- Camera + spotlight -------------------------------------------------
+  // The same camera serves the guided tour AND a normal building click. Pan the
+  // world so the focused building sits at viewport centre, then zoom. t =
+  // -((coord-50)/100 · stageSize); the zoom scales about centre, so the framed
+  // building stays put while the rest of the kingdom grows past the edge.
+  const focusBuilding: BuildingId | null = tour.active
+    ? tour.beat && !tour.beat.overview
+      ? tour.beat.building ?? null
+      : null
+    : focusId;
+  // Dim the kingdom + spotlight the focused building (a tour "outside" beat, or
+  // a normal building click).
+  const spotlightOn =
+    (tour.active && tour.beat?.phase === "outside" && !tour.beat?.overview) ||
+    (!tour.active && focusId !== null);
+  const cam = (() => {
+    if (!focusBuilding || typeof window === "undefined") {
+      return { z: 1, tx: 0, ty: 0 };
+    }
+    const lay = layout[focusBuilding];
+    if (!lay) return { z: 1, tx: 0, ty: 0 };
+    const W = Math.max(window.innerWidth, MAP_RATIO * window.innerHeight);
+    const H = Math.max(window.innerHeight, window.innerWidth / MAP_RATIO);
+    return {
+      z: 2.1,
+      tx: -((lay.x - 50) / 100) * W,
+      ty: -((lay.y - 8 - 50) / 100) * H, // -8 frames the body, not the feet
+    };
+  })();
+
+  // The tour drives the interior: an "inside" beat opens the building; an
+  // "outside" beat closes whatever the tour opened.
+  useEffect(() => {
+    if (!tour.active) return;
+    if (tour.beat?.phase === "inside" && tour.beat.building) {
+      setView({ id: tour.beat.building, mode: "inside" });
+    } else {
+      setView((v) => (v?.mode === "inside" ? null : v));
+    }
+  }, [tour.active, tour.beat]);
+
+  // A starting tour takes over the camera; drop any manual building focus.
+  useEffect(() => {
+    if (tour.active) setFocusId(null);
+  }, [tour.active]);
+
   const clickBuilding = (id: BuildingId) => {
+    if (tour.active) return; // the tour drives navigation
     if (edit) {
       setSel(id);
       return;
@@ -138,7 +192,7 @@ export function VillageShell() {
       if (!awake) setView({ id: "gate", mode: "connect" });
       return;
     }
-    setView({ id, mode: "preview" });
+    setFocusId(id); // zoom in + spotlight + show the building's blurb
   };
 
   return (
@@ -147,35 +201,75 @@ export function VillageShell() {
         <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
           PYRE
         </span>
-        <ConnectButton connectedOnly />
+        <div className="flex items-center gap-3">
+          {awake && !edit && <WorldRiteProgress />}
+          <ConnectButton connectedOnly />
+        </div>
       </header>
 
-      {/* The world. A stage that covers the viewport at the map's ratio; the map
-          fills it and buildings sit on top by %-coordinate. */}
-      <div
-        ref={worldRef}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: `max(100vw, ${100 * MAP_RATIO}vh)`,
-          height: `max(${100 / MAP_RATIO}vw, 100vh)`,
-          filter: awake || edit ? "none" : "grayscale(0.55) brightness(0.5)",
-          transition: "filter var(--duration-entry) var(--ease-warm)",
-        }}
-      >
-        {/* Map background — original Pyre_World_Clean.png, untouched. */}
-        <Image
-          src={asset("/world/map.webp")}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover select-none pointer-events-none"
-        />
+      {/* Profile, bottom-left. Sits above the mock Preview switcher in dev; at the
+          corner in production (where the switcher doesn't ship). */}
+      {awake && !edit && (
+        <div className={`absolute left-4 z-20 ${USE_MOCK ? "bottom-20" : "bottom-4"}`}>
+          <WorldProfile />
+        </div>
+      )}
+
+      {/* The world. A camera (zoom + pan) wraps a stage that covers the viewport
+          at the map's ratio; the map fills it and buildings sit on top by %-
+          coordinate. During the guided tour the camera focuses each building. */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: `scale(${cam.z})`,
+            transformOrigin: "center center",
+            transition: "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              transform: `translate(${cam.tx}px, ${cam.ty}px)`,
+              transition: "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          >
+            <div
+              ref={worldRef}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{
+                width: `max(100vw, ${100 * MAP_RATIO}vh)`,
+                height: `max(${100 / MAP_RATIO}vw, 100vh)`,
+                filter: awake || edit ? "none" : "grayscale(0.55) brightness(0.5)",
+                transition: "filter var(--duration-entry) var(--ease-warm)",
+              }}
+            >
+              {/* Map background, original Pyre_World_Clean.png, untouched. */}
+              <Image
+                src={asset("/world/map.webp")}
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover select-none pointer-events-none"
+              />
+
+              {/* Spotlight: darken the map during an outside beat so the framed
+                  building reads as lit. Above the map, below the buildings. */}
+              {spotlightOn && (
+                <div
+                  className="absolute inset-0 bg-bg/70 transition-opacity duration-base"
+                  style={{ zIndex: 1 }}
+                  aria-hidden
+                />
+              )}
 
         {BUILDINGS.map((b) => {
           const lay = layout[b.id] ?? { x: b.map.x, y: b.map.y, scale: b.scale };
           const gatePrompt = b.id === "gate" && !awake && !edit;
           const selected = edit && sel === b.id;
+          const tourFocus = spotlightOn && focusBuilding === b.id;
+          const tourDim = spotlightOn && focusBuilding !== b.id;
           return (
             <button
               key={b.id}
@@ -183,25 +277,25 @@ export function VillageShell() {
               onPointerDown={(e) => startDrag(b.id, e)}
               /* Base-anchored: the ground point (x/y) sits at the building's
                  footing. Depth-sorted by y so nearer buildings draw in front. */
-              className={`absolute group focus:outline-none ${edit ? "cursor-move" : ""}`}
+              className={`absolute group focus:outline-none transition-opacity duration-base ${
+                edit ? "cursor-move" : ""
+              } ${tourDim ? "opacity-20" : "opacity-100"}`}
               style={{
                 left: `${lay.x}%`,
                 top: `${lay.y}%`,
                 width: `${lay.scale}%`,
                 transform: "translate(-50%, -84%)",
-                zIndex: selected ? 999 : Math.round(lay.y),
+                zIndex: tourFocus ? 1000 : selected ? 999 : Math.round(lay.y),
                 touchAction: "none",
               }}
-              aria-label={`${b.name} — ${b.tagline}`}
+              aria-label={`${b.name}, ${b.tagline}`}
             >
               {b.art ? (
                 <span
-                  className={`block relative transition-[filter] duration-base ${
-                    gatePrompt ? "animate-pulse" : ""
-                  }`}
+                  className="block relative"
                   style={{
-                    filter: gatePrompt
-                      ? "drop-shadow(0 6px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(240,169,59,0.9))"
+                    filter: tourFocus
+                      ? "drop-shadow(0 10px 12px rgba(0,0,0,0.55)) drop-shadow(0 0 28px rgba(240,169,59,0.6))"
                       : "drop-shadow(0 10px 12px rgba(0,0,0,0.55))",
                   }}
                 >
@@ -216,7 +310,7 @@ export function VillageShell() {
                   />
                 </span>
               ) : (
-                /* Art not delivered / pulled — a compact labelled signpost. */
+                /* Art not delivered / pulled, a compact labelled signpost. */
                 <span className="mx-auto flex w-3/5 aspect-square items-center justify-center rounded-full bg-surface-2/80 border border-dashed border-brand/50 backdrop-blur-sm text-3xl shadow-[0_8px_14px_rgba(0,0,0,0.55)] group-hover:border-brand group-hover:shadow-glow transition-all duration-base">
                   {PLACEHOLDER_ICON[b.id] ?? "🏛"}
                 </span>
@@ -227,7 +321,7 @@ export function VillageShell() {
                 <span className="pointer-events-none absolute inset-0 ring-2 ring-brand rounded-md" />
               )}
 
-              {/* Nameplate — above the building. Always shown while editing, for
+              {/* Nameplate, above the building. Always shown while editing, for
                   the dormant Gate, and for placeholders; otherwise on hover. */}
               <span
                 className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1 whitespace-nowrap rounded-md bg-bg/80 px-2.5 py-1 backdrop-blur-sm transition-opacity duration-fast ${
@@ -244,13 +338,16 @@ export function VillageShell() {
             </button>
           );
         })}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Dormant hint */}
       {!awake && !edit && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 text-center pointer-events-none px-4 z-10">
           <p className="text-brand/90 text-base font-display drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            The village sleeps
+            The kingdom sleeps
           </p>
           <p className="text-text-2 text-xs drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)]">
             Light the lantern at the Gate to wake it
@@ -274,33 +371,81 @@ export function VillageShell() {
         />
       )}
 
-      {/* Gate — connect prompt */}
+      {/* Gate, connect prompt */}
       {view?.mode === "connect" && (
         <Overlay onClose={() => setView(null)}>
           <div className="rounded-panel bg-surface border border-surface-3/60 shadow-panel">
-            <GatePanel />
+            <GatePanel onEntered={() => setView(null)} />
           </div>
         </Overlay>
       )}
 
-      {/* STEP 1 — at the door */}
-      {view?.mode === "preview" && (
-        <Overlay onClose={() => setView(null)}>
-          <DoorPreview id={view.id} onEnter={() => setView({ id: view.id, mode: "inside" })} />
+      {/* STEP 1, at the door: a building click zooms in + spotlights it (camera
+          above), and this blurb explains it with a way in. Hidden once inside. */}
+      {focusId && !tour.active && view?.mode !== "inside" && (
+        <div className="fixed inset-x-0 bottom-0 z-[55] flex justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-md rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-5 text-center animate-entry">
+            <div className="text-text-3 text-[11px] uppercase tracking-widest">
+              {BUILDING_BY_ID[focusId].tagline}
+            </div>
+            <h2 className="font-display text-2xl text-brand mt-0.5">
+              {BUILDING_BY_ID[focusId].name}
+            </h2>
+            <p className="text-text-2 text-sm mt-2 leading-relaxed">
+              {BUILDING_BY_ID[focusId].description}
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => setFocusId(null)}
+                className="text-text-3 text-sm hover:text-text-2 transition-colors px-3 py-2"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={() => setView({ id: focusId, mode: "inside" })}
+                className="rounded-md bg-brand text-bg px-6 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+              >
+                {enterLabel(BUILDING_BY_ID[focusId].name)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2, inside. Back returns to the zoomed-in blurb (focus), not a popup. */}
+      {view?.mode === "inside" && (
+        <Overlay onClose={() => setView(null)} wide={BUILDING_BY_ID[view.id]?.wide}>
+          <Interior id={view.id} onBack={() => setView(null)} />
         </Overlay>
       )}
 
-      {/* STEP 2 — inside */}
-      {view?.mode === "inside" && (
-        <Overlay onClose={() => setView(null)}>
-          <Interior id={view.id} onBack={() => setView({ id: view.id, mode: "preview" })} />
-        </Overlay>
+      {/* GUIDED TOUR, the Emberkeeper's narration + controls. Drives the camera
+          (outside beats) and the interiors (inside beats) above. */}
+      {tour.active && tour.beat && <TourNarration />}
+
+      {/* Coachmark: glow/spotlight the exact UI section the current line is about
+          (e.g. the Forge's Stake box), so "you stake here" points somewhere real. */}
+      {tour.active && tour.beat?.phase === "inside" && tour.beat.highlight && (
+        <TourHighlight targetId={tour.beat.highlight} />
+      )}
+
+      {/* Mock-only: replay the guided tour without re-running the whole intro. */}
+      {USE_MOCK && awake && !edit && !tour.active && (
+        <button
+          onClick={tour.start}
+          className="fixed bottom-3 right-14 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
+        >
+          ▶ Replay tour
+        </button>
       )}
     </main>
   );
 }
 
-/* The hand-placement editor — drag buildings on the map, resize the selected
+/* TourNarration + TourHighlight now live in components/tour-ui.tsx (shared by
+   both shells). The camera + interior driving stay here in VillageShell. */
+
+/* The hand-placement editor, drag buildings on the map, resize the selected
    one, copy the resulting coordinates. Mock/dev only. */
 function LayoutEditor({
   edit,
@@ -408,13 +553,24 @@ function LayoutEditor({
 }
 
 /* Shared dim backdrop + entry animation container. */
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Overlay({
+  children,
+  onClose,
+  wide = false,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+}) {
   return (
     <div
       className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-bg/85 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div className="animate-entry w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`animate-entry w-full max-h-[90vh] overflow-y-auto ${wide ? "max-w-6xl" : "max-w-lg"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>

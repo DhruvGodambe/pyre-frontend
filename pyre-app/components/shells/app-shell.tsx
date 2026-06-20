@@ -1,7 +1,7 @@
 "use client";
 
 /* Picks the shell by viewport: Village on desktop, Dashboard on mobile.
-   Same panels render in both — this only chooses the frame.
+   Same panels render in both, this only chooses the frame.
    The Design Preview switcher floats over both (mock mode only). */
 
 import { useEffect } from "react";
@@ -32,7 +32,7 @@ export function AppShell() {
     <>
       {isDesktop ? <VillageShell /> : <MobileShell />}
       <PreviewSwitcher />
-      {/* The cinematic brand film — plays first on arrival, over everything,
+      {/* The cinematic brand film, plays first on arrival, over everything,
           with a Skip. When it ends/skips, the Emberkeeper onboarding takes over. */}
       <PyreIntro />
       {/* The real, user-facing first-time onboarding (shows in every mode). */}

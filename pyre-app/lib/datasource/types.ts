@@ -1,10 +1,10 @@
 /* ============================================================================
-   PYRE — DataSource interface  ("the one switch")
+   PYRE, DataSource interface  ("the one switch")
    ----------------------------------------------------------------------------
    Every read and every write the UI needs is a method here. Two implementations:
 
-     • MockDataSource   — realistic fake data, works with NO contract (today)
-     • ChainDataSource  — wagmi/viem reads + writes against the deployed contracts
+     • MockDataSource, realistic fake data, works with NO contract (today)
+     • ChainDataSource, wagmi/viem reads + writes against the deployed contracts
                           (a stub for now; filled in when the developer ships ABIs)
 
    The whole UI depends only on this interface. Swapping the implementation

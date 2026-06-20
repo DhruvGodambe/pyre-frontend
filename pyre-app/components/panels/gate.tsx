@@ -1,27 +1,93 @@
 "use client";
 
-/* THE GATE — the entry moment (not a feature panel). Pre-connect: the village is
-   dormant. On connect: it wakes. Spec: 05-ui-screens.md → "The Gate".
-   Used by the Village shell as the entry overlay; on mobile it's the header. */
+/* THE GATE, the entry moment (not a feature panel). The dormant village's
+   threshold: choose HOW you enter. Mirrors the intro's identity fork, so a
+   returning visitor (intro already seen, no identity yet) gets the SAME
+   connect-or-guest choice here as a first-timer does at the end of the lore.
+   Connecting is never forced, guest is an equal path. Either choice sets an
+   identity, which wakes the village (`awake = connected || isSet`) and unlocks
+   everything. Spec: 05-ui-screens.md → "The Gate".
+   Used by the Village shell as the dormant entry overlay. */
 
+import { useEffect, useRef, useState } from "react";
+import { useIdentity } from "@/lib/identity";
 import { useWallet } from "@/lib/wallet";
-import { Button } from "@/components/ui/primitives";
+import { Button, Field } from "@/components/ui/primitives";
 
-export function GatePanel() {
-  const { status, connect } = useWallet();
+export function GatePanel({ onEntered }: { onEntered?: () => void }) {
+  const { mode, connectWallet, continueAsGuest } = useIdentity();
+  const { status } = useWallet();
+  const connecting = status === "connecting";
+  const [guestOpen, setGuestOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  // Close the gate the instant an identity is established. A fresh wallet
+  // connect resolves async (connecting → connected → mode "wallet"); a guest
+  // choice resolves immediately. Guard so it fires exactly once.
+  const done = useRef(false);
+  useEffect(() => {
+    if (mode && !done.current) {
+      done.current = true;
+      onEntered?.();
+    }
+  }, [mode, onEntered]);
+
   return (
-    <div className="text-center py-12 space-y-4">
-      <div className="text-5xl" aria-hidden>
-        🏮
+    <div className="py-10 px-6 space-y-4 w-[min(92vw,24rem)]">
+      <div className="text-center space-y-3">
+        <div className="text-5xl" aria-hidden>
+          🏮
+        </div>
+        <h2 className="font-display text-3xl text-brand">The kingdom sleeps</h2>
+        <p className="text-text-2 text-sm max-w-xs mx-auto">
+          A single lantern burns at the gate. The fire doesn&rsquo;t demand your
+          wallet, connect if you like, or enter as a guest. Either way, the
+          fires wake.
+        </p>
       </div>
-      <h2 className="font-display text-3xl text-brand">The village sleeps</h2>
-      <p className="text-text-2 text-sm max-w-xs mx-auto">
-        A single lantern burns at the gate. Light it, and the fires wake. Dawn breaks over the
-        village.
-      </p>
-      <Button onClick={connect} disabled={status === "connecting"}>
-        {status === "connecting" ? "Dawn breaking…" : "Light the lantern · Connect"}
-      </Button>
+
+      {!guestOpen ? (
+        <div className="space-y-2">
+          <button
+            onClick={connectWallet}
+            disabled={connecting}
+            className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
+          >
+            <div className="text-sm font-medium">
+              {connecting ? "Dawn breaking…" : "Light the lantern · Connect wallet"}
+            </div>
+            <div className="text-bg/70 text-xs">
+              Your address is your entry, there&rsquo;s nothing else to submit.
+            </div>
+          </button>
+          <button
+            onClick={() => setGuestOpen(true)}
+            className="w-full text-left rounded-md bg-surface-2 text-text border border-surface-3 px-4 py-3 hover:bg-surface-3 transition-colors"
+          >
+            <div className="text-sm font-medium">Continue as guest</div>
+            <div className="text-text-3 text-xs">
+              Stay private. Pick a name now, add your wallet at the very end.
+            </div>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Field label="Choose a name" value={name} onChange={setName} placeholder="stranger" />
+          <Button
+            onClick={() => continueAsGuest(name)}
+            disabled={name.trim().length < 2}
+            className="w-full"
+          >
+            Enter as {name.trim() || "guest"}
+          </Button>
+          <button
+            onClick={() => setGuestOpen(false)}
+            className="w-full text-text-3 text-xs hover:text-text-2 transition-colors pt-1"
+          >
+            ← back to options
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /* ============================================================================
-   PYRE — Quest catalog  (the pre-launch funnel, single source of truth)
+   PYRE, Quest catalog  (the pre-launch funnel, single source of truth)
    ----------------------------------------------------------------------------
-   These are the task DEFINITIONS (content). They live in code — version-
+   These are the task DEFINITIONS (content). They live in code, version-
    controlled, easy to edit, no SQL needed. The DATABASE only stores per-visitor
    state: which tasks a session completed, and the wallet it submitted.
 
@@ -41,7 +41,7 @@ export interface QuestDef {
       - "click"  : marked complete when the visitor acts (POST /complete)
       - "wallet" : marked complete when a wallet is submitted (POST /wallet)   */
   completion: "click" | "wallet";
-  /** "Embers" earned on completion — vary by effort/value of the rite. */
+  /** "Embers" earned on completion, vary by effort/value of the rite. */
   points: number;
   /** When this rite was kindled. Drives the "Newly lit" marker; set to the
       current time when you add a brand-new rite so returning visitors see it. */
@@ -91,7 +91,7 @@ export const QUEST_CATALOG: QuestDef[] = [
     required: true,
     completion: "click",
     points: 15,
-    // Recently kindled — shows the "Newly lit" marker (example of an ad-hoc drop).
+    // Recently kindled, shows the "Newly lit" marker (example of an ad-hoc drop).
     addedAt: FUNNEL_OPENS_AT - 2 * DAYS,
   },
   {

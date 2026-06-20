@@ -46,7 +46,7 @@ export function ReviewSwap({
   const outSym = quote.output.token.symbol;
   const confirmed = swap.isSuccess && swap.data?.ok;
   const impactDanger = quote.priceImpact >= 0.05;
-  const boughtPyre = outSym === "PYRE"; // a buy — the next step is to put it to work
+  const boughtPyre = outSym === "PYRE"; // a buy, the next step is to put it to work
 
   const goStake = () => {
     onClose();
@@ -141,7 +141,7 @@ export function ReviewSwap({
               {boughtPyre ? (
                 <>
                   <p className="text-text-2 text-xs">
-                    Now stake your $PYRE to earn ETH yield — then burn to forge an Acolyte and
+                    Now stake your $PYRE to earn ETH yield, then burn to forge an Acolyte and
                     multiply it.
                   </p>
                   <Button onClick={goStake} className="w-full">

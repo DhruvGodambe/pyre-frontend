@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — State views (loading / error / empty)
+   PYRE, State views (loading / error / empty)
    ----------------------------------------------------------------------------
    The spec requires every screen to design its loading, error and empty states
    ("make waiting feel ritual, not broken"). StateView is the single wrapper that
@@ -36,7 +36,7 @@ export function EmptyState({
 }
 
 /**
- * StateView — wraps any data render with consistent loading/error handling.
+ * StateView, wraps any data render with consistent loading/error handling.
  * Usage:
  *   <StateView query={statsQuery} loading={<Skeleton .../>}>
  *     {(data) => <RealUI data={data} />}

@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — Domain types
+   PYRE, Domain types
    ----------------------------------------------------------------------------
    The exact shape of every piece of data the UI consumes. These are framework-
    and source-agnostic: the mock data source and the future on-chain data source
@@ -78,7 +78,7 @@ export interface DripState {
 
 /** Temporary yield-weight boost earned by completing the pre-launch quests and
     submitting a wallet. Shown only to the wallet that earned it. (Distinct from
-    the launch fee — which is intentionally NOT surfaced — and from private KOL
+    the launch fee, which is intentionally NOT surfaced, and from private KOL
     arrangements, which never appear in the UI.) */
 export interface MultiplierBoost {
   factor: number; // e.g. 1.2 = +20%
@@ -267,7 +267,7 @@ export interface MarketListing {
 
 /* --- Visitor identity: how someone entered the funnel ------------------- */
 /** Persisted per session so a visitor's choice (and guest name) survives a
-    hard refresh server-side, not just in the browser. Wallet is optional —
+    hard refresh server-side, not just in the browser. Wallet is optional, 
     connecting is never forced; a guest provides a username instead. */
 export interface StoredIdentity {
   mode: "wallet" | "guest";

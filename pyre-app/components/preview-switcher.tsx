@@ -1,6 +1,6 @@
 "use client";
 
-/* The Design Preview control — a small fixed panel letting the designer flip the
+/* The Design Preview control, a small fixed panel letting the designer flip the
    previewed user state. Selecting one also connects the mock wallet, so gated
    panels (Amber Vault, Forge, Hall of the Immolated) populate immediately
    instead of showing the connect wall. Mock-only; hidden against real data. */

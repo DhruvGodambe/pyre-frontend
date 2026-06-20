@@ -1,7 +1,7 @@
 /* ============================================================================
-   PYRE — Quest API client  (browser → /api/quests/*)
+   PYRE, Quest API client  (browser → /api/quests/*)
    ----------------------------------------------------------------------------
-   The quest funnel is OFF-CHAIN and permanent — it never lives on a contract —
+   The quest funnel is OFF-CHAIN and permanent, it never lives on a contract, 
    so it behaves identically whether the app is in mock or chain mode. Both
    DataSource implementations delegate their quest methods here, and these call
    our own API routes (session cookie travels automatically, same-origin).
@@ -9,10 +9,16 @@
 
 import type { QuestTask, StoredIdentity } from "../types";
 import type { TxResult } from "../datasource/types";
+import { BASE_PATH } from "../config";
+
+/* The app runs under a basePath (/app). A raw fetch() does NOT inherit it the
+   way next/link and next/image do, so every API path must be prefixed or it
+   404s behind the basePath (in dev AND production). */
+const api = (path: string) => `${BASE_PATH}${path}`;
 
 async function postJson(url: string, body: unknown): Promise<TxResult> {
   try {
-    const res = await fetch(url, {
+    const res = await fetch(api(url), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -28,7 +34,7 @@ async function postJson(url: string, body: unknown): Promise<TxResult> {
 }
 
 export async function fetchQuestTasks(): Promise<QuestTask[]> {
-  const res = await fetch("/api/quests", { cache: "no-store" });
+  const res = await fetch(api("/api/quests"), { cache: "no-store" });
   if (!res.ok) throw new Error("Could not load quests");
   const data = (await res.json()) as { tasks: QuestTask[] };
   return data.tasks;
@@ -42,10 +48,10 @@ export function submitWallet(wallet: string): Promise<TxResult> {
   return postJson("/api/quests/wallet", { wallet });
 }
 
-/* Visitor identity — durable, server-side, keyed by the session cookie. */
+/* Visitor identity, durable, server-side, keyed by the session cookie. */
 export async function fetchIdentity(): Promise<StoredIdentity | null> {
   try {
-    const res = await fetch("/api/quests/identity", { cache: "no-store" });
+    const res = await fetch(api("/api/quests/identity"), { cache: "no-store" });
     if (!res.ok) return null;
     const data = (await res.json()) as { identity: StoredIdentity | null };
     return data.identity ?? null;
@@ -60,7 +66,7 @@ export function saveIdentity(identity: StoredIdentity): Promise<TxResult> {
 
 export async function clearIdentity(): Promise<void> {
   try {
-    await fetch("/api/quests/identity", { method: "DELETE" });
+    await fetch(api("/api/quests/identity"), { method: "DELETE" });
   } catch {
     /* best-effort; local state is already cleared */
   }
@@ -78,7 +84,7 @@ export interface QuestLeaderboard {
   you: { rank: number; embers: number } | null;
 }
 export async function fetchQuestLeaderboard(): Promise<QuestLeaderboard> {
-  const res = await fetch("/api/quests/leaderboard", { cache: "no-store" });
+  const res = await fetch(api("/api/quests/leaderboard"), { cache: "no-store" });
   if (!res.ok) throw new Error("Could not load the leaderboard");
   return (await res.json()) as QuestLeaderboard;
 }
@@ -91,7 +97,7 @@ export interface ReferralInfo {
   embersEach: number;
 }
 export async function fetchReferral(): Promise<ReferralInfo> {
-  const res = await fetch("/api/quests/referral", { cache: "no-store" });
+  const res = await fetch(api("/api/quests/referral"), { cache: "no-store" });
   if (!res.ok) throw new Error("Could not load your referral link");
   return (await res.json()) as ReferralInfo;
 }

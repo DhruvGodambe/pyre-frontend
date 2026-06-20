@@ -1,20 +1,20 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Emberkeeper Intro  (the first-time, forced storytelling onboarding)
+   PYRE, Emberkeeper Intro  (the first-time, forced storytelling onboarding)
    ----------------------------------------------------------------------------
    The user-facing "Welcome, stranger" sequence shown on a visitor's FIRST visit.
-   A narrated guide — the Emberkeeper — walks the stranger through three acts:
+   A narrated guide, the Emberkeeper, walks the stranger through three acts:
 
-     ACT 1 · Cold open   — the lore: what PYRE is, the fire & the decay, the docs.
-     ACT 2 · The tour    — every building, one narrated beat each, ending at the
+     ACT 1 · Cold open, the lore: what PYRE is, the fire & the decay, the docs.
+     ACT 2 · The tour, every building, one narrated beat each, ending at the
                             Ashen Cup (the rites) to set up the funnel.
-     ACT 3 · The funnel  — introduce the rites, do the FIRST one for real
+     ACT 3 · The funnel, introduce the rites, do the FIRST one for real
                             (Follow @PYRE → completes the real quest), then a
                             shareable "flex" card with a one-tap pre-filled tweet.
 
-   Why this shape (from the GTM research on crypto game-worlds — Sunflower Land,
-   Pixels — and Telegram funnels — Hamster Kombat):
+   Why this shape (from the GTM research on crypto game-worlds, Sunflower Land,
+   Pixels, and Telegram funnels, Hamster Kombat):
      • Forced but feels optional: a muted Skip link + an ENDOWED progress bar
        (starts part-filled) so finishing feels inevitable, not trapped.
      • The X / share prompt lands AFTER a first win, never on the cold open.
@@ -36,12 +36,13 @@ import { QUEST_CATALOG } from "@/lib/quests/catalog";
 import { useCompleteQuestTask, useReferral } from "@/lib/hooks";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
+import { useTour } from "@/lib/tour";
 import { useWallet } from "@/lib/wallet";
 import { shortAddress } from "@/lib/format";
 import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
 import { USE_MOCK, asset } from "@/lib/config";
 
-/* localStorage keys — "seen" gates the auto-show; "step" makes it resumable. */
+/* localStorage keys, "seen" gates the auto-show; "step" makes it resumable. */
 const SEEN_KEY = "pyre_intro_seen";
 const STEP_KEY = "pyre_intro_step";
 
@@ -49,7 +50,7 @@ const STEP_KEY = "pyre_intro_step";
    stranger feels they've begun, not that they're staring down a long road. */
 const PROGRESS_HEAD = 0.18;
 
-/* The tour order — narrative flow, NOT registry order. Ends on the Tavern so the
+/* The tour order, narrative flow, NOT registry order. Ends on the Tavern so the
    tour walks straight into the rites (the funnel). The Gate is excluded: it IS
    the connect mechanic, introduced in the lore, not toured. */
 const TOUR: BuildingId[] = [
@@ -63,14 +64,14 @@ const TOUR: BuildingId[] = [
   "tavern",
 ];
 
-/* The Emberkeeper's one line per building — "what you can do here", in his voice.
+/* The Emberkeeper's one line per building, "what you can do here", in his voice.
    Kept separate from the registry `description` (that copy is for the at-the-door
    preview; this is the guided-tour beat). */
 const TOUR_LINE: Record<BuildingId, string> = {
   bonfire:
     "The heart of it all. Every $PYRE fed to the fire feeds this flame. Watch the burn climb, live.",
   forge:
-    "Where you act. Stake your $PYRE to earn ETH yield and shield it from the decay — then burn $PYRE to forge your Pyre Acolyte, which multiplies that yield up to 3×.",
+    "Where you act. Stake your $PYRE to earn ETH yield and shield it from the decay, then burn $PYRE to forge your Pyre Acolyte, which multiplies that yield up to 3×.",
   vault:
     "Your own hold. Your Pyre Acolyte, your balances, your yield, your standing in the fire. Everything here is yours.",
   observatory:
@@ -95,30 +96,30 @@ type Scene =
   | { kind: "funnel" }
   | { kind: "referral" };
 
+/* The intro is now just the LORE COLD-OPEN + the identity choice. Choosing how
+   you enter hands off to the guided world Tour (lib/tour), one onboarding, not
+   two. The building walk / rites that used to live here are the Tour now. */
 const SCENES: Scene[] = [
   {
     kind: "lore",
     title: "Welcome, stranger.",
     body:
-      "You've found a village that runs on fire. Not the warm kind. $PYRE is a token built to be burned. Come closer, and I'll show you how it all lives.",
+      "We're glad you chose to visit the Pyre kingdom: a realm that runs on fire, where $PYRE is a token built to be burned.",
   },
   {
     kind: "lore",
-    title: "The fire & the decay.",
+    title: "You're early.",
     body:
-      "Every $PYRE left idle slowly decays away. Stake it to earn ETH and hold back the decay — and what you burn is never lost: it forges a Pyre Acolyte that is yours, multiplying your yield each time you feed the flame.",
+      "Few have found this place yet, and the early are remembered. There are rites to be earned in these first days, and what they unlock is revealed closer to launch.",
   },
   {
     kind: "lore",
-    title: "How the village works.",
+    title: "Let me show you around.",
     body:
-      "Eight places ring the Bonfire, each one a thing you can do. I'll walk you past every door. Want the whole story first? The scrolls are always here.",
+      "I'm the Emberkeeper. Choose how you'll enter, and I'll walk you through the kingdom building by building, so you know how it all lives. Want the whole story first? The scrolls are always here.",
     docs: true,
   },
-  ...TOUR.map((id): Scene => ({ kind: "building", id })),
   { kind: "identity" },
-  { kind: "funnel" },
-  { kind: "referral" },
 ];
 
 /* The building glyph (placeholder until the designer's exterior art lands). */
@@ -129,16 +130,20 @@ export function EmberkeeperIntro() {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  // Skip asks for confirmation first, a loss-aversion guard so people don't
+  // bail on their first rite by reflex.
+  const [confirmSkip, setConfirmSkip] = useState(false);
   const complete = useCompleteQuestTask();
   const { navigate } = useNavigation();
   const identity = useIdentity();
+  const tour = useTour();
 
   // First visit → open at the saved step (resumable). Runs client-side only.
   //
   // Escape hatch for review: visiting with `?intro=1` (or `#intro`) FORCES the
   // intro open from the start, regardless of the "seen" flag and regardless of
   // mock/live mode. This is how the team and the designer re-watch the whole
-  // flow on demand without clearing storage or hunting for the replay button —
+  // flow on demand without clearing storage or hunting for the replay button, 
   // it skips otherwise because it's deliberately first-visit-only.
   useEffect(() => {
     setReady(true);
@@ -163,7 +168,7 @@ export function EmberkeeperIntro() {
 
   if (!ready || !open) {
     // Mock-only replay control, so the look can be re-tested without clearing
-    // storage. Bottom-centre — clear of the DesignerIntro "?" (bottom-right) and
+    // storage. Bottom-centre, clear of the DesignerIntro "?" (bottom-right) and
     // the Preview switcher (bottom-left). Never ships to the real app.
     //
     // FULL first-time reset: identity now persists server-side (Supabase, keyed
@@ -181,7 +186,7 @@ export function EmberkeeperIntro() {
           setOpen(true);
         }}
         className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
-        title="Replay the full first-time intro from scratch — resets identity so the connect-vs-guest fork shows fresh (mock only)"
+        title="Replay the full first-time intro from scratch, resets identity so the connect-vs-guest fork shows fresh (mock only)"
       >
         ↺ Replay first-time intro
       </button>
@@ -205,26 +210,35 @@ export function EmberkeeperIntro() {
     finish();
   };
 
+  // Hand off from the lore/identity intro to the guided Tour, one onboarding.
+  // Desktop flies the camera over the map; mobile scrolls + spotlights panels.
+  const beginTour = () => {
+    finish();
+    tour.start();
+  };
+
   return (
-    // Forced: the backdrop does NOT dismiss. The only exits are Skip / Enter.
+    <>
+    {/* Forced: the backdrop does NOT dismiss. The only exits are Skip / Enter. */}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/92 backdrop-blur-sm">
       <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-panel bg-surface border border-surface-3/60 shadow-panel">
-        {/* Top bar — endowed progress + a muted, deliberately un-inviting skip. */}
+        {/* Top bar, endowed progress + a muted, deliberately un-inviting skip. */}
         <div className="flex items-center gap-3 px-5 pt-4">
           <div className="flex-1">
             <ProgressBar value={progress} />
           </div>
-          {!last && (
-            <button
-              onClick={finish}
-              className="text-text-3 text-xs hover:text-text-2 transition-colors shrink-0"
-            >
-              Skip
-            </button>
-          )}
+          {/* Always-available exit. Kept secondary (muted), research says a
+              forced flow with no out raises drop-off, but the reward hook above
+              is what pulls people through rather than trapping them. */}
+          <button
+            onClick={() => setConfirmSkip(true)}
+            className="text-text-3 text-xs hover:text-text-2 transition-colors shrink-0"
+          >
+            Skip intro
+          </button>
         </div>
 
-        {/* Narrator chrome — the Emberkeeper. No face; an ember glyph + a name. */}
+        {/* Narrator chrome, the Emberkeeper. No face; an ember glyph + a name. */}
         <div className="flex items-center gap-2 px-5 pt-4">
           <span className="text-brand text-lg" aria-hidden>
             ✦
@@ -234,13 +248,30 @@ export function EmberkeeperIntro() {
           </span>
         </div>
 
-        {/* Scene — re-animates on each step via the `key`. */}
+        {/* COLD-OPEN HOOK (step 0 only). Plant the goal + reward up front so the
+            visitor has a reason to finish, without pitching the quest ask yet
+            (that lands after a first win). Glosses "rite" in plain words on first
+            use, and teases the reward without over-promising (revealed at launch).
+            Backed by onboarding research: early reward expectation + goal-gradient
+            lift completion; unexplained jargon drives drop-off. */}
+        {step === 0 && (
+          <div className="mx-5 mt-3 rounded-md border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5">
+            <p className="text-text-2 text-xs leading-relaxed">
+              Stay to the end and you&rsquo;ll complete your{" "}
+              <span className="text-brand">first rite</span>, a short quest. The early
+              are rewarded: rites earn <span className="text-text">Embers</span>, and what
+              they unlock is revealed closer to launch.
+            </p>
+          </div>
+        )}
+
+        {/* Scene, re-animates on each step via the `key`. */}
         <div key={step} className="animate-entry px-5 pb-5 pt-2">
           {scene.kind === "lore" && (
             <LoreScene title={scene.title} body={scene.body} docs={scene.docs} />
           )}
           {scene.kind === "building" && <BuildingScene id={scene.id} />}
-          {scene.kind === "identity" && <IdentityScene onChose={next} />}
+          {scene.kind === "identity" && <IdentityScene onChose={beginTour} />}
           {scene.kind === "funnel" && (
             <FunnelScene
               onFollow={() => {
@@ -273,10 +304,10 @@ export function EmberkeeperIntro() {
             )}
             {scene.kind === "identity" && identity.isSet && (
               <button
-                onClick={next}
+                onClick={beginTour}
                 className="rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
               >
-                Continue
+                Begin the tour →
               </button>
             )}
             {scene.kind === "funnel" && (
@@ -299,6 +330,38 @@ export function EmberkeeperIntro() {
         </div>
       </div>
     </div>
+
+    {/* Skip confirmation, loss-aversion guard. Primary action KEEPS them in;
+        skipping is the quiet secondary choice. */}
+    {confirmSkip && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm">
+        <div className="w-full max-w-sm rounded-panel bg-surface border border-surface-3/60 shadow-panel p-6 text-center space-y-3 animate-entry">
+          <h3 className="font-display text-2xl text-brand">Skip the introduction?</h3>
+          <p className="text-text-2 text-sm leading-relaxed">
+            You&rsquo;ll miss your <span className="text-brand">first rite</span>, a short
+            quest that earns Embers, with rewards revealed closer to launch.
+          </p>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={() => setConfirmSkip(false)}
+              className="rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+            >
+              Keep going
+            </button>
+            <button
+              onClick={() => {
+                setConfirmSkip(false);
+                finish();
+              }}
+              className="text-text-3 text-xs hover:text-text-2 transition-colors py-1"
+            >
+              Skip anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -336,7 +399,7 @@ function BuildingScene({ id }: { id: BuildingId }) {
   const n = TOUR.indexOf(id) + 1;
   return (
     <div className="space-y-4">
-      {/* Exterior close-up — the designer's building art (glyph fallback until
+      {/* Exterior close-up, the designer's building art (glyph fallback until
           a building's art is delivered, e.g. the Observatory). */}
       <div
         className="relative h-36 rounded-md flex items-end justify-center overflow-hidden border border-surface-3/60"
@@ -369,7 +432,7 @@ function BuildingScene({ id }: { id: BuildingId }) {
 }
 
 /* The fork: connect a wallet, or enter as a named guest. Connecting is never
-   forced — many people are wary of it, so guest is an equal, first-class path. */
+   forced, many people are wary of it, so guest is an equal, first-class path. */
 function IdentityScene({ onChose }: { onChose: () => void }) {
   const { mode, address, username, connectWallet, continueAsGuest, reset } = useIdentity();
   const { status } = useWallet();
@@ -377,7 +440,7 @@ function IdentityScene({ onChose }: { onChose: () => void }) {
   const [name, setName] = useState("");
   const advanced = useRef(false);
   // Was an identity already set when this scene mounted? (i.e. Back navigation.)
-  // If so, don't auto-advance — let the visitor sit and use Back / Continue.
+  // If so, don't auto-advance, let the visitor sit and use Back / Continue.
   const startedSet = useRef(mode !== null);
 
   // Auto-advance only on a FRESH wallet connect made on this scene.
@@ -477,6 +540,7 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
           The Tavern
         </div>
         <h2 className="font-display text-3xl text-brand leading-none">The Rites</h2>
+        <p className="text-text-3 text-xs mt-1">Rites are short quests. Do them, earn Embers.</p>
       </div>
       <p className="text-text-2 text-base leading-relaxed">
         You came early, and the early are remembered. Each rite you complete
@@ -496,7 +560,7 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
         </p>
       )}
 
-      {/* The rites, previewed — this is the "introduce the quest platform" beat. */}
+      {/* The rites, previewed, this is the "introduce the quest platform" beat. */}
       <ul className="space-y-1.5">
         {QUEST_CATALOG.filter((q) => q.id !== "submit")
           .slice(0, 5)
@@ -512,7 +576,7 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
         <li className="text-text-3 text-xs pl-5">…and submit your wallet to lock it in.</li>
       </ul>
 
-      {/* The FIRST rite, done for real — the "first win" before the share card. */}
+      {/* The FIRST rite, done for real, the "first win" before the share card. */}
       <a
         href={follow?.href ?? "https://x.com"}
         target="_blank"
@@ -526,7 +590,7 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
   );
 }
 
-/* The closing beat — introduce refer-a-friend (the repeatable earn) right before
+/* The closing beat, introduce refer-a-friend (the repeatable earn) right before
    handing the visitor into the Tavern. Doubles as the viral share moment. */
 function ReferralScene() {
   const referral = useReferral();

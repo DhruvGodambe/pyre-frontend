@@ -1,4 +1,4 @@
-/* POST /api/quests/wallet  { wallet } — record the address this session submits
+/* POST /api/quests/wallet  { wallet }, record the address this session submits
    to receive its multiplier. Completes the wallet-gated funnel task. */
 
 import { NextResponse } from "next/server";

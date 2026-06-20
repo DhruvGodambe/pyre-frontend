@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — Quest session identity
+   PYRE, Quest session identity
    ----------------------------------------------------------------------------
    The funnel is intentionally wallet-free ("just submit your address when you're
    done"), so we identify a visitor by an anonymous, httpOnly session cookie.

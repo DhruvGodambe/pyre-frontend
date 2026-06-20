@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — DESIGN TOKENS  ("the control panel for the entire look")
+   PYRE, DESIGN TOKENS  ("the control panel for the entire look")
    ============================================================================
 
    This is THE file to change when the designer delivers his look.
@@ -11,7 +11,7 @@
 
    Values below are PLACEHOLDERS based on PYRE's already-locked brand direction
    (warm amber/gold on near-black, Cormorant Garamond display). They are
-   intentionally rough — a skeleton, not the final design. Swap them for the
+   intentionally rough, a skeleton, not the final design. Swap them for the
    designer's exact values when they arrive.
 
    Tailwind v4: tokens declared in @theme become utilities automatically,
@@ -22,18 +22,18 @@
 
 @theme {
   /* --- Brand ------------------------------------------------------------ */
-  --color-brand: #f0a93b;            /* PLACEHOLDER amber/gold — the PYRE fire */
+  --color-brand: #f0a93b;            /* PLACEHOLDER amber/gold, the PYRE fire */
   --color-brand-deep: #c8731c;       /* deeper ember for hovers/gradients */
   --color-brand-soft: #f7d08a;       /* pale gold for highlights */
 
   /* --- Surfaces (dark, layered) ---------------------------------------- */
-  --color-bg: #0b0a09;               /* page background — near-black, warm */
+  --color-bg: #0b0a09;               /* page background, near-black, warm */
   --color-surface: #161310;          /* panels / cards */
   --color-surface-2: #221d18;        /* raised elements, inputs */
   --color-surface-3: #2e2720;        /* borders, dividers, hover fills */
 
   /* --- Text ------------------------------------------------------------- */
-  --color-text: #f4ece0;             /* primary text — warm off-white */
+  --color-text: #f4ece0;             /* primary text, warm off-white */
   --color-text-2: #b8ab99;           /* secondary text */
   --color-text-3: #7d7263;           /* muted / captions */
 
@@ -72,7 +72,7 @@
 }
 
 /* ----------------------------------------------------------------------------
-   Base element defaults — derived from tokens only. No hardcoded values.
+   Base element defaults, derived from tokens only. No hardcoded values.
    -------------------------------------------------------------------------- */
 :root {
   color-scheme: dark;
@@ -91,7 +91,7 @@ h1, h2, h3, h4 {
   font-weight: 500;
 }
 
-/* Numbers/stats read best in mono — a small utility the panels use. */
+/* Numbers/stats read best in mono, a small utility the panels use. */
 .tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

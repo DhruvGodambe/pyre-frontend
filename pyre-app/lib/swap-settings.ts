@@ -1,12 +1,12 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Swap settings (slippage + deadline), persisted like Uniswap
+   PYRE, Swap settings (slippage + deadline), persisted like Uniswap
    ----------------------------------------------------------------------------
    The Grand Exchange remembers the user's max-slippage and transaction-deadline
    choices across reloads (localStorage). `effectiveSlippageBps` resolves the
    Auto vs Custom choice into the single number the quote/swap actually uses.
-   No new deps — a tiny localStorage-backed hook.
+   No new deps, a tiny localStorage-backed hook.
    ========================================================================== */
 
 import { useCallback, useEffect, useState } from "react";
@@ -53,7 +53,7 @@ export function useSwapSettings() {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
-        /* storage unavailable — keep in-memory */
+        /* storage unavailable, keep in-memory */
       }
       return next;
     });

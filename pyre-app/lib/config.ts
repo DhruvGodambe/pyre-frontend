@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — App config  ("the switch")
+   PYRE, App config  ("the switch")
    ----------------------------------------------------------------------------
    USE_MOCK = true  → the whole app runs on realistic fake data (no contract).
    USE_MOCK = false → the app reads/writes the deployed contracts on-chain.
@@ -14,16 +14,16 @@ import type { Address, TokenInfo } from "./types";
 export const USE_MOCK =
   process.env.NEXT_PUBLIC_USE_MOCK !== "false"; // default: mock on
 
-/** The app is served under /app (next.config.mjs basePath). Raw assets — the
+/** The app is served under /app (next.config.mjs basePath). Raw assets, the
     intro video, and <Image> sources (Next does NOT reliably prefix basePath on
-    image src in this multi-zone setup) — must add it. Use asset() for any file
+    image src in this multi-zone setup), must add it. Use asset() for any file
     under /public. */
 export const BASE_PATH = "/app";
 export const asset = (path: string) => `${BASE_PATH}${path}`;
 
 /* Testing phase → default to Sepolia (the dev tests the pool + hook on a
    testnet). Flips to mainnet (1) at launch via NEXT_PUBLIC_CHAIN_ID, or set it
-   to 84532 (Base Sepolia) / 1301 (Unichain Sepolia) — all four are in
+   to 84532 (Base Sepolia) / 1301 (Unichain Sepolia), all four are in
    V4_DEPLOYMENTS below. */
 export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 11155111); // Sepolia
 
@@ -40,11 +40,11 @@ export const CONTRACTS: Record<
 };
 
 /* ============================================================================
-   UNISWAP V4 — Grand Exchange swap wiring
+   UNISWAP V4, Grand Exchange swap wiring
    ----------------------------------------------------------------------------
    The Grand Exchange swaps PYRE↔ETH against our own v4 pool (which carries the
    PYRE Diamond hook). Everything below is READ by ChainDataSource and is INERT
-   while USE_MOCK is true — the mock needs none of it. When the dev deploys the
+   while USE_MOCK is true, the mock needs none of it. When the dev deploys the
    pool, pick the network, confirm the PoolKey, set NEXT_PUBLIC_USE_MOCK=false,
    and fill in lib/datasource/chain.ts. Nothing in the UI changes.
 
@@ -107,7 +107,7 @@ export const V4 = V4_DEPLOYMENTS[CHAIN_ID];
 
 /** Dynamic-fee sentinel: a v4 pool whose LP fee is set by its hook at swap time
     carries this flag as its PoolKey.fee. PYRE uses a static pool fee + a hook
-    fee, so this is false — but the field is here for the dev to flip if the
+    fee, so this is false, but the field is here for the dev to flip if the
     Diamond hook is reconfigured to a dynamic fee. */
 export const DYNAMIC_FEE_FLAG = 0x800000;
 
@@ -115,7 +115,7 @@ export const DYNAMIC_FEE_FLAG = 0x800000;
     ETH is address(0), so it sorts first → currency0 = ETH, currency1 = PYRE.
     fee/tickSpacing/hooks are confirmed at deploy time. */
 export const POOL = {
-  feeTier: 100, // pool LP fee in bps (1%) — see POOL_FEE_BPS in constants.ts
+  feeTier: 100, // pool LP fee in bps (1%), see POOL_FEE_BPS in constants.ts
   tickSpacing: 60,
   isDynamicFee: false,
   /** address(0) sentinel for native ETH as currency0. */

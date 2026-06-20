@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/primitives";
 import { shortAddress } from "@/lib/format";
 
 /* connectedOnly: render the account chip when connected, but nothing when
-   disconnected — used in the Village header, where the Gate is the connect
+   disconnected, used in the Village header, where the Gate is the connect
    prompt so a second "Connect Wallet" button would be redundant. */
 export function ConnectButton({ connectedOnly = false }: { connectedOnly?: boolean }) {
   const { status, address, connect, disconnect } = useWallet();
@@ -19,7 +19,7 @@ export function ConnectButton({ connectedOnly = false }: { connectedOnly?: boole
   if (connectedOnly) return null;
   return (
     <Button onClick={connect} disabled={status === "connecting"}>
-      {status === "connecting" ? "Waking the village…" : "Connect Wallet"}
+      {status === "connecting" ? "Waking the kingdom…" : "Connect Wallet"}
     </Button>
   );
 }

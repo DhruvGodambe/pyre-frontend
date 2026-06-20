@@ -1,14 +1,14 @@
 /* ============================================================================
-   PYRE — QuestStore interface  ("the one switch", DB edition)
+   PYRE, QuestStore interface  ("the one switch", DB edition)
    ----------------------------------------------------------------------------
    The persistence boundary for the quest funnel. Two implementations:
 
-     • FileStore     — a JSON file under .data/ (zero config, local dev only)
-     • SupabaseStore — the real Postgres tables (production)
+     • FileStore, a JSON file under .data/ (zero config, local dev only)
+     • SupabaseStore, the real Postgres tables (production)
 
    lib/db/index.ts picks one based on env (Supabase keys present → Supabase).
    The API routes depend ONLY on this interface, so swapping dev↔prod storage is
-   invisible to them — exactly like the mock↔chain DataSource switch.
+   invisible to them, exactly like the mock↔chain DataSource switch.
    ========================================================================== */
 
 import type { StoredIdentity } from "../types";
@@ -19,7 +19,7 @@ export interface WalletSubmission {
 }
 
 /** Raw per-session progress for the quest (Ember) leaderboard. The Ember TOTAL
-    is computed in the route from the catalog point values — kept out of the DB
+    is computed in the route from the catalog point values, kept out of the DB
     so changing a rite's worth doesn't need a migration. */
 export interface LeaderboardRow {
   sessionId: string;

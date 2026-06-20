@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — Display formatting
+   PYRE, Display formatting
    ----------------------------------------------------------------------------
    Turns on-chain bigints + raw values into the strings the UI shows. Centralised
    so number formatting is consistent everywhere (and easy to restyle).
@@ -67,7 +67,7 @@ export function formatCountdown(msUntil: number): string {
   return `${pad(h)}:${pad(m)}:${pad(sec)}`;
 }
 
-/** "3m ago", "2h ago" — for activity feeds. */
+/** "3m ago", "2h ago", for activity feeds. */
 export function formatAgo(at: number, now = Date.now()): string {
   const s = Math.max(0, Math.floor((now - at) / 1000));
   if (s < 60) return `${s}s ago`;

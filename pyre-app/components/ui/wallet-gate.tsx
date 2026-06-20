@@ -10,7 +10,7 @@ import { Button } from "./primitives";
 
 export function RequireWallet({
   children,
-  title = "The village sleeps",
+  title = "The kingdom sleeps",
   message = "Connect your wallet to wake it.",
 }: {
   children: ReactNode;

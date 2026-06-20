@@ -1,23 +1,23 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Cinematic Intro  (the brand opening, shown before the world)
+   PYRE, Cinematic Intro  (the brand opening, shown before the world)
    ----------------------------------------------------------------------------
    When a visitor arrives, they first get the designer's Pyre_Intro film. It
    plays full-screen over a black stage; a clear "Skip intro →" lets anyone move
    straight to the world. When the film ends (or is skipped) it dismisses and the
-   village / dashboard is revealed underneath — and, on a first visit, the
+   village / dashboard is revealed underneath, and, on a first visit, the
    Emberkeeper onboarding takes over from there.
 
    Gating:
      • Shows once per browser (localStorage "pyre_intro_video_seen"), so it lands
        on the first arrival but never nags on every refresh.
-     • Force a replay any time with ?video=1 (or #video) — for the team/designer
+     • Force a replay any time with ?video=1 (or #video), for the team/designer
        to re-watch on demand without clearing storage.
 
    Autoplay reality: browsers block sound-on autoplay, so the film starts MUTED
    and we surface a prominent "🔊 Sound on" control. Skip and the sound toggle
-   are the only chrome — everything else is the film.
+   are the only chrome, everything else is the film.
    ========================================================================== */
 
 import { useEffect, useRef, useState } from "react";
@@ -81,7 +81,7 @@ export function PyreIntro() {
         </div>
       )}
 
-      {/* Sound toggle — prominent, because the film wants to be heard. */}
+      {/* Sound toggle, prominent, because the film wants to be heard. */}
       <button
         onClick={toggleSound}
         className="absolute top-5 left-5 rounded-full bg-black/55 border border-white/15 text-white/90 text-sm px-4 py-2 backdrop-blur hover:border-brand hover:text-brand transition-colors"
@@ -89,7 +89,7 @@ export function PyreIntro() {
         {muted ? "🔊 Sound on" : "🔇 Mute"}
       </button>
 
-      {/* Skip — always available, never hidden. */}
+      {/* Skip, always available, never hidden. */}
       <button
         onClick={finish}
         className="absolute bottom-5 right-5 rounded-full bg-black/55 border border-white/15 text-white/90 text-sm px-5 py-2.5 backdrop-blur hover:border-brand hover:text-brand transition-colors"

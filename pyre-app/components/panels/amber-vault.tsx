@@ -1,8 +1,8 @@
 "use client";
 
-/* THE AMBER VAULT — your position + Pyre Acolyte. Requires wallet.
+/* THE AMBER VAULT, your position + Pyre Acolyte. Requires wallet.
    Spec: 05-ui-screens.md → "The Amber Vault". States: not-connected, loading,
-   acolyte (no Pyre Acolyte forged yet — a conversion screen, NOT a dead end),
+   acolyte (no Pyre Acolyte forged yet, a conversion screen, NOT a dead end),
    populated. Includes the quest-completer boost (if earned) and personal
    transaction history. */
 
@@ -17,7 +17,7 @@ import { StateView } from "@/components/ui/state";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
-import { STAGES } from "@/lib/constants";
+import { STAGES, acolyteName } from "@/lib/constants";
 import {
   formatToken,
   formatEth,
@@ -49,12 +49,12 @@ export function AmberVaultPanel() {
               />
             ) : (
               <div className="space-y-5">
-                <div className="flex gap-4 items-center">
+                <div className="flex flex-col items-center text-center gap-4 sm:flex-row sm:items-center sm:text-left">
                   <AcolyteArt acolyte={a} size={140} />
                   <div className="space-y-2">
                     <div>
-                      <span className="font-display text-3xl text-brand">{a.stageName}</span>
-                      <span className="text-text-3 ml-2">Stage {a.stage}</span>
+                      <span className="font-display text-3xl text-brand">{acolyteName(a.stage)}</span>
+                      <span className="text-text-3 ml-2">Tier {a.stage} of 4</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge tone="brand">{a.multiplier}× yield</Badge>
@@ -75,7 +75,7 @@ export function AmberVaultPanel() {
                 <StateView query={position}>
                   {(p) => (
                     <>
-                      {/* Quest-completer boost — shown only to the wallet that earned it */}
+                      {/* Quest-completer boost, shown only to the wallet that earned it */}
                       {p.boost && (
                         <div className="flex items-center justify-between rounded-md bg-brand/10 border border-brand/30 px-3 py-2">
                           <span className="text-brand text-sm">
@@ -102,7 +102,7 @@ export function AmberVaultPanel() {
 
                       {/* Always-present next step: more burned = more multiplier on the
                           staked yield. Nudge the two actions that grow the position. */}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div id="vault-actions" className="grid grid-cols-2 gap-2 scroll-mt-24">
                         <NavCta to="forge" tab="stake" variant="ghost">Stake more</NavCta>
                         <NavCta to="forge" tab="burn">
                           {a.stage >= 4 ? "Burn more" : "Burn → raise multiplier"}
@@ -145,7 +145,7 @@ export function AmberVaultPanel() {
 }
 
 /* The pre-forge state. The most-visited empty state in the app, and the top of
-   the funnel — so it SELLS the loop instead of dead-ending: stake $PYRE to earn
+   the funnel, so it SELLS the loop instead of dead-ending: stake $PYRE to earn
    ETH, burn $PYRE to forge your Acolyte and multiply that yield (up to 3×). The
    primary CTA adapts to whether they hold any $PYRE yet. */
 function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
@@ -159,10 +159,11 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
         <div className="text-4xl text-text-3" aria-hidden>
           🜂
         </div>
-        <h3 className="font-display text-2xl text-brand">You are a Pyre Acolyte</h3>
+        <h3 className="font-display text-2xl text-brand">You haven&rsquo;t forged an Acolyte yet</h3>
         <p className="text-text-2 text-sm max-w-sm mx-auto">
-          You haven&rsquo;t entered the fire yet. Stake $PYRE to earn ETH yield, then burn $PYRE
-          to forge your Acolyte — it multiplies that yield up to 3×. Idle $PYRE only decays.
+          Stake $PYRE to earn ETH yield and shield it from decay. Then burn $PYRE to forge your
+          Acolyte, an NFT that multiplies that yield, rising tier by tier from Ember Acolyte up to
+          Pyre Acolyte (3×). Idle $PYRE only decays.
         </p>
       </div>
 
@@ -185,7 +186,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
         />
       </div>
 
-      {/* Next step — adapts to whether they hold $PYRE yet */}
+      {/* Next step, adapts to whether they hold $PYRE yet */}
       <div className="space-y-2">
         {hasPyre ? (
           <>

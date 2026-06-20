@@ -1,7 +1,7 @@
 "use client";
 
-/* THE BLACK MARKET — Pyre Acolyte marketplace, live at launch. A branded window
-   over external listings (OpenSea/Blur) — no separate contract.
+/* THE BLACK MARKET, Pyre Acolyte marketplace, live at launch. A branded window
+   over external listings (OpenSea/Blur), no separate contract.
    Spec: 05-ui-screens.md → "The Black Market". Key state: empty market at launch
    ("the market is cold, no Acolytes have risen yet"). */
 
@@ -39,7 +39,7 @@ export function BlackMarketPanel() {
             <EmptyState
               icon="🜂"
               title="The market is cold"
-              message="No Acolytes have risen yet. They appear here the moment wallets begin to burn — be the first to forge one."
+              message="No Acolytes have risen yet. They appear here the moment wallets begin to burn, be the first to forge one."
               action={
                 <NavCta to="forge" tab="burn" className="">
                   Forge the first Acolyte

@@ -13,7 +13,7 @@ const jobs = [
   // Interior backdrop.
   { in: `${W}/interiors/observatory.png`, out: `${W}/interiors/observatory.webp`, width: 2048, q: 80 },
   // Buildings: keep full 1484px (covers high-DPI display), alpha preserved.
-  ...["bonfire", "vault", "forge", "immolated", "tavern", "exchange", "market", "gate"].map(
+  ...["bonfire", "vault", "forge", "immolated", "observatory", "tavern", "exchange", "market", "gate"].map(
     (id) => ({ in: `${W}/buildings/${id}.png`, out: `${W}/buildings/${id}.webp`, width: 1484, q: 86 })
   ),
 ];

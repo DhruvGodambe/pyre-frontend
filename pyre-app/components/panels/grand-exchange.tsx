@@ -1,6 +1,6 @@
 "use client";
 
-/* THE GRAND EXCHANGE — the full Uniswap-v4 swap experience for PYRE↔ETH.
+/* THE GRAND EXCHANGE, the full Uniswap-v4 swap experience for PYRE↔ETH.
    Spec: 05-ui-screens.md. Drives the same data a real Uniswap swap shows
    (rate, price impact, slippage floor, fee breakdown, route, gas, Permit2
    approval) through the DataSource seam, so it runs on the mock today and on
@@ -157,7 +157,7 @@ export function GrandExchangePanel() {
       }
     >
       <RequireWallet message="Connect to swap.">
-        <div className="space-y-3">
+        <div id="exchange-swap" className="space-y-3 scroll-mt-24">
           {/* Direction + tools */}
           <div className="flex items-center justify-between">
             <div className="flex gap-1 rounded-md bg-surface-2 p-1 text-sm">
@@ -289,7 +289,7 @@ export function GrandExchangePanel() {
   );
 }
 
-/* Recent swaps — reuses the global activity feed, filtered to swaps. */
+/* Recent swaps, reuses the global activity feed, filtered to swaps. */
 function RecentSwaps() {
   const feed = useActivityFeed();
   const swaps = (feed.data ?? []).filter((e) => e.kind === "swap").slice(0, 5);

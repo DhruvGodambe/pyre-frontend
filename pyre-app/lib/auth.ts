@@ -1,4 +1,4 @@
-/* Password gate — IDENTICAL salt + cookie to the designer-briefing portal, so a
+/* Password gate, IDENTICAL salt + cookie to the designer-briefing portal, so a
    designer logged into designer.pyreprotocol.com is automatically authorised for
    /app (the cookie validates against the same DESIGNER_PASSWORD). Do not change
    the salt or cookie name without changing the portal's too. */

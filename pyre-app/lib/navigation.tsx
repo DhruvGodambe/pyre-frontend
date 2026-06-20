@@ -1,15 +1,15 @@
 "use client";
 
 /* ============================================================================
-   PYRE — In-app navigation intent  (deep-link to a building / panel tab)
+   PYRE, In-app navigation intent  (deep-link to a building / panel tab)
    ----------------------------------------------------------------------------
    A tiny shared "where to go next" so one part of the app can send the user
-   into a specific building — and even a specific tab inside it. Used by the
+   into a specific building, and even a specific tab inside it. Used by the
    Emberkeeper intro to drop the visitor straight into The Ashen Cup → Quests
    when onboarding ends.
 
    It's plain React state (not a fire-once event) so a consumer that mounts
-   slightly later — e.g. the Ashen Cup panel opening inside the Village shell —
+   slightly later, e.g. the Ashen Cup panel opening inside the Village shell, 
    still sees the pending target. The consumer that handles it calls
    clearPending() when done.
    ========================================================================== */

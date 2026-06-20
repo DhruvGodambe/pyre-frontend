@@ -1,10 +1,10 @@
 -- ============================================================================
--- PYRE — Quest funnel schema (Supabase / Postgres)
+-- PYRE, Quest funnel schema (Supabase / Postgres)
 -- ----------------------------------------------------------------------------
 -- Run this once in the Supabase project: Dashboard → SQL Editor → paste → Run.
 -- Stores only per-visitor state; task DEFINITIONS live in code
 -- (lib/quests/catalog.ts). All access is server-side via the service role key,
--- which bypasses RLS — so we enable RLS with NO public policies to deny the
+-- which bypasses RLS, so we enable RLS with NO public policies to deny the
 -- anon/public keys by default.
 -- ============================================================================
 

@@ -1,10 +1,10 @@
-/* POST /api/quests/complete  { taskId } — mark a "click" task complete for this
+/* POST /api/quests/complete  { taskId }, mark a "click" task complete for this
    session. Idempotent. Rejects unknown ids and the wallet-gated task (use
    /api/quests/wallet for that).
 
    NOTE: completion is recorded on the visitor's say-so for now. Real
    verification (Guild.xyz / X / Telegram OAuth) plugs in here later, before the
-   store write — the rest of the funnel stays the same. */
+   store write, the rest of the funnel stays the same. */
 
 import { NextResponse } from "next/server";
 import { getQuestStore } from "@/lib/db";

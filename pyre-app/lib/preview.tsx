@@ -1,6 +1,6 @@
 "use client";
 
-/* Design Preview state — lets the designer (and you) flip the previewed user
+/* Design Preview state, lets the designer (and you) flip the previewed user
    between empty/locked and full/unlocked states, so EVERY panel state is
    visible without meeting on-chain thresholds. Mock-only; irrelevant once the
    app reads real chain data. */

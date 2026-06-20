@@ -1,6 +1,6 @@
 /* /api/quests/identity
-   GET  — the identity this session chose (wallet or named guest), or null.
-   POST — record (or replace) it { mode, username?, wallet? }.
+   GET, the identity this session chose (wallet or named guest), or null.
+   POST, record (or replace) it { mode, username?, wallet? }.
 
    This is what makes a guest's choice + name durable SERVER-SIDE (not just in
    the browser), keyed by the same anonymous session cookie as quest progress,

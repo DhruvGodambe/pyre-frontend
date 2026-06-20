@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 
 /* Simple two-or-more tab switcher (used by The Forge: Stake / Burn).
    Uncontrolled by default; pass `active` + `onChange` to control it (e.g. so a
-   deep-link can open a specific tab — see The Ashen Cup). */
+   deep-link can open a specific tab, see The Ashen Cup). */
 export function Tabs({
   tabs,
   active: activeProp,
@@ -29,7 +29,7 @@ export function Tabs({
             role="tab"
             aria-selected={active === t.id}
             onClick={() => setActive(t.id)}
-            className={`flex-1 rounded-sm px-3 py-2 text-sm transition-colors duration-fast ${
+            className={`flex-1 rounded-sm px-3 py-2.5 text-sm transition-colors duration-fast ${
               active === t.id ? "bg-brand text-bg" : "text-text-2 hover:text-text"
             }`}
           >

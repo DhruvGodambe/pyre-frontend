@@ -1,15 +1,15 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Identity context  (wallet OR guest — connecting is never forced)
+   PYRE, Identity context  (wallet OR guest, connecting is never forced)
    ----------------------------------------------------------------------------
    Many people are wary of connecting a wallet, so PYRE doesn't force it. A
    visitor enters one of two ways:
 
-     • "wallet"  — they connect. Their address IS their identity, so at the end
+     • "wallet", they connect. Their address IS their identity, so at the end
                    of the funnel there's nothing extra to submit; the connected
                    address is recorded automatically.
-     • "guest"   — they stay private and pick a username. They complete the same
+     • "guest", they stay private and pick a username. They complete the same
                    rites, then submit their wallet MANUALLY at the end to claim.
 
    Identity is DERIVED, not duplicated: a live wallet connection always wins
@@ -56,7 +56,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
 
   // Restore the guest choice on mount. localStorage is the instant optimistic
   // cache; the server (keyed by the session cookie) is the durable source of
-  // truth and reconciles a beat later — so the name survives a hard refresh
+  // truth and reconciles a beat later, so the name survives a hard refresh
   // even if localStorage was cleared. Declared before the persist effect so it
   // reads before anything could clear it.
   useEffect(() => {

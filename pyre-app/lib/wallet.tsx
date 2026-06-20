@@ -1,11 +1,11 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Wallet context (MOCK)
+   PYRE, Wallet context (MOCK)
    ----------------------------------------------------------------------------
    A tiny mock of wallet connection so the Gate / connected-vs-disconnected
    states work today. Connect = pretend after a short delay. When real wallets
-   are wired, replace the internals with wagmi's useAccount/useConnect — the
+   are wired, replace the internals with wagmi's useAccount/useConnect, the
    useWallet() shape stays the same, so panels don't change.
    ========================================================================== */
 

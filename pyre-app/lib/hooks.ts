@@ -1,12 +1,12 @@
 "use client";
 
 /* ============================================================================
-   PYRE — Data hooks  (the API every panel uses)
+   PYRE, Data hooks  (the API every panel uses)
    ----------------------------------------------------------------------------
    Read hooks wrap the active DataSource in react-query (loading/error/refetch
    for free). Write hooks run a "transaction" and invalidate the data it touched
-   so the UI updates. Panels import ONLY from here — never the data source
-   directly — so the mock→chain swap is invisible to them.
+   so the UI updates. Panels import ONLY from here, never the data source
+   directly, so the mock→chain swap is invisible to them.
    ========================================================================== */
 
 import {
@@ -112,7 +112,7 @@ export function useSwapQuote(params: SwapQuoteParams) {
     queryKey: KEY.quote(params),
     queryFn: () => ds().getSwapQuote(params),
     enabled: params.amount > 0n,
-    // Quotes expire (~30s) — refetch so price stays fresh, like Uniswap.
+    // Quotes expire (~30s), refetch so price stays fresh, like Uniswap.
     refetchInterval: 15_000,
   });
 }
@@ -144,7 +144,7 @@ export function useQuestTasks() {
   return useQuery({ queryKey: KEY.quests(address), queryFn: () => ds().getQuestTasks(address) });
 }
 
-/* Quest funnel extras — off-chain, session-based (same in mock + chain), so they
+/* Quest funnel extras, off-chain, session-based (same in mock + chain), so they
    call the quest client directly rather than going through the data source. */
 export function useQuestLeaderboard() {
   return useQuery({ queryKey: ["questLeaderboard"], queryFn: () => fetchQuestLeaderboard() });
@@ -188,7 +188,7 @@ const POSITION_KEYS = (a: Address | null) => [
 ];
 
 /* Swap touches balances, the pool, and invalidates the live quote/approval
-   (broad prefixes — react-query matches by key prefix). */
+   (broad prefixes, react-query matches by key prefix). */
 const SWAP_KEYS = (a: Address | null): readonly (readonly unknown[])[] => [
   ...POSITION_KEYS(a),
   KEY.swapBalances(a),
@@ -206,7 +206,7 @@ export const useBurnTokens = () =>
   useTx<bigint>((a, amount) => ds().burnTokens(a, amount), POSITION_KEYS);
 export const useImmolatedBurn = () =>
   useTx<bigint>((a, amount) => ds().immolatedBurn(a, amount), POSITION_KEYS);
-// mutate() — no args
+// mutate(), no args
 export const useClaimDrip = () =>
   useTx((a) => ds().claimDrip(a), POSITION_KEYS);
 export const useClaimStakingRewards = () =>
@@ -216,14 +216,14 @@ export const useClaimImmolatedYield = () =>
 // mutate({ eth, pyre }) / mutate({ direction, amountIn })
 export const useBurnLP = () =>
   useTx<{ eth: bigint; pyre: bigint }>((a, v) => ds().burnLP(a, v.eth, v.pyre), POSITION_KEYS);
-// mutate() — advances the Permit2 approval for the PYRE (sell) side
+// mutate(), advances the Permit2 approval for the PYRE (sell) side
 export const useApproveToken = () =>
   useTx((a) => ds().approveToken(a), (a) => [KEY.swapBalances(a), ["approval", a]]);
 // mutate(SwapParams)
 export const useSwap = () =>
   useTx<SwapParams>((a, params) => ds().swap(a, params), SWAP_KEYS);
 
-/* --- Quest funnel (no wallet required — uses an anonymous session) -------- */
+/* --- Quest funnel (no wallet required, uses an anonymous session) -------- */
 
 /** Generic quest mutation: no connected wallet needed; refreshes the task list
    (and the staking position, which carries the quest-completer boost). */

@@ -1,8 +1,8 @@
 /* ============================================================================
-   PYRE — SupabaseStore  (production quest persistence)
+   PYRE, SupabaseStore  (production quest persistence)
    ----------------------------------------------------------------------------
    Talks to the Supabase Postgres tables (see lib/db/schema.sql) using the
-   SERVICE ROLE key. This runs ONLY in server-side route handlers — the service
+   SERVICE ROLE key. This runs ONLY in server-side route handlers, the service
    role bypasses Row Level Security, so the key must never reach the browser
    (no NEXT_PUBLIC_ prefix; keep it in server env only).
    ========================================================================== */
@@ -148,7 +148,7 @@ export class SupabaseStore implements QuestStore {
     if (error) throw new Error(error.message);
     if (data) return { code: data.code as string, referredBy: (data.referred_by as string | null) ?? null };
 
-    // None yet — mint one. ignoreDuplicates guards a concurrent first hit.
+    // None yet, mint one. ignoreDuplicates guards a concurrent first hit.
     const { error: insErr } = await this.db
       .from(REFERRALS)
       .upsert({ session_id: sessionId, code: mintCode }, { onConflict: "session_id", ignoreDuplicates: true });
@@ -166,7 +166,7 @@ export class SupabaseStore implements QuestStore {
   }
 
   async setReferredBy(sessionId: string, byCode: string): Promise<void> {
-    // Only set when currently null — never overwrite an existing attribution.
+    // Only set when currently null, never overwrite an existing attribution.
     const { error } = await this.db
       .from(REFERRALS)
       .update({ referred_by: byCode })

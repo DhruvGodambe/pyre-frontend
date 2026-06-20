@@ -24,7 +24,7 @@ export function SettingsPopover({
   const lowSlippage = settings.slippageMode === "custom" && settings.slippageBps < 10;
 
   return (
-    <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-md border border-surface-3 bg-surface shadow-panel p-3 space-y-3">
+    <div className="absolute right-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-surface-3 bg-surface shadow-panel p-3 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-text">Settings</span>
         <button onClick={onClose} className="text-text-3 hover:text-text text-sm">
@@ -61,10 +61,10 @@ export function SettingsPopover({
           </div>
         </div>
         {highSlippage && (
-          <p className="text-warning text-xs">High slippage — your trade may be front-run.</p>
+          <p className="text-warning text-xs">High slippage, your trade may be front-run.</p>
         )}
         {lowSlippage && (
-          <p className="text-warning text-xs">Very low slippage — your trade may fail.</p>
+          <p className="text-warning text-xs">Very low slippage, your trade may fail.</p>
         )}
       </div>
 

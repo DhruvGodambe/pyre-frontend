@@ -1,8 +1,8 @@
 "use client";
 
-/* THE BONFIRE — the central plaza. A counter + flame, not a full UI.
+/* THE BONFIRE, the central plaza. A counter + flame, not a full UI.
    4 visual states by total all-time burned: kindling → burning → raging →
-   inferno. Beneath the flame: a LIVE BURN ticker — burns only, not other
+   inferno. Beneath the flame: a LIVE BURN ticker, burns only, not other
    activity. Spec: 05-ui-screens.md → "The Bonfire". */
 
 import { useEffect, useState } from "react";
@@ -60,7 +60,7 @@ export function BonfirePanel() {
   );
 }
 
-/* Live ticker of recent BURNS only — cycles through them for a "happening now"
+/* Live ticker of recent BURNS only, cycles through them for a "happening now"
    feel. Other activity (swaps, claims, stakes) belongs in The Ashen Cup, not here. */
 function BurnTicker({ events }: { events: ActivityEvent[] }) {
   const burns = events.filter((e) => e.kind === "burn");

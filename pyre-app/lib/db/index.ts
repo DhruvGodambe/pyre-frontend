@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — Quest storage selector  ("the switch", DB edition)
+   PYRE, Quest storage selector  ("the switch", DB edition)
    ----------------------------------------------------------------------------
    SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY present → real Supabase Postgres.
    Otherwise                                        → local JSON file store.

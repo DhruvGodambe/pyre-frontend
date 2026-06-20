@@ -1,10 +1,10 @@
 "use client";
 
 /* ============================================================================
-   THE OBSERVATORY — live protocol stats
+   THE OBSERVATORY, live protocol stats
    ----------------------------------------------------------------------------
    Read-only. No wallet required (public data). The reference implementation:
-   every other panel follows this shape — a hook for data, StateView for
+   every other panel follows this shape, a hook for data, StateView for
    loading/error, token-driven primitives for the render.
    Spec: designer-briefing/content/05-ui-screens.md → "The Observatory".
    ========================================================================== */
@@ -29,7 +29,7 @@ export function ObservatoryPanel() {
       <StateView query={stats}>
         {(s) => (
           <div className="space-y-5">
-            {/* Rebase countdown — the live pulse */}
+            {/* Rebase countdown, the live pulse */}
             <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
               <div>
                 <span className="text-text-3 text-xs uppercase tracking-wider">

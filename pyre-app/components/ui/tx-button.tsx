@@ -1,7 +1,7 @@
 "use client";
 
 /* ============================================================================
-   TxButton — a button bound to a transaction (mutation) hook.
+   TxButton, a button bound to a transaction (mutation) hook.
    ----------------------------------------------------------------------------
    Handles the idle → pending → confirmed/failed lifecycle the spec asks for on
    every action, so individual panels don't re-implement it. "Make waiting feel

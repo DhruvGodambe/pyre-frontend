@@ -9,6 +9,7 @@ import { WalletProvider } from "./wallet";
 import { IdentityProvider } from "./identity";
 import { NavigationProvider } from "./navigation";
 import { PreviewProvider } from "./preview";
+import { TourProvider } from "./tour";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -27,7 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             independent. Both sit above the shells, panels and the intro. */}
         <IdentityProvider>
           <NavigationProvider>
-            <PreviewProvider>{children}</PreviewProvider>
+            <PreviewProvider>
+              <TourProvider>{children}</TourProvider>
+            </PreviewProvider>
           </NavigationProvider>
         </IdentityProvider>
       </WalletProvider>

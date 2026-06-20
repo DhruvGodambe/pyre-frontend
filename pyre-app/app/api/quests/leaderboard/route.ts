@@ -1,4 +1,4 @@
-/* GET /api/quests/leaderboard — the Ember leaderboard.
+/* GET /api/quests/leaderboard, the Ember leaderboard.
    Each session's Embers = quest rites completed (catalog points) + referrals
    brought in (REFERRAL_EMBERS each). Computed here from the catalog so a rite's
    worth can change without a migration. Session ids never leave the server. */

@@ -1,6 +1,6 @@
 "use client";
 
-/* THE TAVERN — the quest hub. Complete rites + refer friends to earn Embers and
+/* THE TAVERN, the quest hub. Complete rites + refer friends to earn Embers and
    climb the leaderboard. No news here (that lives on X / Telegram); this is
    purely the pre-launch quest funnel, the referral earn, and the standings.
 
@@ -20,7 +20,8 @@ import {
 } from "@/lib/hooks";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
-import { Panel, Badge, Button, Field } from "@/components/ui/primitives";
+import { Panel, Badge, Button, Field, ProgressBar } from "@/components/ui/primitives";
+import { EmberCount } from "@/components/world-hud";
 import { StateView } from "@/components/ui/state";
 import { Tabs } from "@/components/ui/tabs";
 import { NEWLY_LIT_WINDOW } from "@/lib/quests/catalog";
@@ -75,7 +76,7 @@ function QuestFunnel() {
 
   const submitted = tasks.data?.find((t) => t.id === "submit")?.done ?? false;
 
-  // Wallet users never fill in a form — their connected address IS the entry, so
+  // Wallet users never fill in a form, their connected address IS the entry, so
   // record it automatically (once) the first time they reach the funnel.
   const autoSubmitted = useRef(false);
   useEffect(() => {
@@ -96,16 +97,32 @@ function QuestFunnel() {
         {(rows) => {
           const questEmbers = rows.filter((t) => t.done).reduce((s, t) => s + t.points, 0);
           const totalEmbers = questEmbers + referralEmbers;
+          const total = rows.length;
+          const done = rows.filter((t) => t.done).length;
           return (
             <>
-              {/* Total Embers — rites + referrals. What it unlocks is the reveal. */}
+              {/* Total Embers, rites + referrals. Ticks up when a rite completes.
+                  What it unlocks is the reveal. */}
               <div className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
                 <span className="text-text-3 text-xs uppercase tracking-wider">Embers gathered</span>
-                <span className="tabular text-brand text-lg">🔥 {totalEmbers}</span>
+                <span className="tabular text-brand text-lg">
+                  🔥 <EmberCount value={totalEmbers} />
+                </span>
               </div>
 
-              <ul className="space-y-2">
-                {rows.map((t) => {
+              {/* Rite progress, the unfinished journey, kept visible (Zeigarnik). */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-text-3 uppercase tracking-wider">Your rites</span>
+                  <span className="tabular text-text-2">
+                    {done} of {total} complete
+                  </span>
+                </div>
+                <ProgressBar value={total ? done / total : 0} />
+              </div>
+
+              <ul id="tavern-rites" className="space-y-2 scroll-mt-24">
+                {rows.map((t, i) => {
                   const locked = t.unlockAt !== null && t.unlockAt > Date.now();
                   const actionable = !t.done && !locked && t.id !== "submit";
                   const newlyLit = !t.done && !locked && Date.now() - t.addedAt < NEWLY_LIT_WINDOW;
@@ -116,6 +133,9 @@ function QuestFunnel() {
                         {t.done ? "✓" : locked ? "🔒" : "○"}
                       </span>
                       <div className="flex-1 min-w-0">
+                        <div className="text-text-3 text-[10px] uppercase tracking-widest">
+                          Rite {roman(i + 1)} of {total}
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-text text-sm">{t.title}</span>
                           {newlyLit && <Badge tone="brand">Newly lit</Badge>}
@@ -166,7 +186,7 @@ function QuestFunnel() {
                 />
               </div>
 
-              {/* Secondary, repeatable earn — bring friends to the fire. */}
+              {/* Secondary, repeatable earn, bring friends to the fire. */}
               <ReferSection />
             </>
           );
@@ -308,6 +328,25 @@ function ReferSection() {
       }}
     </StateView>
   );
+}
+
+/* Small roman numeral for rite labels (the funnel is short, I–IX is plenty). */
+function roman(n: number): string {
+  const map: [number, string][] = [
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"],
+  ];
+  let out = "";
+  for (const [v, s] of map) {
+    while (n >= v) {
+      out += s;
+      n -= v;
+    }
+  }
+  return out;
 }
 
 /* ----------------------------------------------------------- Leaderboard */

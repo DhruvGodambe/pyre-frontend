@@ -1,6 +1,6 @@
 "use client";
 
-/* The trade-details accordion under the swap form — every number Uniswap shows:
+/* The trade-details accordion under the swap form, every number Uniswap shows:
    exchange rate (invertible), price impact, max slippage, minimum received /
    maximum sold, the honest fee breakdown, network cost, and the order route. */
 
@@ -99,7 +99,7 @@ export function SwapDetails({
             </Row>
           )}
 
-          {/* Fee breakdown — honest disposition */}
+          {/* Fee breakdown, honest disposition */}
           <Row label={`Fee (${formatPercent(quote.fee.totalFeeBps / 10000, 2)})`}>
             {fmtTokenAmount(quote.input.token, quote.fee.feeAmount)} {inSym}
           </Row>

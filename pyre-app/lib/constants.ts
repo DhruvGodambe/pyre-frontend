@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — Protocol constants (locked parameters)
+   PYRE, Protocol constants (locked parameters)
    ----------------------------------------------------------------------------
    Single source of truth for every fixed number the UI references. Values are
    taken verbatim from dev/DEV_BRIEF.md ("Locked Parameters"). If the developer
@@ -32,7 +32,7 @@ export const DRIP_DURATION_SECONDS = DRIP_DURATION_DAYS * 24 * 3600;
 
 /* --- Pyre Acolyte stages -------------------------------------------------
    NOTE FOR DEV: stage is driven by CUMULATIVE BURN WEIGHT (not staking time).
-   The currentStage() sample in DEV_BRIEF.md uses accumulatedStakingTime — that
+   The currentStage() sample in DEV_BRIEF.md uses accumulatedStakingTime, that
    is flagged in the brief as leftover OLD-architecture code. The authoritative
    "Locked Parameters" table + CORE.md define stage by cumulative burn. The UI
    models burn-weight thresholds; confirm with the developer before launch.
@@ -48,6 +48,14 @@ export const STAGES: Record<
   3: { name: "FORGE", threshold: pyre(150_000), multiplier: 2 },
   4: { name: "PYRE", threshold: pyre(300_000), multiplier: 3 },
 };
+
+/** The Acolyte's display name at a tier: "Ember Acolyte" … "Pyre Acolyte". The
+    Acolyte is the NFT earned by BURNING; its tier rises with cumulative burn
+    weight. (The Hall of the Immolated holds a further "Immolated Acolyte" tier.) */
+export function acolyteName(stage: Stage): string {
+  const n = STAGES[stage].name; // "EMBER" … "PYRE"
+  return `${n.charAt(0)}${n.slice(1).toLowerCase()} Acolyte`;
+}
 
 /** Resolve stage (and the next threshold) from a cumulative burn weight. */
 export function stageFromWeight(weight: bigint): {

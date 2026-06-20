@@ -1,6 +1,6 @@
 "use client";
 
-/* NavCta — a button that sends the user into another building (and optional tab).
+/* NavCta, a button that sends the user into another building (and optional tab).
    The single conversion primitive: every "Buy $PYRE", "Stake", "Burn to multiply"
    call-to-action across the app routes through here, so the funnel between
    buildings is consistent and works in BOTH shells (the Village opens the target

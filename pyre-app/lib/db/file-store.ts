@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — FileStore  (local-dev quest persistence, zero dependencies)
+   PYRE, FileStore  (local-dev quest persistence, zero dependencies)
    ----------------------------------------------------------------------------
    Persists quest state to a JSON file under .data/ so the funnel works on your
    machine with no database at all. NOT for production: serverless filesystems
@@ -139,7 +139,7 @@ export class FileStore implements QuestStore {
       const data = await this.read();
       const row = data.referrals[sessionId];
       if (!row) return; // getReferral mints the row first; nothing to set otherwise
-      if (row.referredBy) return; // already attributed — never overwrite
+      if (row.referredBy) return; // already attributed, never overwrite
       row.referredBy = byCode;
       await this.write(data);
     });

@@ -1,6 +1,6 @@
 /* /api/quests/referral
-   GET  — this session's referral code + how many friends it has brought in.
-   POST — { code } records that THIS session was referred by `code` (once,
+   GET, this session's referral code + how many friends it has brought in.
+   POST, { code } records that THIS session was referred by `code` (once,
           never self). Called when someone arrives with ?ref=CODE.
 
    Referrals are a repeatable, secondary earn (REFERRAL_EMBERS each) that feeds
@@ -14,7 +14,7 @@ import { REFERRAL_EMBERS } from "@/lib/quests/catalog";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** A short, URL-safe public code — distinct from the (secret, httpOnly) sid. */
+/** A short, URL-safe public code, distinct from the (secret, httpOnly) sid. */
 function mintCode(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 8);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-/* Designer onboarding — shown on first visit to the gated preview so the
+/* Designer onboarding, shown on first visit to the gated preview so the
    designer immediately knows what this is, that the look is placeholder, what
    the controls do, and where to start. Re-openable via the "?" button.
    Mock-only (it's a design-preview aid); never shows in the real app. */

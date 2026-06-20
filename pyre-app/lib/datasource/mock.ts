@@ -1,5 +1,5 @@
 /* ============================================================================
-   PYRE — MockDataSource
+   PYRE, MockDataSource
    ----------------------------------------------------------------------------
    Realistic fake data for building & demoing the UI with no contract deployed.
    Holds an in-memory "world" so writes have visible effects (stake moves tokens,
@@ -52,7 +52,7 @@ import {
   submitWallet as submitWalletApi,
 } from "../quests/client";
 
-/* Preview personas — switchable at runtime via the on-screen Design Preview
+/* Preview personas, switchable at runtime via the on-screen Design Preview
    control (lib/preview.tsx + components/preview-switcher.tsx), so the designer
    can see EVERY state without meeting on-chain thresholds:
    "newcomer" → empty / locked states (Pyre Acolyte, nothing staked, Hall sealed).
@@ -72,7 +72,7 @@ const randHex = (n: number) =>
 const addr = (): Address => `0x${randHex(40)}` as Address;
 
 /* ============================================================================
-   Grand Exchange — mock swap "backend"
+   Grand Exchange, mock swap "backend"
    ----------------------------------------------------------------------------
    A real constant-product (x·y=k) AMM over a seeded PYRE↔ETH pool, so the swap
    UI behaves like an actual swap: outputs, price impact, slippage floors and
@@ -107,7 +107,7 @@ function toWei(human: number): bigint {
   return BigInt(w) * WAD + BigInt(f);
 }
 
-/** The core AMM quote. Pure function of the request — same call the V4Quoter
+/** The core AMM quote. Pure function of the request, same call the V4Quoter
     answers on-chain. Returns everything the swap UI displays. */
 function computePoolQuote(p: SwapQuoteParams): SwapQuote {
   const isBuy = p.direction === "buy";
@@ -446,7 +446,7 @@ export class MockDataSource implements DataSource {
     return [
       {
         id: "a1",
-        title: "Era 0 is live — the fire is lit",
+        title: "Era 0 is live, the fire is lit",
         body: "Decay runs at 0.45%/hr. Stake to preserve, burn to forge.",
         pinned: true,
         at: now - 3600_000 * 6,
@@ -551,7 +551,7 @@ export class MockDataSource implements DataSource {
     }
   }
 
-  // Quests are off-chain + permanent — real backend in every mode (see
+  // Quests are off-chain + permanent, real backend in every mode (see
   // lib/quests/client.ts). The mock world doesn't simulate them.
   getQuestTasks(_address: Address | null): Promise<QuestTask[]> {
     return fetchQuestTasks();
