@@ -11,11 +11,10 @@
    its exact spot and resize it. Positions persist to localStorage and can be
    copied out, so the placement is done by hand, not guessed. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
-import { ConnectButton } from "@/components/connect-button";
-import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
+import { WorldLedger } from "@/components/world-hud";
 import { TourNarration, TourHighlight } from "@/components/tour-ui";
 import { useTour } from "@/lib/tour";
 import { GatePanel } from "@/components/panels/gate";
@@ -25,8 +24,6 @@ import { useNavigation } from "@/lib/navigation";
 import { asset, USE_MOCK } from "@/lib/config";
 
 type View = { id: BuildingId; mode: "preview" | "inside" | "connect" } | null;
-type Placement = { x: number; y: number; scale: number };
-type Layout = Record<string, Placement>;
 
 const enterLabel = (name: string) => `Enter ${name.replace(/^The /, "the ")}`;
 
@@ -35,8 +32,6 @@ const enterLabel = (name: string) => `Enter ${name.replace(/^The /, "the ")}`;
    %-coords track the artwork however the window is shaped. */
 const MAP_RATIO = 6688 / 3764; // ≈ 1.777
 
-const LAYOUT_KEY = "pyre_layout";
-
 /* Icons for buildings whose art hasn't been delivered / been pulled (shown on a
    placeholder marker instead of building art). */
 const PLACEHOLDER_ICON: Partial<Record<BuildingId, string>> = {
@@ -44,11 +39,6 @@ const PLACEHOLDER_ICON: Partial<Record<BuildingId, string>> = {
   tavern: "🍺",
   vault: "🔐",
 };
-
-const defaultLayout = (): Layout =>
-  Object.fromEntries(
-    BUILDINGS.map((b) => [b.id, { x: b.map.x, y: b.map.y, scale: b.scale }])
-  );
 
 export function VillageShell() {
   const [view, setView] = useState<View>(null);
@@ -60,66 +50,6 @@ export function VillageShell() {
   const { pending, clearPending } = useNavigation();
   const awake = status === "connected" || isSet;
   const tour = useTour();
-
-  // --- Layout editor state ------------------------------------------------
-  const worldRef = useRef<HTMLDivElement>(null);
-  const [edit, setEdit] = useState(false);
-  const [sel, setSel] = useState<BuildingId | null>(null);
-  const [layout, setLayout] = useState<Layout>(defaultLayout);
-  const dragId = useRef<BuildingId | null>(null);
-
-  // Load any saved hand-placed layout once on the client.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(LAYOUT_KEY);
-      if (saved) setLayout((l) => ({ ...l, ...JSON.parse(saved) }));
-    } catch {}
-  }, []);
-
-  const save = useCallback((next: Layout) => {
-    try {
-      localStorage.setItem(LAYOUT_KEY, JSON.stringify(next));
-    } catch {}
-  }, []);
-
-  const onMove = useCallback(
-    (e: PointerEvent) => {
-      const id = dragId.current;
-      const rect = worldRef.current?.getBoundingClientRect();
-      if (!id || !rect) return;
-      const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-      const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-      setLayout((l) => {
-        const next = { ...l, [id]: { ...l[id], x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 } };
-        save(next);
-        return next;
-      });
-    },
-    [save]
-  );
-
-  const onUp = useCallback(() => {
-    dragId.current = null;
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-  }, [onMove]);
-
-  const startDrag = (id: BuildingId, e: React.PointerEvent) => {
-    if (!edit) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setSel(id);
-    dragId.current = id;
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-
-  const bump = (id: BuildingId, key: keyof Placement, delta: number) =>
-    setLayout((l) => {
-      const next = { ...l, [id]: { ...l[id], [key]: Math.round((l[id][key] + delta) * 10) / 10 } };
-      save(next);
-      return next;
-    });
 
   // Once awake, close the Gate's connect overlay and reveal the woken village.
   useEffect(() => {
@@ -155,14 +85,13 @@ export function VillageShell() {
     if (!focusBuilding || typeof window === "undefined") {
       return { z: 1, tx: 0, ty: 0 };
     }
-    const lay = layout[focusBuilding];
-    if (!lay) return { z: 1, tx: 0, ty: 0 };
+    const { map } = BUILDING_BY_ID[focusBuilding];
     const W = Math.max(window.innerWidth, MAP_RATIO * window.innerHeight);
     const H = Math.max(window.innerHeight, window.innerWidth / MAP_RATIO);
     return {
       z: 2.1,
-      tx: -((lay.x - 50) / 100) * W,
-      ty: -((lay.y - 8 - 50) / 100) * H, // -8 frames the body, not the feet
+      tx: -((map.x - 50) / 100) * W,
+      ty: -((map.y - 8 - 50) / 100) * H, // -8 frames the body, not the feet
     };
   })();
 
@@ -184,12 +113,10 @@ export function VillageShell() {
 
   const clickBuilding = (id: BuildingId) => {
     if (tour.active) return; // the tour drives navigation
-    if (edit) {
-      setSel(id);
-      return;
-    }
     if (id === "gate") {
-      if (!awake) setView({ id: "gate", mode: "connect" });
+      // Dormant: the connect/guest fork. Already inside: the Gate shows your
+      // entry (and lets a guest connect a wallet) instead of doing nothing.
+      setView({ id: "gate", mode: "connect" });
       return;
     }
     setFocusId(id); // zoom in + spotlight + show the building's blurb
@@ -201,17 +128,13 @@ export function VillageShell() {
         <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
           PYRE
         </span>
-        <div className="flex items-center gap-3">
-          {awake && !edit && <WorldRiteProgress />}
-          <ConnectButton connectedOnly />
-        </div>
       </header>
 
-      {/* Profile, bottom-left. Sits above the mock Preview switcher in dev; at the
-          corner in production (where the switcher doesn't ship). */}
-      {awake && !edit && (
-        <div className={`absolute left-4 z-20 ${USE_MOCK ? "bottom-20" : "bottom-4"}`}>
-          <WorldProfile />
+      {/* Your standing, top-right: one box with identity, disconnect, and the
+          key personal numbers (rites, yield, Acolyte, staked, drip). */}
+      {awake && (
+        <div className="absolute right-4 top-4 z-30">
+          <WorldLedger />
         </div>
       )}
 
@@ -235,12 +158,11 @@ export function VillageShell() {
             }}
           >
             <div
-              ref={worldRef}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
               style={{
                 width: `max(100vw, ${100 * MAP_RATIO}vh)`,
                 height: `max(${100 / MAP_RATIO}vw, 100vh)`,
-                filter: awake || edit ? "none" : "grayscale(0.55) brightness(0.5)",
+                filter: awake ? "none" : "grayscale(0.55) brightness(0.5)",
                 transition: "filter var(--duration-entry) var(--ease-warm)",
               }}
             >
@@ -265,28 +187,25 @@ export function VillageShell() {
               )}
 
         {BUILDINGS.map((b) => {
-          const lay = layout[b.id] ?? { x: b.map.x, y: b.map.y, scale: b.scale };
-          const gatePrompt = b.id === "gate" && !awake && !edit;
-          const selected = edit && sel === b.id;
+          const lay = { x: b.map.x, y: b.map.y, scale: b.scale };
+          const gatePrompt = b.id === "gate" && !awake;
           const tourFocus = spotlightOn && focusBuilding === b.id;
           const tourDim = spotlightOn && focusBuilding !== b.id;
           return (
             <button
               key={b.id}
               onClick={() => clickBuilding(b.id)}
-              onPointerDown={(e) => startDrag(b.id, e)}
               /* Base-anchored: the ground point (x/y) sits at the building's
                  footing. Depth-sorted by y so nearer buildings draw in front. */
               className={`absolute group focus:outline-none transition-opacity duration-base ${
-                edit ? "cursor-move" : ""
-              } ${tourDim ? "opacity-20" : "opacity-100"}`}
+                tourDim ? "opacity-20" : "opacity-100"
+              }`}
               style={{
                 left: `${lay.x}%`,
                 top: `${lay.y}%`,
                 width: `${lay.scale}%`,
                 transform: "translate(-50%, -84%)",
-                zIndex: tourFocus ? 1000 : selected ? 999 : Math.round(lay.y),
-                touchAction: "none",
+                zIndex: tourFocus ? 1000 : Math.round(lay.y),
               }}
               aria-label={`${b.name}, ${b.tagline}`}
             >
@@ -316,16 +235,11 @@ export function VillageShell() {
                 </span>
               )}
 
-              {/* Selection outline while editing. */}
-              {selected && (
-                <span className="pointer-events-none absolute inset-0 ring-2 ring-brand rounded-md" />
-              )}
-
-              {/* Nameplate, above the building. Always shown while editing, for
-                  the dormant Gate, and for placeholders; otherwise on hover. */}
+              {/* Nameplate, above the building. Always shown for the dormant
+                  Gate and for placeholders; otherwise on hover. */}
               <span
                 className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1 whitespace-nowrap rounded-md bg-bg/80 px-2.5 py-1 backdrop-blur-sm transition-opacity duration-fast ${
-                  gatePrompt || edit || !b.art ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  gatePrompt || !b.art ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`}
               >
                 <span className="block font-display text-brand text-base leading-none text-center">
@@ -344,7 +258,7 @@ export function VillageShell() {
       </div>
 
       {/* Dormant hint */}
-      {!awake && !edit && (
+      {!awake && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 text-center pointer-events-none px-4 z-10">
           <p className="text-brand/90 text-base font-display drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             The kingdom sleeps
@@ -355,21 +269,7 @@ export function VillageShell() {
         </div>
       )}
 
-      {/* LAYOUT EDITOR (mock only) */}
-      {USE_MOCK && (
-        <LayoutEditor
-          edit={edit}
-          setEdit={setEdit}
-          sel={sel}
-          layout={layout}
-          onBump={bump}
-          onReset={() => {
-            const d = defaultLayout();
-            setLayout(d);
-            save(d);
-          }}
-        />
-      )}
+      {/* Layout is locked in (hand-placed), so the in-app editor is retired. */}
 
       {/* Gate, connect prompt */}
       {view?.mode === "connect" && (
@@ -430,7 +330,7 @@ export function VillageShell() {
       )}
 
       {/* Mock-only: replay the guided tour without re-running the whole intro. */}
-      {USE_MOCK && awake && !edit && !tour.active && (
+      {USE_MOCK && awake && !tour.active && (
         <button
           onClick={tour.start}
           className="fixed bottom-3 right-14 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
@@ -444,113 +344,6 @@ export function VillageShell() {
 
 /* TourNarration + TourHighlight now live in components/tour-ui.tsx (shared by
    both shells). The camera + interior driving stay here in VillageShell. */
-
-/* The hand-placement editor, drag buildings on the map, resize the selected
-   one, copy the resulting coordinates. Mock/dev only. */
-function LayoutEditor({
-  edit,
-  setEdit,
-  sel,
-  layout,
-  onBump,
-  onReset,
-}: {
-  edit: boolean;
-  setEdit: (v: boolean) => void;
-  sel: BuildingId | null;
-  layout: Layout;
-  onBump: (id: BuildingId, key: keyof Placement, delta: number) => void;
-  onReset: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const selLay = sel ? layout[sel] : null;
-
-  const copy = () => {
-    // Registry-ready lines, in the BUILDINGS order.
-    const lines = BUILDINGS.map((b) => {
-      const l = layout[b.id];
-      return `${b.id}: map { x: ${l.x}, y: ${l.y} }, scale: ${l.scale}`;
-    }).join("\n");
-    navigator.clipboard?.writeText(lines);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <div className="fixed top-20 right-4 z-40 w-64 rounded-panel bg-surface/95 border border-surface-3 shadow-panel backdrop-blur p-3 space-y-3 text-sm">
-      <button
-        onClick={() => setEdit(!edit)}
-        className={`w-full rounded-md px-3 py-2 font-medium transition-colors ${
-          edit ? "bg-brand text-bg hover:bg-brand-deep" : "bg-surface-2 text-text border border-surface-3 hover:border-brand"
-        }`}
-      >
-        {edit ? "✓ Done placing" : "🛠 Edit layout"}
-      </button>
-
-      {edit && (
-        <>
-          <p className="text-text-3 text-xs leading-relaxed">
-            Drag any building to move it. Click one to select, then resize it below.
-          </p>
-
-          {sel && selLay ? (
-            <div className="rounded-md bg-surface-2 border border-surface-3 p-2 space-y-2">
-              <div className="font-display text-brand">{BUILDING_BY_ID[sel].name}</div>
-              <div className="tabular text-text-3 text-xs">
-                x {selLay.x} · y {selLay.y}
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-text-2 text-xs">Size {selLay.scale}</span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => onBump(sel, "scale", -1)}
-                    className="w-7 h-7 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={() => onBump(sel, "scale", 1)}
-                    className="w-7 h-7 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-text-2 text-xs">Nudge</span>
-                <div className="grid grid-cols-3 gap-0.5">
-                  <span />
-                  <button onClick={() => onBump(sel, "y", -0.5)} className="w-6 h-6 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg">↑</button>
-                  <span />
-                  <button onClick={() => onBump(sel, "x", -0.5)} className="w-6 h-6 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg">←</button>
-                  <button onClick={() => onBump(sel, "y", 0.5)} className="w-6 h-6 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg">↓</button>
-                  <button onClick={() => onBump(sel, "x", 0.5)} className="w-6 h-6 rounded bg-surface-3 text-text hover:bg-brand hover:text-bg">→</button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-text-3 text-xs italic">No building selected.</p>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              onClick={copy}
-              className="flex-1 rounded-md bg-surface-2 text-text border border-surface-3 px-2 py-1.5 text-xs hover:border-brand"
-            >
-              {copied ? "Copied ✓" : "Copy coordinates"}
-            </button>
-            <button
-              onClick={onReset}
-              className="rounded-md bg-surface-2 text-text-3 border border-surface-3 px-2 py-1.5 text-xs hover:border-danger hover:text-danger"
-            >
-              Reset
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 /* Shared dim backdrop + entry animation container. */
 function Overlay({

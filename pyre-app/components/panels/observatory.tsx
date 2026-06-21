@@ -44,6 +44,20 @@ export function ObservatoryPanel() {
               </Badge>
             </div>
 
+            {/* Reward pool, ETH gathered from fees and waiting for the next
+                distribution to stakers + Acolytes. */}
+            <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
+              <div>
+                <span className="text-text-3 text-xs uppercase tracking-wider">
+                  Reward pool · awaiting distribution
+                </span>
+                <div className="tabular text-2xl text-brand">
+                  {formatEth(s.pendingYieldPoolEth, 2)}
+                </div>
+              </div>
+              <Badge>{formatEth(s.totalEthDistributed, 0)} paid all-time</Badge>
+            </div>
+
             {/* Stat grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Stat label="Supply remaining" value={formatToken(s.totalSupply)} />

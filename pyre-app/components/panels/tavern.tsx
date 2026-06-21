@@ -45,9 +45,9 @@ export function TavernPanel() {
 
   return (
     <div ref={ref}>
-      <Panel title="The Tavern" tagline="Quests & leaderboard">
+      <Panel title="The Ashen Cup" tagline="Quests & leaderboard">
         <p className="text-text-2 text-sm mb-4">
-          Earn <span className="text-brand">Embers</span> by completing rites and
+          Earn <span className="text-brand">Embers</span> by completing quests and
           bringing friends to the fire, then climb the leaderboard before it&rsquo;s
           lit. What the Embers unlock is revealed closer to launch.
         </p>
@@ -55,7 +55,7 @@ export function TavernPanel() {
           active={tab}
           onChange={setTab}
           tabs={[
-            { id: "rites", label: "Rites", content: <QuestFunnel /> },
+            { id: "rites", label: "Quests", content: <QuestFunnel /> },
             { id: "leaderboard", label: "Leaderboard", content: <QuestLeaderboard /> },
           ]}
         />
@@ -76,18 +76,23 @@ function QuestFunnel() {
 
   const submitted = tasks.data?.find((t) => t.id === "submit")?.done ?? false;
 
+  // The wallet can only be locked in once EVERY other rite is done (the full
+  // Ember haul). This is the gate on the funnel reward, no shortcut to the end.
+  const otherRites = (tasks.data ?? []).filter((t) => t.id !== "submit");
+  const allRitesDone = otherRites.length > 0 && otherRites.every((t) => t.done);
+
   // Wallet users never fill in a form, their connected address IS the entry, so
-  // record it automatically (once) the first time they reach the funnel.
+  // record it automatically (once), but ONLY after they've cleared every rite.
   const autoSubmitted = useRef(false);
   useEffect(() => {
     if (mode !== "wallet") autoSubmitted.current = false;
   }, [mode]);
   useEffect(() => {
-    if (mode === "wallet" && address && tasks.data && !submitted && !submit.isPending && !autoSubmitted.current) {
+    if (mode === "wallet" && address && tasks.data && !submitted && !submit.isPending && !autoSubmitted.current && allRitesDone) {
       autoSubmitted.current = true;
       submit.mutate(address);
     }
-  }, [mode, address, tasks.data, submitted, submit.isPending, submit]);
+  }, [mode, address, tasks.data, submitted, submit.isPending, submit, allRitesDone]);
 
   const referralEmbers = referral.data ? referral.data.count * referral.data.embersEach : 0;
 
@@ -113,7 +118,7 @@ function QuestFunnel() {
               {/* Rite progress, the unfinished journey, kept visible (Zeigarnik). */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-text-3 uppercase tracking-wider">Your rites</span>
+                  <span className="text-text-3 uppercase tracking-wider">Your quests</span>
                   <span className="tabular text-text-2">
                     {done} of {total} complete
                   </span>
@@ -134,7 +139,7 @@ function QuestFunnel() {
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="text-text-3 text-[10px] uppercase tracking-widest">
-                          Rite {roman(i + 1)} of {total}
+                          Quest {roman(i + 1)} of {total}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-text text-sm">{t.title}</span>
@@ -177,6 +182,14 @@ function QuestFunnel() {
                   address={address}
                   username={username}
                   submitted={submitted}
+                  gateOpen={allRitesDone}
+                  ritesRemaining={rows.filter((t) => t.id !== "submit" && !t.done).length}
+                  requiredEmbers={rows
+                    .filter((t) => t.id !== "submit")
+                    .reduce((s, t) => s + t.points, 0)}
+                  earnedEmbers={rows
+                    .filter((t) => t.id !== "submit" && t.done)
+                    .reduce((s, t) => s + t.points, 0)}
                   wallet={wallet}
                   setWallet={setWallet}
                   submitting={submit.isPending}
@@ -205,6 +218,10 @@ function SubmissionArea({
   address,
   username,
   submitted,
+  gateOpen,
+  ritesRemaining,
+  requiredEmbers,
+  earnedEmbers,
   wallet,
   setWallet,
   submitting,
@@ -216,6 +233,10 @@ function SubmissionArea({
   address: string | null;
   username: string | null;
   submitted: boolean;
+  gateOpen: boolean;
+  ritesRemaining: number;
+  requiredEmbers: number;
+  earnedEmbers: number;
   wallet: string;
   setWallet: (v: string) => void;
   submitting: boolean;
@@ -231,8 +252,10 @@ function SubmissionArea({
             ✓ Wallet {address ? shortAddress(address as `0x${string}`) : ""} locked in for your
             reward.
           </span>
-        ) : (
+        ) : gateOpen ? (
           <span className="text-text-2">Recording your connected wallet…</span>
+        ) : (
+          <GateNote remaining={ritesRemaining} earned={earnedEmbers} required={requiredEmbers} />
         )}
       </div>
     );
@@ -244,18 +267,25 @@ function SubmissionArea({
 
   return (
     <>
-      {mode === "guest" && username && (
+      {!gateOpen && (
+        <GateNote remaining={ritesRemaining} earned={earnedEmbers} required={requiredEmbers} />
+      )}
+      {gateOpen && mode === "guest" && username && (
         <div className="text-text-3 text-xs">
           Entering as <span className="text-text-2">{username}</span>. Add the wallet that receives
           your reward.
         </div>
       )}
       <Field label="Your wallet address" value={wallet} onChange={setWallet} placeholder="0x…" />
-      <Button onClick={onSubmit} disabled={wallet.trim().length < 10 || submitting} className="w-full">
-        {submitting ? "Submitting…" : "Submit wallet"}
+      <Button
+        onClick={onSubmit}
+        disabled={!gateOpen || wallet.trim().length < 10 || submitting}
+        className="w-full"
+      >
+        {submitting ? "Submitting…" : gateOpen ? "Submit wallet" : "Complete all quests to submit"}
       </Button>
       {submitError && <p className="text-danger text-xs">{submitError}</p>}
-      {mode === null && (
+      {mode === null && gateOpen && (
         <button
           onClick={onConnect}
           className="w-full text-text-3 text-xs hover:text-brand transition-colors pt-1"
@@ -264,6 +294,28 @@ function SubmissionArea({
         </button>
       )}
     </>
+  );
+}
+
+/* The submission lock: the wallet only goes in once every rite is done (the full
+   Ember haul). Tells the visitor exactly how much is left. */
+function GateNote({
+  remaining,
+  earned,
+  required,
+}: {
+  remaining: number;
+  earned: number;
+  required: number;
+}) {
+  return (
+    <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
+      🔒 The fire asks for every Ember first. Complete{" "}
+      <span className="text-brand">
+        {remaining} more {remaining === 1 ? "quest" : "quests"}
+      </span>{" "}
+      to submit your wallet, {earned} / {required} Embers gathered.
+    </div>
   );
 }
 
@@ -279,7 +331,7 @@ function ReferSection() {
         const link = referralLink(r.code);
         const earned = r.count * r.embersEach;
         const tweet = tweetIntent(
-          "I'm gathering Embers before the fire is lit. Come stand at the Tavern with me. ⟡",
+          "I'm gathering Embers before the fire is lit. Come stand at the Ashen Cup with me. ⟡",
           link
         );
         return (

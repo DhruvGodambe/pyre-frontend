@@ -5,6 +5,11 @@
    contract ABIs + addresses. Each method maps 1:1 to a contract call:
 
      getProtocolStats()      → PyreToken.scalingFactor / totalSupply, etc.
+                               pendingYieldPoolEth = ETH gathered into the reward
+                               pool but not yet distributed. Expose a view on the
+                               distributor/hook (undistributed balance = the
+                               pool's ETH balance minus already-allocated), and
+                               read it here.
      getAcolyte(addr)        → PyreNFT.tokenOf / currentStage / immolatedWeight
      getStakingPosition(addr)→ PyreStaking.positions / pendingRewards / drips
      stake/unstake/burn...   → write calls via wagmi/viem

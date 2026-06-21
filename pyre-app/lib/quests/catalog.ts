@@ -14,6 +14,7 @@
    ========================================================================== */
 
 import type { QuestTask } from "../types";
+import { X_PROFILE_URL } from "../social";
 
 /** When the pre-launch funnel opens. Adjust when the launch window is fixed. */
 export const FUNNEL_OPENS_AT = Date.UTC(2026, 5, 14, 0, 0, 0); // 2026-06-14 UTC
@@ -50,10 +51,22 @@ export interface QuestDef {
 
 export const QUEST_CATALOG: QuestDef[] = [
   {
+    id: "intro",
+    title: "Heed the Emberkeeper",
+    description: "Complete the Emberkeeper's welcome and tour of the kingdom.",
+    href: null,
+    unlockAt: null,
+    required: true,
+    // Credited in code when the intro hands off to the tour (not a link click).
+    completion: "click",
+    points: 20,
+    addedAt: FUNNEL_OPENS_AT - 14 * DAYS,
+  },
+  {
     id: "follow",
-    title: "Follow @pyre on X",
+    title: "Follow @pyre_protocol on X",
     description: "Follow the official account.",
-    href: "https://x.com",
+    href: X_PROFILE_URL,
     unlockAt: null,
     required: true,
     completion: "click",

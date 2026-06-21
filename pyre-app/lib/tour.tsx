@@ -126,7 +126,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     outside: { text: "And the reason you came early: the Ashen Cup." },
     inside: [
       {
-        text: "And here are the rites. Complete them to earn Embers and climb the leaderboard. Let's do your first.",
+        text: "And here are the quests. Complete them to earn Embers and climb the leaderboard. Let's do your first.",
         highlight: "tavern-rites",
       },
     ],

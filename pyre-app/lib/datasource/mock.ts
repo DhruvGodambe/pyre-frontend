@@ -326,6 +326,7 @@ export class MockDataSource implements DataSource {
       stakingRatio: 0.37,
       activeAcolytes: 1_284,
       totalEthDistributed: pyre(2_190).valueOf(), // ~2190 ETH all-time (display only)
+      pendingYieldPoolEth: eth(41.7), // sitting in the reward pool, awaiting next distribution
       volume24h: 940_000_000_000_000_000_000n, // ~940 ETH
       bonfire: bonfireState(w.totalBurned),
       burnRateSeries: burnSeries(),

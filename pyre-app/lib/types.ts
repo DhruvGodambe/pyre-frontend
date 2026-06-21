@@ -33,6 +33,7 @@ export interface ProtocolStats {
   stakingRatio: number; // 0..1 share of supply staked
   activeAcolytes: number;
   totalEthDistributed: bigint; // all-time ETH paid to participants (wei)
+  pendingYieldPoolEth: bigint; // ETH collected into the reward pool, awaiting the next distribution (wei)
   volume24h: bigint; // 24h swap volume (wei of ETH)
   bonfire: BonfireState;
   burnRateSeries: SeriesPoint[]; // for the live burn-rate chart

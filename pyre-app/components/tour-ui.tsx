@@ -90,7 +90,7 @@ export function TourNarration() {
   const primaryLabel = overview
     ? "Begin the tour →"
     : tour.isLastBeat
-      ? "Begin the rites →"
+      ? "Begin the quests →"
       : !inside && isDesktop
         ? "Step inside →"
         : "Continue →";

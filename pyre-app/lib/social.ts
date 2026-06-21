@@ -6,7 +6,8 @@
    here, never anything tying to a person. Swap the placeholders when live.
    ========================================================================== */
 
-export const X_HANDLE = "PYRE_xyz"; // no leading @
+export const X_HANDLE = "pyre_protocol"; // no leading @
+export const X_PROFILE_URL = `https://x.com/${X_HANDLE}`;
 export const DOCS_URL = "https://docs.pyreprotocol.com"; // TODO: real docs URL
 export const SITE_URL = "https://pyreprotocol.com"; // TODO: real site URL
 

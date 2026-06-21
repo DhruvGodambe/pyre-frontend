@@ -83,7 +83,7 @@ const TOUR_LINE: Record<BuildingId, string> = {
   immolated:
     "The inner order. Reach the Pyre, burn once more, and these doors open to a deeper share of the fire.",
   tavern:
-    "The Tavern, and the reason you came early. Take up the rites, bring friends to the fire, and climb the leaderboard. The reward is revealed closer to launch.",
+    "The Ashen Cup, and the reason you came early. Take up the quests, bring friends to the fire, and climb the leaderboard. The reward is revealed closer to launch.",
   gate: "",
 };
 
@@ -110,7 +110,7 @@ const SCENES: Scene[] = [
     kind: "lore",
     title: "You're early.",
     body:
-      "Few have found this place yet, and the early are remembered. There are rites to be earned in these first days, and what they unlock is revealed closer to launch.",
+      "Few have found this place yet, and the early are remembered. There are quests to be earned in these first days, and what they unlock is revealed closer to launch.",
   },
   {
     kind: "lore",
@@ -206,13 +206,16 @@ export function EmberkeeperIntro() {
   };
   // The closing hand-off: drop the visitor straight into The Tavern → Rites.
   const enterRites = () => {
+    complete.mutate("intro"); // getting through the intro IS the first rite
     navigate({ building: "tavern", tab: "rites" });
     finish();
   };
 
   // Hand off from the lore/identity intro to the guided Tour, one onboarding.
   // Desktop flies the camera over the map; mobile scrolls + spotlights panels.
+  // Completing the intro credits the "intro" rite (skipping does not).
   const beginTour = () => {
+    complete.mutate("intro");
     finish();
     tour.start();
   };
@@ -258,8 +261,8 @@ export function EmberkeeperIntro() {
           <div className="mx-5 mt-3 rounded-md border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5">
             <p className="text-text-2 text-xs leading-relaxed">
               Stay to the end and you&rsquo;ll complete your{" "}
-              <span className="text-brand">first rite</span>, a short quest. The early
-              are rewarded: rites earn <span className="text-text">Embers</span>, and what
+              <span className="text-brand">first quest</span>. The early
+              are rewarded: quests earn <span className="text-text">Embers</span>, and what
               they unlock is revealed closer to launch.
             </p>
           </div>
@@ -323,7 +326,7 @@ export function EmberkeeperIntro() {
                 onClick={enterRites}
                 className="rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
               >
-                Enter the Tavern →
+                Enter the Ashen Cup →
               </button>
             )}
           </div>
@@ -338,8 +341,8 @@ export function EmberkeeperIntro() {
         <div className="w-full max-w-sm rounded-panel bg-surface border border-surface-3/60 shadow-panel p-6 text-center space-y-3 animate-entry">
           <h3 className="font-display text-2xl text-brand">Skip the introduction?</h3>
           <p className="text-text-2 text-sm leading-relaxed">
-            You&rsquo;ll miss your <span className="text-brand">first rite</span>, a short
-            quest that earns Embers, with rewards revealed closer to launch.
+            You&rsquo;ll miss your <span className="text-brand">first quest</span>, which
+            earns Embers, with rewards revealed closer to launch.
           </p>
           <div className="flex flex-col gap-2 pt-1">
             <button
@@ -478,7 +481,7 @@ function IdentityScene({ onChose }: { onChose: () => void }) {
       <h2 className="font-display text-3xl text-brand">How will you enter?</h2>
       <p className="text-text-2 text-base leading-relaxed">
         The fire doesn&rsquo;t demand your wallet. Connect if you like, or stay a
-        guest and keep your distance. Either way, the rites are open to you.
+        guest and keep your distance. Either way, the quests are open to you.
       </p>
 
       {!guestOpen ? (
@@ -537,15 +540,15 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
     <div className="space-y-4">
       <div>
         <div className="text-text-3 text-[11px] uppercase tracking-widest mb-1">
-          The Tavern
+          The Ashen Cup
         </div>
-        <h2 className="font-display text-3xl text-brand leading-none">The Rites</h2>
-        <p className="text-text-3 text-xs mt-1">Rites are short quests. Do them, earn Embers.</p>
+        <h2 className="font-display text-3xl text-brand leading-none">The Quests</h2>
+        <p className="text-text-3 text-xs mt-1">Short tasks, do them, earn Embers.</p>
       </div>
       <p className="text-text-2 text-base leading-relaxed">
-        You came early, and the early are remembered. Each rite you complete
+        You came early, and the early are remembered. Each quest you complete
         earns <span className="text-brand">Embers</span>; what they unlock is
-        revealed closer to launch. New rites keep being kindled as the fire
+        revealed closer to launch. New quests keep being kindled as the fire
         nears, so this is only the beginning.
       </p>
       {mode === "wallet" && address && (
@@ -584,7 +587,7 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
         onClick={onFollow}
         className="block text-center rounded-md bg-brand text-bg px-6 py-3 text-sm font-medium hover:bg-brand-deep transition-colors"
       >
-        Begin the first rite: Follow @{X_HANDLE} on X
+        Begin the first quest: Follow @{X_HANDLE} on X
       </a>
     </div>
   );
@@ -599,7 +602,7 @@ function ReferralScene() {
   const link = code ? referralLink(code) : "";
   const embersEach = referral.data?.embersEach ?? 30;
   const tweet = tweetIntent(
-    "I'm gathering Embers before the fire is lit. Come stand at the Tavern with me. ⟡",
+    "I'm gathering Embers before the fire is lit. Come stand at the Ashen Cup with me. ⟡",
     link || undefined
   );
 

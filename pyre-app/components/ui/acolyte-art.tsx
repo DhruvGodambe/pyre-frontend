@@ -57,3 +57,38 @@ export function AcolyteArt({
     </div>
   );
 }
+
+/* Compact Acolyte thumbnail for the HUD profile header: just the art (on-chain
+   SVG when it lands, else the stage-coloured placeholder), no badges/tokenId.
+   Immolated Acolytes get a danger ring so the status reads at a glance. */
+export function AcolyteAvatar({
+  acolyte,
+  size = 36,
+}: {
+  acolyte: Acolyte;
+  size?: number;
+}) {
+  const ring = acolyte.isImmolated ? "border-danger/70" : "border-surface-3";
+  if (acolyte.svg) {
+    return (
+      <div
+        className={`shrink-0 overflow-hidden rounded-lg border ${ring} [&>svg]:h-full [&>svg]:w-full`}
+        style={{ width: size, height: size }}
+        dangerouslySetInnerHTML={{ __html: acolyte.svg }}
+      />
+    );
+  }
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border ${ring}`}
+      style={{
+        width: size,
+        height: size,
+        background: `radial-gradient(circle at 50% 60%, ${STAGE_COLOR[acolyte.stage]}66, var(--color-surface) 72%)`,
+      }}
+      aria-hidden
+    >
+      <span style={{ fontSize: size * 0.5 }}>🔥</span>
+    </div>
+  );
+}
