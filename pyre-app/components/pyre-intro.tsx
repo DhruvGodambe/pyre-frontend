@@ -15,9 +15,12 @@
      • Force a replay any time with ?video=1 (or #video), for the team/designer
        to re-watch on demand without clearing storage.
 
-   Autoplay reality: browsers block sound-on autoplay, so the film starts MUTED
-   and we surface a prominent "🔊 Sound on" control. Skip and the sound toggle
-   are the only chrome, everything else is the film.
+   Sound: the film WANTS to be heard, so it plays with sound by default. Browsers
+   block sound-on autoplay without a prior gesture (a first-time visitor with no
+   interaction); when that happens we fall back to muted playback and the prominent
+   "🔊 Sound on" control switches it on with one tap. On the designer portal the
+   password login counts as a gesture, so sound usually plays straight away.
+   Skip and the sound toggle are the only chrome, everything else is the film.
    ========================================================================== */
 
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +32,7 @@ const VIDEO_SRC = `${BASE_PATH}/intro/pyre-intro.mp4`;
 export function PyreIntro() {
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false); // sound ON by default
   const [started, setStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -41,6 +44,28 @@ export function PyreIntro() {
       window.location.hash === "#video";
     if (force || !localStorage.getItem(SEEN_KEY)) setOpen(true);
   }, []);
+
+  // Start playback WITH sound. If the browser refuses sound-on autoplay (no prior
+  // gesture), fall back to muted playback so the film still rolls, and let the
+  // "Sound on" control unmute it. Runs once the film is mounted (open).
+  useEffect(() => {
+    if (!open) return;
+    const v = videoRef.current;
+    if (!v) return;
+    let cancelled = false;
+    v.muted = false;
+    v.play()
+      .then(() => !cancelled && setMuted(false))
+      .catch(() => {
+        if (cancelled) return;
+        v.muted = true;
+        setMuted(true);
+        v.play().catch(() => {});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const finish = () => {
     localStorage.setItem(SEEN_KEY, "1");
@@ -63,8 +88,6 @@ export function PyreIntro() {
       <video
         ref={videoRef}
         src={VIDEO_SRC}
-        autoPlay
-        muted={muted}
         playsInline
         preload="auto"
         onPlaying={() => setStarted(true)}
