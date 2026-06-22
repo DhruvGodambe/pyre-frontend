@@ -51,8 +51,16 @@ export interface Building {
   /** exterior art (transparent PNG) placed on the map + shown at the door.
       null = art not yet delivered → a styled placeholder marker is used. */
   art: string | null;
-  /** interior art (framed behind the panel when you step inside). */
+  /** interior art (full scene shown behind the panel once you step inside). */
   interior?: string;
+  /** full exterior SCENE with its own background, shown when you click the
+      building (the "at the door" view), before you Enter. Distinct from `art`,
+      which is the transparent cut-out marker placed on the shared map. */
+  exterior?: string;
+  /** small square building icon (shown on the door card + reused in nav). */
+  icon?: string;
+  /** looping background music for this building's exterior + interior. */
+  sound?: string;
   /** give this building's interior a wider overlay on desktop (e.g. the Forge,
       whose Stake + Burn boxes sit side by side). Defaults to the narrow column. */
   wide?: boolean;
@@ -68,7 +76,7 @@ export const BUILDINGS: Building[] = [
      Vault (E). FRONT row at the entrance, Black Market (SW), Gate (S),
      Grand Exchange (SE). Plaza centre ≈ (49.5, 54), ring radius ≈ 15%. */
   { id: "immolated", name: "Hall of the Immolated", tagline: "Top-tier rewards pool", description: "For top holders only. Reach the highest Acolyte tier (Pyre) and burn again to join and share extra ETH yield.", Panel: ImmolatedPanel, mobileOrder: 5, kind: "panel", map: { x: 49.7, y: 41.9 }, scale: 20, art: "/world/buildings/immolated.webp" },
-  { id: "forge", name: "The Forge", tagline: "Stake & burn", description: "Where commitment is made. Stake your $PYRE to earn ETH yield and shield it from decay, then burn $PYRE to forge your Pyre Acolyte and multiply that yield up to 3×.", Panel: ForgePanel, mobileOrder: 3, kind: "panel", map: { x: 39.2, y: 46.1 }, scale: 15, art: "/world/buildings/forge.webp", wide: true },
+  { id: "forge", name: "The Forge", tagline: "Stake & burn", description: "Where commitment is made. Stake your $PYRE to earn ETH yield and shield it from decay, then burn $PYRE to forge your Pyre Acolyte and multiply that yield up to 3×.", Panel: ForgePanel, mobileOrder: 3, kind: "panel", map: { x: 39.2, y: 46.1 }, scale: 15, art: "/world/buildings/forge.webp", interior: "/world/interiors/forge.webp", exterior: "/world/exteriors/forge.webp", icon: "/world/icons/forge.webp", sound: "/world/audio/forge.mp3", wide: true },
   { id: "observatory", name: "The Observatory", tagline: "Live protocol stats", description: "The watchtower. Live readings of the whole protocol: supply, decay, burns, staking and yield. No wallet needed.", Panel: ObservatoryPanel, mobileOrder: 4, kind: "panel", map: { x: 60.1, y: 46.9 }, scale: 15, art: "/world/buildings/observatory.webp", interior: "/world/interiors/observatory.webp" },
   { id: "tavern", name: "The Ashen Cup", tagline: "Quests, invites & leaderboard", description: "Complete quests and invite friends to earn Points toward a reward revealed closer to launch, then see where you rank on the leaderboard.", Panel: TavernPanel, mobileOrder: 6, kind: "panel", map: { x: 34.8, y: 58.4 }, scale: 13, art: "/world/buildings/tavern.webp", wide: true },
   { id: "bonfire", name: "The Bonfire", tagline: "Live burn counter", description: "The center of PYRE. Every $PYRE anyone burns is counted here. Watch the total climb in real time.", Panel: BonfirePanel, mobileOrder: 1, kind: "bonfire", map: { x: 49.6, y: 54.6 }, scale: 13, art: "/world/buildings/bonfire.webp" },

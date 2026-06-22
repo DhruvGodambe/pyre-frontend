@@ -32,3 +32,19 @@ Thumbs.db
 # Shipped art is already optimized under pyre-app/public/.
 swisstransfer_*/
 **/swisstransfer_*/
+
+# Raw designer deliveries at repo root (per-building source PNGs/MP3s + bundles).
+# The optimized, in-use versions live under pyre-app/public/world/.
+/bonfire/
+/forge/
+/vault/
+/observertory/
+/grand_exchange/
+/black_market/
+/hall/
+/tavern/
+/gate/
+/Soundtrack/
+/Character_PFP/
+/UI_Elements/
+/Other/

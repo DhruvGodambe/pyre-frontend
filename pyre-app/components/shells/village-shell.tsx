@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { WorldLedger } from "@/components/world-hud";
+import { BuildingAudio } from "@/components/world-audio";
 import { TourNarration, TourHighlight } from "@/components/tour-ui";
 import { useTour } from "@/lib/tour";
 import { GatePanel } from "@/components/panels/gate";
@@ -280,37 +281,56 @@ export function VillageShell() {
         </Overlay>
       )}
 
-      {/* STEP 1, at the door: a building click zooms in + spotlights it (camera
-          above), and this blurb explains it with a way in. Hidden once inside. */}
-      {focusId && !tour.active && view?.mode !== "inside" && (
-        <div className="fixed inset-x-0 bottom-0 z-[55] flex justify-center p-4 pointer-events-none">
-          <div className="pointer-events-auto w-full max-w-md rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-5 text-center animate-entry">
-            <div className="text-text-3 text-[11px] uppercase tracking-widest">
-              {BUILDING_BY_ID[focusId].tagline}
-            </div>
-            <h2 className="font-display text-2xl text-brand mt-0.5">
-              {BUILDING_BY_ID[focusId].name}
-            </h2>
-            <p className="text-text-2 text-sm mt-2 leading-relaxed">
-              {BUILDING_BY_ID[focusId].description}
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <button
-                onClick={() => setFocusId(null)}
-                className="text-text-3 text-sm hover:text-text-2 transition-colors px-3 py-2"
-              >
-                ← Back
-              </button>
-              <button
-                onClick={() => setView({ id: focusId, mode: "inside" })}
-                className="rounded-md bg-brand text-bg px-6 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
-              >
-                {enterLabel(BUILDING_BY_ID[focusId].name)}
-              </button>
+      {/* STEP 1, at the door. If the building has a full exterior SCENE, show it
+          full-screen with an Enter button (the new flow). Otherwise fall back to
+          the camera-zoom + text blurb for buildings not yet wired with scenes. */}
+      {focusId &&
+        !tour.active &&
+        view?.mode !== "inside" &&
+        (BUILDING_BY_ID[focusId].exterior ? (
+          <ExteriorScene
+            id={focusId}
+            onBack={() => setFocusId(null)}
+            onEnter={() => setView({ id: focusId, mode: "inside" })}
+          />
+        ) : (
+          <div className="fixed inset-x-0 bottom-0 z-[55] flex justify-center p-4 pointer-events-none">
+            <div className="pointer-events-auto w-full max-w-md rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-5 text-center animate-entry">
+              <div className="text-text-3 text-[11px] uppercase tracking-widest">
+                {BUILDING_BY_ID[focusId].tagline}
+              </div>
+              <h2 className="font-display text-2xl text-brand mt-0.5">
+                {BUILDING_BY_ID[focusId].name}
+              </h2>
+              <p className="text-text-2 text-sm mt-2 leading-relaxed">
+                {BUILDING_BY_ID[focusId].description}
+              </p>
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setFocusId(null)}
+                  className="text-text-3 text-sm hover:text-text-2 transition-colors px-3 py-2"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={() => setView({ id: focusId, mode: "inside" })}
+                  className="rounded-md bg-brand text-bg px-6 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+                >
+                  {enterLabel(BUILDING_BY_ID[focusId].name)}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+
+      {/* Per-building background music: plays while a building is open (its
+          exterior view or inside), fades out on leave. Skipped during the tour
+          (which has its own narration). */}
+      {(() => {
+        const openId = !tour.active ? (view?.mode === "inside" ? view.id : focusId) : null;
+        const sound = openId ? BUILDING_BY_ID[openId].sound : null;
+        return sound ? <BuildingAudio key={openId} src={sound} /> : null;
+      })()}
 
       {/* STEP 2, inside. Back returns to the zoomed-in blurb (focus), not a popup. */}
       {view?.mode === "inside" && (
@@ -403,6 +423,88 @@ function DoorPreview({ id, onEnter }: { id: BuildingId; onEnter: () => void }) {
         >
           {enterLabel(b.name)}
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* STEP 1, the new "walk up to the building" view: the building's full exterior
+   SCENE fills the screen with a slow zoom-in (you arrive), its name + an Enter
+   button over it. Enter steps inside; Back returns to the map. */
+function ExteriorScene({
+  id,
+  onEnter,
+  onBack,
+}: {
+  id: BuildingId;
+  onEnter: () => void;
+  onBack: () => void;
+}) {
+  const b = BUILDING_BY_ID[id];
+  // Settle from slightly zoomed-in + faded to resting, the "arrive at the door" beat.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[45] overflow-hidden bg-bg">
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: shown ? "scale(1)" : "scale(1.08)",
+          opacity: shown ? 1 : 0,
+          transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1), opacity 600ms ease-out",
+        }}
+      >
+        <Image
+          src={asset(b.exterior!)}
+          alt={b.name}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover select-none pointer-events-none"
+        />
+      </div>
+
+      {/* Bottom scrim so the title + buttons stay readable over the art. */}
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/75 to-transparent pointer-events-none" />
+
+      <button
+        onClick={onBack}
+        className="absolute top-4 left-4 z-10 rounded-md bg-bg/70 backdrop-blur px-3 py-2 text-text-2 text-sm hover:text-text transition-colors"
+      >
+        ← Back to map
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-6">
+        <div className="w-full max-w-lg text-center animate-entry">
+          <div className="flex items-center justify-center gap-3">
+            {b.icon && (
+              <Image
+                src={asset(b.icon)}
+                alt=""
+                width={48}
+                height={48}
+                className="h-12 w-12 object-contain drop-shadow"
+              />
+            )}
+            <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              {b.name}
+            </h2>
+          </div>
+          <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{b.tagline}</p>
+          <p className="text-text-2 text-sm mt-3 max-w-md mx-auto leading-relaxed">
+            {b.description}
+          </p>
+          <button
+            onClick={onEnter}
+            className="mt-5 rounded-md bg-brand text-bg px-8 py-3 text-base font-medium hover:bg-brand-deep transition-colors shadow-panel"
+          >
+            {enterLabel(b.name)}
+          </button>
+        </div>
       </div>
     </div>
   );
