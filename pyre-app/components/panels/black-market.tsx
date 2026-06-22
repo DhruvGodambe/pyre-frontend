@@ -153,21 +153,21 @@ function ListingsTab({
             <EmptyState
               icon="🜂"
               title="No Acolytes match"
-              message="Nothing on the market fits this tier and variant yet. Loosen the filter, or be the one to forge it."
+              message="Nothing matches this filter yet. Try a different filter, or create your own in The Forge."
               action={
                 <NavCta to="forge" tab="burn" className="">
-                  Forge an Acolyte
+                  Create an Acolyte
                 </NavCta>
               }
             />
           ) : (
             <EmptyState
               icon="🜂"
-              title="The market is cold"
-              message="No Acolytes have risen yet. They appear here the moment wallets begin to burn, be the first to forge one."
+              title="No Acolytes listed yet"
+              message="Acolytes show up here once people start burning $PYRE. Be the first to create one."
               action={
                 <NavCta to="forge" tab="burn" className="">
-                  Forge the first Acolyte
+                  Create the first Acolyte
                 </NavCta>
               }
             />

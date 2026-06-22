@@ -96,15 +96,15 @@ export function ImmolatedPanel() {
   const claim = useClaimImmolatedYield();
 
   return (
-    <Panel title="Hall of the Immolated" tagline="The inner order">
-      <RequireWallet message="Connect to learn whether the Hall opens for you.">
+    <Panel title="Hall of the Immolated" tagline="Top-tier rewards pool">
+      <RequireWallet message="Connect to see if you're eligible.">
         <StateView query={pos}>
           {(p) =>
             !p.isMember ? (
               <EmptyState
                 icon="⌖"
-                title="The Immolated do not announce themselves"
-                message="Reach the Pyre: Stage 4, plus 10,000 $PYRE burned into the Hall, and the door opens."
+                title="Not eligible yet"
+                message="Reach the top Acolyte tier (Pyre), then burn 10,000 $PYRE into the Hall to join."
               />
             ) : (
               <div className="space-y-5">
@@ -134,15 +134,15 @@ export function ImmolatedPanel() {
                     tx={burn}
                     disabled={parseToken(amount) <= 0n}
                     onClick={() => burn.mutate(parseToken(amount))}
-                    pendingLabel="Committing…"
+                    pendingLabel="Burning…"
                   >
-                    Add to weight
+                    Burn into the Hall
                   </TxButton>
                 </div>
 
                 <div className="pt-3 border-t border-surface-3/60">
                   <h3 className="font-display text-lg text-brand">Hall of Fame</h3>
-                  <p className="text-text-3 text-xs mb-3">The Immolated who burn the deepest.</p>
+                  <p className="text-text-3 text-xs mb-3">Members who&rsquo;ve burned the most.</p>
                   <StateView query={board}>{(rows) => <HallOfFame rows={rows} />}</StateView>
                 </div>
               </div>

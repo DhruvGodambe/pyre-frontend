@@ -261,10 +261,10 @@ export function VillageShell() {
       {!awake && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 text-center pointer-events-none px-4 z-10">
           <p className="text-brand/90 text-base font-display drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            The kingdom sleeps
+            Get started
           </p>
           <p className="text-text-2 text-xs drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)]">
-            Light the lantern at the Gate to wake it
+            Open the Gate to connect or enter as a guest
           </p>
         </div>
       )}

@@ -57,24 +57,24 @@ export interface TourInsideStep extends TourLine {
 
 const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }> = {
   bonfire: {
-    outside: { text: "Start at the heart. Every $PYRE fed to the fire feeds this flame." },
+    outside: { text: "Let's start at the center: the Bonfire. Every $PYRE anyone burns shows up here." },
     inside: [
       {
-        text: "Inside, the global burn counter climbs in real time. This is the pulse of the whole kingdom.",
+        text: "This is the total $PYRE burned across everyone, updating live.",
       },
     ],
   },
   forge: {
     outside: {
-      text: "The Forge is where you stake $PYRE to shield it from decay, and where Pyre Acolytes (NFTs) are earned by burning. Come, step in.",
+      text: "The Forge is where you stake $PYRE to earn ETH (and stop decay), and burn $PYRE to create your Acolyte NFT. Let's go in.",
     },
     inside: [
       {
-        text: "First, stake your $PYRE here. It stops the decay and starts earning you ETH.",
+        text: "First, stake your $PYRE here. That stops decay and starts earning you ETH.",
         highlight: "forge-stake",
       },
       {
-        text: "Then burn $PYRE here to forge your Acolyte, which multiplies that ETH yield up to 3×.",
+        text: "Then burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
         highlight: "forge-burn",
       },
       {
@@ -84,7 +84,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     ],
   },
   vault: {
-    outside: { text: "Your own hold sits here: the Amber Vault." },
+    outside: { text: "Your personal dashboard: the Amber Vault." },
     inside: [
       {
         text: "Everything that's yours lives here: your Acolyte, your balances and your yield, with quick ways back to the action.",
@@ -93,7 +93,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     ],
   },
   observatory: {
-    outside: { text: "The watchtower, the Observatory." },
+    outside: { text: "Live project stats: the Observatory." },
     inside: [
       {
         text: "From here you read the whole protocol at a glance: supply, decay, burns and yield. No wallet needed to look.",
@@ -101,32 +101,32 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     ],
   },
   exchange: {
-    outside: { text: "The trading floor: the Grand Exchange." },
+    outside: { text: "Where you trade: the Grand Exchange." },
     inside: [
       {
-        text: "Swap ETH and $PYRE right here, every fee shown to you honestly. Nothing hidden in the dark.",
+        text: "Swap ETH and $PYRE here, with every fee shown upfront.",
         highlight: "exchange-swap",
       },
     ],
   },
   market: {
-    outside: { text: "The bazaar, the Black Market." },
-    inside: [{ text: "Browse and claim the Acolytes other wallets have forged in the flame." }],
+    outside: { text: "Buy and sell NFTs: the Black Market." },
+    inside: [{ text: "Browse and buy Acolytes that other people have created." }],
   },
   immolated: {
-    outside: { text: "Above it all, the Hall of the Immolated." },
+    outside: { text: "For top holders: the Hall of the Immolated." },
     inside: [
       {
-        text: "Reach Pyre Acolyte, then burn again here to become an Immolated Acolyte and claim a deeper share of the fire.",
+        text: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
         highlight: "immolated-action",
       },
     ],
   },
   tavern: {
-    outside: { text: "And the reason you came early: the Ashen Cup." },
+    outside: { text: "And the Ashen Cup, where you earn rewards before launch." },
     inside: [
       {
-        text: "And here are the quests. Complete them to earn Embers and climb the leaderboard. Let's do your first.",
+        text: "Here are the quests. Complete them to earn Embers and climb the leaderboard. Let's do your first.",
         highlight: "tavern-rites",
       },
     ],
@@ -155,7 +155,7 @@ export interface TourBeat {
 const OVERVIEW_BEAT: TourBeat = {
   phase: "outside",
   overview: true,
-  text: "Look upon the Pyre kingdom. Every road leads to the fire at its heart: feed it $PYRE and it rewards you, in ETH yield and in Acolytes forged from the flame. Come, let me show you each door.",
+  text: "Welcome to PYRE. The idea is simple: stake and burn $PYRE to earn ETH yield and level up your Acolyte NFT. Let me show you around, building by building.",
   step: 0,
   total: ORDER.length,
 };

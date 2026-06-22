@@ -19,7 +19,7 @@ export function ConnectButton({ connectedOnly = false }: { connectedOnly?: boole
   if (connectedOnly) return null;
   return (
     <Button onClick={connect} disabled={status === "connecting"}>
-      {status === "connecting" ? "Waking the kingdom…" : "Connect Wallet"}
+      {status === "connecting" ? "Connecting…" : "Connect Wallet"}
     </Button>
   );
 }

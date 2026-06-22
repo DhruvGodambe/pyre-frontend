@@ -46,11 +46,11 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
           <div className="text-5xl" aria-hidden>
             🏮
           </div>
-          <h2 className="font-display text-3xl text-brand">You&rsquo;re inside the fire</h2>
+          <h2 className="font-display text-3xl text-brand">You&rsquo;re in</h2>
           <p className="text-text-2 text-sm max-w-xs mx-auto">
             {mode === "wallet"
-              ? `Connected as ${address ? shortAddress(address) : "your wallet"}. Your address is your entry.`
-              : `Entering as ${username}. Connect a wallet whenever you like, or stay a guest, the quests are open either way.`}
+              ? `Connected as ${address ? shortAddress(address) : "your wallet"}. Your address is your account.`
+              : `Signed in as ${username}. Connect a wallet whenever you like, or stay a guest, the quests work either way.`}
           </p>
         </div>
 
@@ -61,10 +61,10 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
             className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
           >
             <div className="text-sm font-medium">
-              {connecting ? "Lighting the lantern…" : "Connect a wallet"}
+              {connecting ? "Connecting…" : "Connect a wallet"}
             </div>
             <div className="text-bg/70 text-xs">
-              Lock in your address now instead of submitting it at the end.
+              Add your address now instead of submitting it at the end.
             </div>
           </button>
         )}
@@ -74,7 +74,7 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
             onClick={() => onEntered?.()}
             className="rounded-md bg-surface-2 text-text border border-surface-3 px-5 py-2.5 text-sm hover:bg-surface-3 transition-colors"
           >
-            Back to the kingdom
+            Back to the app
           </button>
           <button
             onClick={() => {
@@ -96,11 +96,10 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
         <div className="text-5xl" aria-hidden>
           🏮
         </div>
-        <h2 className="font-display text-3xl text-brand">The kingdom sleeps</h2>
+        <h2 className="font-display text-3xl text-brand">Welcome to PYRE</h2>
         <p className="text-text-2 text-sm max-w-xs mx-auto">
-          A single lantern burns at the gate. The fire doesn&rsquo;t demand your
-          wallet, connect if you like, or enter as a guest. Either way, the
-          fires wake.
+          You don&rsquo;t need a wallet to start. Connect one if you like, or
+          continue as a guest, either way you get full access.
         </p>
       </div>
 
@@ -112,10 +111,10 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
             className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
           >
             <div className="text-sm font-medium">
-              {connecting ? "Dawn breaking…" : "Light the lantern · Connect wallet"}
+              {connecting ? "Connecting…" : "Connect wallet"}
             </div>
             <div className="text-bg/70 text-xs">
-              Your address is your entry, there&rsquo;s nothing else to submit.
+              Your address is your account, there&rsquo;s nothing else to submit.
             </div>
           </button>
           <button

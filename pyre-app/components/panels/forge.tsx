@@ -121,7 +121,7 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
                 <ForgeHero acolyte={a} size={150} />
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
                   <span className="font-display text-2xl text-brand">
-                    {a.exists ? acolyteName(a.stage) : "Unforged"}
+                    {a.exists ? acolyteName(a.stage) : "None yet"}
                   </span>
                   {a.exists ? <Badge tone="brand">{a.multiplier}× yield</Badge> : <Badge>No Acolyte yet</Badge>}
                   {a.isLP && <Badge tone="brand">LP</Badge>}
@@ -403,7 +403,7 @@ function ForgeHero({ acolyte, size = 150 }: { acolyte: Acolyte; size?: number })
       <span className="opacity-50 animate-pulse" style={{ fontSize: size * 0.34 }} aria-hidden>
         🔥
       </span>
-      <span className="absolute bottom-2 text-text-3 text-[10px] uppercase tracking-widest">not yet forged</span>
+      <span className="absolute bottom-2 text-text-3 text-[10px] uppercase tracking-widest">none yet</span>
     </div>
   );
 }
@@ -651,16 +651,16 @@ function tierInfo(a: Acolyte): { pct: number; label: string; short: string } {
       short: `${formatToken(rem)} to ${STAGES[next].name} (${STAGES[next].multiplier}×)`,
     };
   }
-  return { pct: 1, label: `PYRE, the highest stage (${STAGES[4].multiplier}×)`, short: "PYRE · 3×" };
+  return { pct: 1, label: `Pyre, the highest tier (${STAGES[4].multiplier}×)`, short: "PYRE · 3×" };
 }
 
 /* The Emberkeeper reacts to where you stand, narration, not status text. */
 function floorLine(a: Acolyte, p: StakingPosition): string {
   if (!a.exists && p.liquidBalance <= 0n && p.stakedBalance <= 0n)
-    return "You come to the fire empty-handed. Bring $PYRE, and we begin.";
-  if (!a.exists) return "Burn $PYRE to forge your Acolyte, ten thousand wakes it.";
-  if (a.stage >= 4) return "You have reached the Pyre. Few have ever stood this close to the fire.";
+    return "You don't have any $PYRE yet. Get some to get started.";
+  if (!a.exists) return "Burn $PYRE to create your Acolyte NFT. 10,000 unlocks the first tier.";
+  if (a.stage >= 4) return "You've reached Pyre, the top tier. Nicely done.";
   if (p.stakedBalance <= 0n)
-    return "Your Acolyte earns nothing while your $PYRE sits idle. Stake it, and the fire will pay you.";
-  return `Your ${a.stageName} burns bright. Burn more to reach ${STAGES[Math.min(4, a.stage + 1) as Stage].name}, the top is PYRE, 3× yield.`;
+    return "Your Acolyte earns nothing while your $PYRE is unstaked. Stake it to start earning ETH.";
+  return `You're at ${a.stageName}. Burn more to reach ${STAGES[Math.min(4, a.stage + 1) as Stage].name}. The top tier is Pyre (3× yield).`;
 }

@@ -340,7 +340,7 @@ export function WorldLedger() {
       </div>
       {/* The reminders */}
       <div className="px-2 py-1.5">
-        <div className="px-2.5 pb-1 pt-1 font-display text-sm text-brand">Your standing</div>
+        <div className="px-2.5 pb-1 pt-1 font-display text-sm text-brand">Your summary</div>
         <LedgerBody />
       </div>
     </div>

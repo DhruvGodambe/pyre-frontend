@@ -102,21 +102,21 @@ type Scene =
 const SCENES: Scene[] = [
   {
     kind: "lore",
-    title: "Welcome, stranger.",
+    title: "Welcome to PYRE.",
     body:
-      "We're glad you chose to visit the Pyre kingdom: a realm that runs on fire, where $PYRE is a token built to be burned.",
+      "PYRE is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn ETH yield and level up your NFT.",
   },
   {
     kind: "lore",
     title: "You're early.",
     body:
-      "Few have found this place yet, and the early are remembered. There are quests to be earned in these first days, and what they unlock is revealed closer to launch.",
+      "Not many people have found this yet, and early users are rewarded. There are quests to complete in these first days, and what they unlock is revealed closer to launch.",
   },
   {
     kind: "lore",
     title: "Let me show you around.",
     body:
-      "I'm the Emberkeeper. Choose how you'll enter, and I'll walk you through the kingdom building by building, so you know how it all lives. Want the whole story first? The scrolls are always here.",
+      "I'm the Emberkeeper, your guide. Choose how you'll enter, and I'll walk you through the app, building by building, so you know how it all works. Want the full background first? It's always here.",
     docs: true,
   },
   { kind: "identity" },
@@ -492,7 +492,7 @@ function IdentityScene({ onChose }: { onChose: () => void }) {
             className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
           >
             <div className="text-sm font-medium">
-              {connecting ? "Lighting the lantern…" : "Connect wallet"}
+              {connecting ? "Connecting…" : "Connect wallet"}
             </div>
             <div className="text-bg/70 text-xs">
               Your address is your entry, so there's nothing else to submit.
@@ -546,10 +546,10 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
         <p className="text-text-3 text-xs mt-1">Short tasks, do them, earn Embers.</p>
       </div>
       <p className="text-text-2 text-base leading-relaxed">
-        You came early, and the early are remembered. Each quest you complete
+        You came early, and early users are rewarded. Each quest you complete
         earns <span className="text-brand">Embers</span>; what they unlock is
-        revealed closer to launch. New quests keep being kindled as the fire
-        nears, so this is only the beginning.
+        revealed closer to launch. New quests are added as launch gets closer,
+        so this is only the beginning.
       </p>
       {mode === "wallet" && address && (
         <p className="text-text-3 text-xs">
@@ -602,7 +602,7 @@ function ReferralScene() {
   const link = code ? referralLink(code) : "";
   const embersEach = referral.data?.embersEach ?? 30;
   const tweet = tweetIntent(
-    "I'm gathering Embers before the fire is lit. Come stand at the Ashen Cup with me. ⟡",
+    "I'm earning Embers on PYRE before launch. Join me:",
     link || undefined
   );
 
@@ -620,7 +620,7 @@ function ReferralScene() {
         <div className="text-4xl mb-2" aria-hidden>
           🔥
         </div>
-        <h2 className="font-display text-2xl text-brand">The fire spreads by hand.</h2>
+        <h2 className="font-display text-2xl text-brand">Spread the word.</h2>
         <p className="text-text-2 text-sm mt-2 max-w-xs mx-auto">
           You showed up early. Now bring others. Every friend who joins through
           your link earns you {embersEach} Embers, again and again.

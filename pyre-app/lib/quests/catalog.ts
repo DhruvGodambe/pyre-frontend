@@ -52,8 +52,8 @@ export interface QuestDef {
 export const QUEST_CATALOG: QuestDef[] = [
   {
     id: "intro",
-    title: "Heed the Emberkeeper",
-    description: "Complete the Emberkeeper's welcome and tour of the kingdom.",
+    title: "Finish the intro tour",
+    description: "Watch the welcome and quick tour of the app.",
     href: null,
     unlockAt: null,
     required: true,
@@ -86,8 +86,8 @@ export const QUEST_CATALOG: QuestDef[] = [
   },
   {
     id: "quiz",
-    title: "Pass the lore quiz",
-    description: "Answer 3 questions about the protocol.",
+    title: "Take the quiz",
+    description: "Answer 3 quick questions about the project.",
     href: null,
     unlockAt: null,
     required: true,
@@ -110,7 +110,7 @@ export const QUEST_CATALOG: QuestDef[] = [
   {
     id: "submit",
     title: "Submit your wallet",
-    description: "Lock in the address that receives your rewards.",
+    description: "Add the address that will receive your rewards.",
     href: null,
     unlockAt: null,
     required: true,

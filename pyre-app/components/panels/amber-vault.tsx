@@ -159,11 +159,11 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
         <div className="text-4xl text-text-3" aria-hidden>
           🜂
         </div>
-        <h3 className="font-display text-2xl text-brand">You haven&rsquo;t forged an Acolyte yet</h3>
+        <h3 className="font-display text-2xl text-brand">You don&rsquo;t have an Acolyte yet</h3>
         <p className="text-text-2 text-sm max-w-sm mx-auto">
-          Stake $PYRE to earn ETH yield and shield it from decay. Then burn $PYRE to forge your
+          Stake $PYRE to earn ETH yield and protect it from decay. Then burn $PYRE to create your
           Acolyte, an NFT that multiplies that yield, rising tier by tier from Ember Acolyte up to
-          Pyre Acolyte (3×). Idle $PYRE only decays.
+          Pyre Acolyte (3×). Unstaked $PYRE only decays.
         </p>
       </div>
 
@@ -182,7 +182,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
         </div>
         <ProgressBar
           value={toNumber(burned) / toNumber(emberTarget)}
-          label={`Burn ${formatToken(remaining)} more $PYRE to forge your first Acolyte (EMBER)`}
+          label={`Burn ${formatToken(remaining)} more $PYRE to create your first Acolyte (Ember tier)`}
         />
       </div>
 

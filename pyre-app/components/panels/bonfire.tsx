@@ -51,7 +51,7 @@ export function BonfirePanel() {
             </div>
 
             <div className="mt-4 max-w-xs mx-auto">
-              <NavCta to="forge" tab="burn">Feed the fire · Burn $PYRE</NavCta>
+              <NavCta to="forge" tab="burn">Burn $PYRE</NavCta>
             </div>
           </div>
         );
@@ -73,7 +73,7 @@ function BurnTicker({ events }: { events: ActivityEvent[] }) {
   }, [burns.length]);
 
   if (burns.length === 0) {
-    return <div className="text-text-3 text-xs">The fire waits for the first burn…</div>;
+    return <div className="text-text-3 text-xs">No burns yet</div>;
   }
   const e = burns[i % burns.length];
   return (
