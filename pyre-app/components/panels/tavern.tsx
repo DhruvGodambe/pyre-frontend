@@ -35,7 +35,6 @@ import { useNavigation } from "@/lib/navigation";
 import { Panel, Badge, Button, Field, ProgressBar } from "@/components/ui/primitives";
 import { EmberCount } from "@/components/world-hud";
 import { Skeleton, EmptyState, StateView } from "@/components/ui/state";
-import { Tabs } from "@/components/ui/tabs";
 import { NEWLY_LIT_WINDOW } from "@/lib/quests/catalog";
 import { tweetIntent, referralLink } from "@/lib/social";
 import { shortAddress, formatCountdown } from "@/lib/format";
@@ -43,44 +42,57 @@ import type { QuestTask } from "@/lib/types";
 
 export function TavernPanel() {
   const { pending, clearPending } = useNavigation();
-  const [tab, setTab] = useState("rites");
   const ref = useRef<HTMLDivElement>(null);
+  const summonRef = useRef<HTMLDivElement>(null);
+  const standingRef = useRef<HTMLDivElement>(null);
 
-  // Honour a deep-link into this building (e.g. intro → Trials): open the right
-  // tab and bring the panel into view (matters on the mobile stacked page).
+  // Honour a deep-link into this building (e.g. intro → Trials): scroll the
+  // matching box into view. Three boxes now, no tabs, so navigation is a scroll,
+  // not a tab switch. Old deep-links still pass tab:"rites" (→ the top).
   useEffect(() => {
     if (pending?.building === "tavern") {
-      if (pending.tab) setTab(pending.tab);
-      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const target =
+        pending.tab === "summon" ? summonRef : pending.tab === "leaderboard" ? standingRef : ref;
+      target.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       clearPending();
     }
   }, [pending, clearPending]);
 
   return (
-    <div ref={ref}>
-      <Panel title="The Ashen Cup" tagline="Trials, allies & standing">
-        <p className="text-text-2 text-sm mb-4">
-          Gather <span className="text-brand">Embers</span> before the fire is lit:
-          finish your trials, summon allies, and climb the standing. What the Embers
-          unlock is sealed until launch.
-        </p>
-        <Tabs
-          active={tab}
-          onChange={setTab}
-          tabs={[
-            { id: "rites", label: "Trials", content: <QuestFunnel onSummon={() => setTab("summon")} /> },
-            { id: "summon", label: "Summon", content: <SummonSection /> },
-            { id: "leaderboard", label: "Standing", content: <QuestLeaderboard /> },
-          ]}
-        />
-      </Panel>
+    <div ref={ref} className="space-y-5">
+      <p className="text-text-2 text-sm">
+        Gather <span className="text-brand">Embers</span> before the fire is lit:
+        finish your trials, summon allies, and climb the standing. What the Embers
+        unlock is sealed until launch.
+      </p>
+
+      {/* Three separate boxes. On desktop the tall Trials box takes the left two
+          thirds; Summon + Standing stack down the right. On mobile they fall into
+          one column. No tabs, everything is visible at once. */}
+      <div className="grid gap-5 items-start lg:grid-cols-3">
+        <Panel title="The Trials" tagline="Your path to the fire" className="lg:col-span-2">
+          <QuestFunnel />
+        </Panel>
+        <div className="space-y-5">
+          <div ref={summonRef}>
+            <Panel title="Summon Allies" tagline="The earn with no ceiling">
+              <SummonSection />
+            </Panel>
+          </div>
+          <div ref={standingRef}>
+            <Panel title="The Standing" tagline="Embers leaderboard">
+              <QuestLeaderboard />
+            </Panel>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 /* ============================================================== TRIALS == */
 
-function QuestFunnel({ onSummon }: { onSummon: () => void }) {
+function QuestFunnel() {
   const tasks = useQuestTasks();
   const referral = useReferral();
   const lb = useQuestLeaderboard();
@@ -112,7 +124,6 @@ function QuestFunnel({ onSummon }: { onSummon: () => void }) {
   // Referral Embers feed the same total (resilient: 0 if the summon circle is
   // still being lit / the query errored, so a backend gap never breaks Trials).
   const referralEmbers = referral.data ? referral.data.count * referral.data.embersEach : 0;
-  const referralEach = referral.data?.embersEach ?? 30;
 
   return (
     <div className="space-y-4">
@@ -190,21 +201,6 @@ function QuestFunnel({ onSummon }: { onSummon: () => void }) {
                   onConnect={connectWallet}
                 />
               </div>
-
-              {/* Teaser into the Summon tab: keeps referrals discoverable from
-                  Trials without cramming them into this room. */}
-              <button
-                onClick={onSummon}
-                className="group flex w-full items-center justify-between rounded-md border border-dashed border-brand/30 bg-brand/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-brand/[0.08]"
-              >
-                <span className="text-sm text-text-2">
-                  <span className="text-brand">Summon allies</span> to the fire, the only
-                  trial with no end.
-                </span>
-                <span className="shrink-0 text-xs text-text-3 group-hover:text-brand transition-colors">
-                  +{referralEach} each →
-                </span>
-              </button>
             </>
           );
         }}
