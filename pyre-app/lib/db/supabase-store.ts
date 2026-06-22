@@ -16,6 +16,16 @@ const SUBMISSIONS = "wallet_submissions";
 const IDENTITIES = "quest_identities";
 const REFERRALS = "quest_referrals";
 
+/** True when an error is "this table doesn't exist yet" (schema not applied).
+   The quest_referrals table is the last piece of schema.sql to be run in
+   Supabase; until it is, referrals can't persist, but the rest of the funnel
+   (and the leaderboard) must keep working rather than 500. PostgREST reports a
+   missing table as PGRST205. */
+function isMissingTable(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "PGRST205" || /Could not find the table/i.test(error.message ?? "");
+}
+
 export class SupabaseStore implements QuestStore {
   private db: SupabaseClient;
 
@@ -109,7 +119,11 @@ export class SupabaseStore implements QuestStore {
       this.db.from(IDENTITIES).select("session_id, username, wallet"),
       this.db.from(REFERRALS).select("session_id, code, referred_by"),
     ]);
-    for (const r of [comps, subs, idents, refs]) if (r.error) throw new Error(r.error.message);
+    // Referrals are supplementary to the board; if the table isn't applied yet,
+    // treat them as empty rather than taking the whole leaderboard down.
+    for (const r of [comps, subs, idents]) if (r.error) throw new Error(r.error.message);
+    if (refs.error && !isMissingTable(refs.error)) throw new Error(refs.error.message);
+    const refRows = isMissingTable(refs.error) ? [] : refs.data ?? [];
 
     const rows = new Map<string, LeaderboardRow>();
     const row = (sid: string) => {
@@ -131,7 +145,7 @@ export class SupabaseStore implements QuestStore {
       r.username = (i.username as string | null) ?? null;
       r.wallet = (i.wallet as string | null) ?? r.wallet;
     }
-    for (const f of refs.data ?? []) {
+    for (const f of refRows) {
       const r = row(f.session_id as string);
       r.code = (f.code as string | null) ?? null;
       r.referredBy = (f.referred_by as string | null) ?? null;
@@ -180,7 +194,7 @@ export class SupabaseStore implements QuestStore {
       .from(REFERRALS)
       .select("session_id", { count: "exact", head: true })
       .eq("referred_by", code);
-    if (error) throw new Error(error.message);
+    if (error && !isMissingTable(error)) throw new Error(error.message);
     return count ?? 0;
   }
 }
