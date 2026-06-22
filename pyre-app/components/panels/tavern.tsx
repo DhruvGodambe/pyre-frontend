@@ -55,26 +55,26 @@ export function TavernPanel() {
   return (
     <div ref={ref} className="space-y-5">
       <p className="text-text-2 text-sm">
-        Earn <span className="text-brand">Embers</span> (your points) before launch:
-        complete quests, invite friends, and climb the leaderboard. What Embers unlock
-        is revealed closer to launch.
+        Earn <span className="text-brand">Points</span> before launch: complete
+        quests, invite friends, and climb the leaderboard. What Points unlock is
+        revealed closer to launch.
       </p>
 
       {/* Three separate boxes. On desktop the tall Quests box takes the left two
           thirds; Invite + Leaderboard stack down the right. On mobile they fall
           into one column. No tabs, everything is visible at once. */}
       <div className="grid gap-5 items-start lg:grid-cols-3">
-        <Panel title="Quests" tagline="Complete tasks to earn Embers" className="lg:col-span-2">
+        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2">
           <QuestFunnel />
         </Panel>
         <div className="space-y-5">
           <div ref={summonRef}>
-            <Panel title="Invite friends" tagline="Earn Embers for every friend">
+            <Panel title="Invite friends" tagline="Earn Points for every friend">
               <SummonSection />
             </Panel>
           </div>
           <div ref={standingRef}>
-            <Panel title="Leaderboard" tagline="Top Ember earners">
+            <Panel title="Leaderboard" tagline="Top point earners">
               <QuestLeaderboard />
             </Panel>
           </div>
@@ -144,7 +144,7 @@ function QuestFunnel() {
 
               {/* Ember total, ticks up on completion. */}
               <div className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
-                <span className="text-text-3 text-xs uppercase tracking-wider">Embers earned</span>
+                <span className="text-text-3 text-xs uppercase tracking-wider">Points earned</span>
                 <span className="tabular text-brand text-lg">
                   🔥 <EmberCount value={totalEmbers} />
                 </span>
@@ -335,11 +335,11 @@ function StandingStrip({
     <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
       {allDone ? (
         <span className="text-text-2">
-          All quests done. Your Embers are locked in, your reward arrives at launch.
+          All quests done. Your Points are locked in, your reward arrives at launch.
         </span>
       ) : unclaimed > 0 ? (
         <span>
-          <span className="text-brand">⚠ {unclaimed} Embers</span> still unclaimed.
+          <span className="text-brand">⚠ {unclaimed} Points</span> still unclaimed.
           Rewards are revealed at launch.
         </span>
       ) : (
@@ -351,7 +351,7 @@ function StandingStrip({
           {gap !== null && gap > 0 && above ? (
             <>
               {" · "}
-              <span className="text-brand tabular">{gap} Embers</span> behind #{above.rank}.
+              <span className="text-brand tabular">{gap} Points</span> behind #{above.rank}.
             </>
           ) : (
             "."
@@ -471,7 +471,7 @@ function GateNote({
       <span className="text-brand">
         {remaining} more {remaining === 1 ? "quest" : "quests"}
       </span>{" "}
-      to submit your wallet. {earned} / {required} Embers earned.
+      to submit your wallet. {earned} / {required} Points earned.
     </div>
   );
 }
@@ -523,7 +523,7 @@ function SummonSection() {
   const link = referralLink(r.code);
   const earned = r.count * r.embersEach;
   const tweet = tweetIntent(
-    "I'm earning Embers on PYRE before launch. Join me:",
+    "I'm earning Points on PYRE before launch. Join me:",
     link
   );
 
@@ -540,7 +540,7 @@ function SummonSection() {
         <h3 className="font-display text-xl text-text">Invite friends</h3>
         <p className="mt-1 text-text-2 text-sm">
           Every friend who joins with your link earns you{" "}
-          <span className="text-brand">{r.embersEach} Embers</span>, again and again.
+          <span className="text-brand">{r.embersEach} Points</span>, again and again.
           There&rsquo;s no limit, the more you invite, the higher you climb.
         </p>
       </div>
@@ -552,7 +552,7 @@ function SummonSection() {
           <div className="tabular text-text text-2xl">{r.count}</div>
         </div>
         <div className="rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
-          <div className="text-text-3 text-[11px] uppercase tracking-wider">Embers from invites</div>
+          <div className="text-text-3 text-[11px] uppercase tracking-wider">Points from invites</div>
           <div className="tabular text-brand text-2xl">🔥 {earned}</div>
         </div>
       </div>
@@ -637,7 +637,7 @@ function QuestLeaderboard() {
       {(data) =>
         data.top.length === 0 ? (
           <div className="text-center text-text-3 text-sm py-6">
-            No Embers earned yet. Be the first on the board.
+            No Points earned yet. Be the first on the board.
           </div>
         ) : (
           <div className="space-y-3">

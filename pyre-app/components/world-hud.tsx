@@ -231,7 +231,7 @@ function LedgerBody() {
         <LedgerRow
           label="Quests"
           value={`${done}/${total}`}
-          sub={`🔥 ${embers} Embers`}
+          sub={`🔥 ${embers} Points`}
           accent={done === total}
           onClick={() => navigate({ building: "tavern", tab: "rites" })}
         />

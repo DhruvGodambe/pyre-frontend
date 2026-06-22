@@ -262,7 +262,7 @@ export function EmberkeeperIntro() {
             <p className="text-text-2 text-xs leading-relaxed">
               Stay to the end and you&rsquo;ll complete your{" "}
               <span className="text-brand">first quest</span>. The early
-              are rewarded: quests earn <span className="text-text">Embers</span>, and what
+              are rewarded: quests earn <span className="text-text">Points</span>, and what
               they unlock is revealed closer to launch.
             </p>
           </div>
@@ -342,7 +342,7 @@ export function EmberkeeperIntro() {
           <h3 className="font-display text-2xl text-brand">Skip the introduction?</h3>
           <p className="text-text-2 text-sm leading-relaxed">
             You&rsquo;ll miss your <span className="text-brand">first quest</span>, which
-            earns Embers, with rewards revealed closer to launch.
+            earns Points, with rewards revealed closer to launch.
           </p>
           <div className="flex flex-col gap-2 pt-1">
             <button
@@ -543,11 +543,11 @@ function FunnelScene({ onFollow }: { onFollow: () => void }) {
           The Ashen Cup
         </div>
         <h2 className="font-display text-3xl text-brand leading-none">The Quests</h2>
-        <p className="text-text-3 text-xs mt-1">Short tasks, do them, earn Embers.</p>
+        <p className="text-text-3 text-xs mt-1">Short tasks, do them, earn Points.</p>
       </div>
       <p className="text-text-2 text-base leading-relaxed">
         You came early, and early users are rewarded. Each quest you complete
-        earns <span className="text-brand">Embers</span>; what they unlock is
+        earns <span className="text-brand">Points</span>; what they unlock is
         revealed closer to launch. New quests are added as launch gets closer,
         so this is only the beginning.
       </p>
@@ -602,7 +602,7 @@ function ReferralScene() {
   const link = code ? referralLink(code) : "";
   const embersEach = referral.data?.embersEach ?? 30;
   const tweet = tweetIntent(
-    "I'm earning Embers on PYRE before launch. Join me:",
+    "I'm earning Points on PYRE before launch. Join me:",
     link || undefined
   );
 
@@ -623,7 +623,7 @@ function ReferralScene() {
         <h2 className="font-display text-2xl text-brand">Spread the word.</h2>
         <p className="text-text-2 text-sm mt-2 max-w-xs mx-auto">
           You showed up early. Now bring others. Every friend who joins through
-          your link earns you {embersEach} Embers, again and again.
+          your link earns you {embersEach} Points, again and again.
         </p>
       </div>
 
