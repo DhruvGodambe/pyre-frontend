@@ -332,11 +332,10 @@ export function VillageShell() {
         return sound ? <BuildingAudio key={openId} src={sound} /> : null;
       })()}
 
-      {/* STEP 2, inside. Back returns to the zoomed-in blurb (focus), not a popup. */}
+      {/* STEP 2, inside: the interior SCENE fills the whole screen and the feature
+          panel floats on top of it (you've stepped into the room). */}
       {view?.mode === "inside" && (
-        <Overlay onClose={() => setView(null)} wide={BUILDING_BY_ID[view.id]?.wide}>
-          <Interior id={view.id} onBack={() => setView(null)} />
-        </Overlay>
+        <InteriorView id={view.id} onBack={() => setView(null)} />
       )}
 
       {/* GUIDED TOUR, the Emberkeeper's narration + controls. Drives the camera
@@ -458,8 +457,10 @@ function ExteriorScene({
           transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1), opacity 600ms ease-out",
         }}
       >
-        {/* Blurred, dimmed copy fills the viewport edges (the scene is 5:4, so on
-            a wide screen object-contain would otherwise leave bare bars). */}
+        {/* The art is ~5:4 and the screen is wider, so it can't fill edge-to-edge
+            AND stay whole. Solution: a bright, blurred copy of the scene fills the
+            whole background (no black bars), and the COMPLETE image sits sharp and
+            uncropped on top. */}
         <Image
           src={asset(b.exterior!)}
           alt=""
@@ -467,9 +468,8 @@ function ExteriorScene({
           priority
           sizes="100vw"
           aria-hidden
-          className="object-cover scale-110 blur-2xl brightness-[0.4] select-none pointer-events-none"
+          className="object-cover scale-125 blur-2xl brightness-[0.85] select-none pointer-events-none"
         />
-        {/* The full scene, uncropped. */}
         <Image
           src={asset(b.exterior!)}
           alt={b.name}
@@ -522,34 +522,42 @@ function ExteriorScene({
   );
 }
 
-/* Inside the building: the feature panel, framed by interior art where delivered. */
-function Interior({ id, onBack }: { id: BuildingId; onBack: () => void }) {
+/* Inside the building: the interior SCENE fills the whole screen (the room you're
+   standing in) and the feature panel floats on top. The scene is a backdrop, so
+   object-cover (which fills and lightly crops the edges) is the right fit here. */
+function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
   const b = BUILDING_BY_ID[id];
   const Panel = b.Panel;
   return (
-    <div className="space-y-3">
-      <div className="relative rounded-panel p-1 border border-surface-3/40 overflow-hidden">
+    <div className="fixed inset-0 z-30 overflow-y-auto">
+      {/* The room, full-screen behind everything. */}
+      <div className="fixed inset-0 -z-10">
         {b.interior && (
-          <>
-            <Image
-              src={asset(b.interior)}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 100vw, 512px"
-              className="object-cover -z-10 select-none pointer-events-none"
-            />
-            <div className="absolute inset-0 -z-10 bg-bg/72" />
-          </>
+          <Image
+            src={asset(b.interior)}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover select-none pointer-events-none"
+          />
         )}
-        {!b.interior && <div className="absolute inset-0 -z-10 bg-surface-2/40" />}
-        <Panel />
+        {/* Legibility scrim over the room (lighter when there's art to show). */}
+        <div className={`absolute inset-0 ${b.interior ? "bg-bg/55" : "bg-bg/92"}`} />
       </div>
+
       <button
         onClick={onBack}
-        className="mx-auto block text-text-3 text-xs uppercase tracking-widest hover:text-text"
+        className="fixed top-4 left-4 z-10 rounded-md bg-bg/70 backdrop-blur px-3 py-2 text-text-2 text-sm hover:text-text transition-colors"
       >
-        ← leave {b.name.replace(/^The /, "the ")}
+        ← Leave {b.name.replace(/^The /, "the ")}
       </button>
+
+      <div className="min-h-dvh flex items-start justify-center px-4 pt-16 pb-10">
+        <div className={`w-full ${b.wide ? "max-w-6xl" : "max-w-lg"} animate-entry`}>
+          <Panel />
+        </div>
+      </div>
     </div>
   );
 }
