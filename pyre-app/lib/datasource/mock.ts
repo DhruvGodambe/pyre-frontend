@@ -36,6 +36,8 @@ import type {
   ActivityEvent,
   Announcement,
   MarketListing,
+  MarketActivityEvent,
+  MarketActivityKind,
   SwapQuote,
   SwapQuoteParams,
   SwapDirection,
@@ -464,6 +466,7 @@ export class MockDataSource implements DataSource {
 
   async getMarketListings(filter?: MarketFilter): Promise<MarketListing[]> {
     await wait(LATENCY_MS);
+    const now = Date.now();
     const all: MarketListing[] = Array.from({ length: 12 }, (_, i) => {
       const stage = ((i % 4) + 1) as 1 | 2 | 3 | 4;
       const isLP = i % 3 === 0;
@@ -479,15 +482,69 @@ export class MockDataSource implements DataSource {
         priceEth: pyre(0.4 + i * 0.15),
         cumulativeBurnWeight: w,
         nextStageThreshold: nextThreshold,
+        listedAt: now - (i * 37 + 11) * 60_000, // staggered "listed Xm ago"
+        externalUrl: "https://opensea.io/",
+        svg: null,
+      };
+    });
+    const rows = all.filter(
+      (l) =>
+        (filter?.stage ? l.stage === filter.stage : true) &&
+        (filter?.lpOnly ? l.isLP : true) &&
+        (filter?.immolatedOnly ? l.isImmolated : true)
+    );
+    const cmp = (a: bigint, b: bigint) => (a < b ? -1 : a > b ? 1 : 0);
+    switch (filter?.sort ?? "price-asc") {
+      case "price-desc":
+        rows.sort((a, b) => cmp(b.priceEth, a.priceEth));
+        break;
+      case "recent":
+        rows.sort((a, b) => b.listedAt - a.listedAt);
+        break;
+      case "tier-desc":
+        rows.sort((a, b) => b.stage - a.stage || cmp(a.priceEth, b.priceEth));
+        break;
+      case "price-asc":
+      default:
+        rows.sort((a, b) => cmp(a.priceEth, b.priceEth));
+    }
+    return rows;
+  }
+
+  async getMarketActivity(filter?: MarketFilter): Promise<MarketActivityEvent[]> {
+    await wait(LATENCY_MS);
+    // Weighted toward sales/listings (what the marketplace event stream is mostly
+    // made of); offers + delistings sprinkled in so every row type is designable.
+    const sequence: MarketActivityKind[] = [
+      "sale", "listing", "offer", "sale", "listing", "sale", "delisting", "listing",
+    ];
+    const now = Date.now();
+    const all: MarketActivityEvent[] = Array.from({ length: 18 }, (_, i) => {
+      const stage = (((i * 3) % 4) + 1) as 1 | 2 | 3 | 4;
+      const kind = sequence[i % sequence.length];
+      const isLP = i % 4 === 0;
+      return {
+        id: `mkt-evt-${i}`,
+        kind,
+        tokenId: 700 + (i % 12),
+        stage,
+        stageName: STAGES[stage].name,
+        multiplier: STAGES[stage].multiplier,
+        isLP,
+        isImmolated: stage === 4 && i % 3 === 0,
+        priceEth: pyre(0.35 + (i % 7) * 0.22 + stage * 0.08),
+        from: addr(),
+        to: kind === "sale" ? addr() : null,
+        at: now - i * 137_000, // newest first, ~2-3 min apart
         externalUrl: "https://opensea.io/",
         svg: null,
       };
     });
     return all.filter(
-      (l) =>
-        (filter?.stage ? l.stage === filter.stage : true) &&
-        (filter?.lpOnly ? l.isLP : true) &&
-        (filter?.immolatedOnly ? l.isImmolated : true)
+      (e) =>
+        (filter?.stage ? e.stage === filter.stage : true) &&
+        (filter?.lpOnly ? e.isLP : true) &&
+        (filter?.immolatedOnly ? e.isImmolated : true)
     );
   }
 

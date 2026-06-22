@@ -255,14 +255,37 @@ export interface Announcement {
 export interface MarketListing {
   tokenId: number;
   stage: Stage;
-  stageName: string;
+  stageName: string; // EMBER | FLAME | FORGE | PYRE (drives the tier filter)
   multiplier: number;
   isLP: boolean;
   isImmolated: boolean;
   priceEth: bigint;
   cumulativeBurnWeight: bigint;
   nextStageThreshold: bigint | null;
+  listedAt: number; // ms the listing went live (powers "listed 2h ago" + recent sort)
   externalUrl: string; // link out to OpenSea/Blur listing
+  svg: string | null;
+}
+
+/** One row of the Black Market's "Recent activity" tab. A branded mirror of the
+    marketplace's event stream (OpenSea/Blur), so traders see the Acolyte market
+    breathing without leaving the Village. */
+export type MarketActivityKind = "sale" | "listing" | "offer" | "delisting";
+
+export interface MarketActivityEvent {
+  id: string;
+  kind: MarketActivityKind;
+  tokenId: number;
+  stage: Stage;
+  stageName: string; // EMBER | FLAME | FORGE | PYRE
+  multiplier: number;
+  isLP: boolean;
+  isImmolated: boolean;
+  priceEth: bigint; // sale price / list price / offer amount
+  from: Address; // seller (sale/listing/delisting) or offerer (offer)
+  to: Address | null; // buyer (sale only); null otherwise
+  at: number; // ms
+  externalUrl: string; // deep-link to the marketplace event/listing
   svg: string | null;
 }
 

@@ -86,6 +86,7 @@ import type {
   ActivityEvent,
   Announcement,
   MarketListing,
+  MarketActivityEvent,
   SwapQuote,
   SwapQuoteParams,
   SwapDirection,
@@ -118,7 +119,12 @@ export class ChainDataSource implements DataSource {
   getTopBurners(): Promise<LeaderboardEntry[]> { return NOT_WIRED(); }
   getActivityFeed(): Promise<ActivityEvent[]> { return NOT_WIRED(); }
   getAnnouncements(): Promise<Announcement[]> { return NOT_WIRED(); }
+  // Black Market = a branded window over OpenSea/Blur. getMarketListings →
+  // their listings API filtered by the PyreNFT collection + trait (stage/LP/
+  // immolated) + sort; getMarketActivity → their events API (sale/listing/
+  // offer/delisting) for the same collection. Both map the filter 1:1.
   getMarketListings(_f?: MarketFilter): Promise<MarketListing[]> { return NOT_WIRED(); }
+  getMarketActivity(_f?: MarketFilter): Promise<MarketActivityEvent[]> { return NOT_WIRED(); }
   // --- The Grand Exchange (see the header for the exact v4 call mapping) ---
   getSwapQuote(_p: SwapQuoteParams): Promise<SwapQuote> { return NOT_WIRED(); } // → V4Quoter
   getPoolState(): Promise<PoolState> { return NOT_WIRED(); } // → StateView

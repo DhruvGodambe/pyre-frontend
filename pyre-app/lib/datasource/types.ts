@@ -22,6 +22,7 @@ import type {
   ActivityEvent,
   Announcement,
   MarketListing,
+  MarketActivityEvent,
   SwapQuote,
   SwapQuoteParams,
   SwapDirection,
@@ -30,6 +31,7 @@ import type {
   ApprovalState,
   QuestTask,
 } from "../types";
+import type { Stage } from "../constants";
 
 /** Result of a write (transaction). Mirrors what a tx receipt gives us. */
 export interface TxResult {
@@ -38,10 +40,18 @@ export interface TxResult {
   error?: string;
 }
 
+/** How the Black Market listing grid is ordered. Maps to OpenSea/Blur's sort
+    params when ChainDataSource wires the real marketplace API. */
+export type MarketSort = "price-asc" | "price-desc" | "recent" | "tier-desc";
+
+/** The Black Market query: tier (Acolyte stage), variant toggles, and sort.
+    Shared by both tabs, the listing grid honours `sort`; the activity feed is
+    always newest-first and ignores it. */
 export interface MarketFilter {
-  stage?: number;
+  stage?: Stage; // 1 EMBER · 2 FLAME · 3 FORGE · 4 PYRE; undefined = all tiers
   lpOnly?: boolean;
   immolatedOnly?: boolean;
+  sort?: MarketSort;
 }
 
 /** Everything the swap write needs: the user-fixed amount/side, the slippage
@@ -65,6 +75,7 @@ export interface DataSource {
   getActivityFeed(): Promise<ActivityEvent[]>;
   getAnnouncements(): Promise<Announcement[]>;
   getMarketListings(filter?: MarketFilter): Promise<MarketListing[]>;
+  getMarketActivity(filter?: MarketFilter): Promise<MarketActivityEvent[]>;
   /* --- The Grand Exchange (Uniswap-v4 swap) ---------------------------- */
   getSwapQuote(params: SwapQuoteParams): Promise<SwapQuote>;
   getPoolState(): Promise<PoolState>;

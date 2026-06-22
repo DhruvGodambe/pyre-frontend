@@ -34,6 +34,7 @@ const KEY = {
   activity: ["activity"] as const,
   announcements: ["announcements"] as const,
   market: (f?: MarketFilter) => ["market", f ?? {}] as const,
+  marketActivity: (f?: MarketFilter) => ["marketActivity", f ?? {}] as const,
   quote: (p: SwapQuoteParams) =>
     ["quote", p.direction, p.kind, p.amount.toString(), p.slippageBps] as const,
   poolState: ["poolState"] as const,
@@ -103,6 +104,14 @@ export function useAnnouncements() {
 
 export function useMarketListings(filter?: MarketFilter) {
   return useQuery({ queryKey: KEY.market(filter), queryFn: () => ds().getMarketListings(filter) });
+}
+
+export function useMarketActivity(filter?: MarketFilter) {
+  return useQuery({
+    queryKey: KEY.marketActivity(filter),
+    queryFn: () => ds().getMarketActivity(filter),
+    refetchInterval: 15_000, // the market is live; keep the feed breathing
+  });
 }
 
 /* The Grand Exchange (Uniswap-v4 swap) ------------------------------------ */
