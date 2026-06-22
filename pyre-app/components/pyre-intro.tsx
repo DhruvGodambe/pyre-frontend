@@ -28,22 +28,33 @@ import { BASE_PATH } from "@/lib/config";
 
 const SEEN_KEY = "pyre_intro_video_seen";
 const VIDEO_SRC = `${BASE_PATH}/intro/pyre-intro.mp4`;
+const POSTER_SRC = `${BASE_PATH}/intro/poster.webp`;
 
 export function PyreIntro() {
   const [open, setOpen] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [decided, setDecided] = useState(false);
+  const [curtainGone, setCurtainGone] = useState(false);
   const [muted, setMuted] = useState(false); // sound ON by default
-  const [started, setStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Decide on the client (localStorage + URL) whether to play.
+  // Decide on the client (localStorage + URL) whether to play. Until we've
+  // decided, an opaque branded curtain covers the app (rendered from the first
+  // paint, so the village shell never flashes through behind the intro).
   useEffect(() => {
-    setReady(true);
     const force =
       new URLSearchParams(window.location.search).has("video") ||
       window.location.hash === "#video";
-    if (force || !localStorage.getItem(SEEN_KEY)) setOpen(true);
+    setOpen(force || !localStorage.getItem(SEEN_KEY));
+    setDecided(true);
   }, []);
+
+  // When we're NOT showing the film (returning visitor, or after it ends), fade
+  // the curtain out and then drop it, so the world is revealed smoothly.
+  useEffect(() => {
+    if (!decided || open) return;
+    const t = setTimeout(() => setCurtainGone(true), 550);
+    return () => clearTimeout(t);
+  }, [decided, open]);
 
   // Start playback WITH sound. If the browser refuses sound-on autoplay (no prior
   // gesture), fall back to muted playback so the film still rolls, and let the
@@ -81,28 +92,34 @@ export function PyreIntro() {
     if (!next) v.play().catch(() => {}); // unmuting counts as a gesture
   };
 
-  if (!ready || !open) return null;
+  // Not playing the film: a plain black curtain. Opaque until we've decided
+  // (covers the shell on first paint), then fades out to reveal the world. No
+  // text, the film is dark, so this reads as the lights going down, not a card.
+  if (!open) {
+    if (curtainGone) return null;
+    return (
+      <div
+        className={`fixed inset-0 z-[60] bg-black transition-opacity duration-500 ${
+          decided ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center">
       <video
         ref={videoRef}
         src={VIDEO_SRC}
+        poster={POSTER_SRC}
         playsInline
         preload="auto"
-        onPlaying={() => setStarted(true)}
         onEnded={finish}
         className="w-full h-full object-contain"
       />
 
-      {/* Loading shimmer until the film is actually painting frames. */}
-      {!started && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="font-display text-brand/80 text-xl tracking-[0.3em] uppercase animate-pulse">
-            PYRE
-          </span>
-        </div>
-      )}
+      {/* No text placeholder — the poster frame shows while the film buffers. */}
 
       {/* Sound toggle, prominent, because the film wants to be heard. */}
       <button

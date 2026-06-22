@@ -442,13 +442,22 @@ function ExteriorScene({
   const b = BUILDING_BY_ID[id];
   // Settle from slightly zoomed-in + faded to resting, the "arrive at the door" beat.
   const [shown, setShown] = useState(false);
+  // Fade the whole scene out before returning to the map (no hard cut).
+  const [leaving, setLeaving] = useState(false);
   useEffect(() => {
     const r = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(r);
   }, []);
+  const back = () => {
+    setLeaving(true);
+    setTimeout(onBack, 320);
+  };
 
   return (
-    <div className="fixed inset-0 z-[45] overflow-hidden bg-bg">
+    <div
+      className="fixed inset-0 z-[45] overflow-hidden bg-bg transition-opacity duration-300"
+      style={{ opacity: leaving ? 0 : 1 }}
+    >
       <div
         className="absolute inset-0"
         style={{
@@ -484,7 +493,7 @@ function ExteriorScene({
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/75 to-transparent pointer-events-none" />
 
       <button
-        onClick={onBack}
+        onClick={back}
         className="absolute top-4 left-4 z-10 rounded-md bg-bg/70 backdrop-blur px-3 py-2 text-text-2 text-sm hover:text-text transition-colors"
       >
         ← Back to map
@@ -528,10 +537,20 @@ function ExteriorScene({
 function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
   const b = BUILDING_BY_ID[id];
   const Panel = b.Panel;
+  // Fade the room up over a solid base, so stepping inside reads as a smooth
+  // reveal (and the map never flashes through during the swap).
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
   return (
-    <div className="fixed inset-0 z-30 overflow-y-auto">
-      {/* The room, full-screen behind everything. */}
-      <div className="fixed inset-0 -z-10">
+    <div className="fixed inset-0 z-30 overflow-y-auto bg-bg">
+      {/* The room, full-screen behind everything, fading in. */}
+      <div
+        className="fixed inset-0 -z-10 transition-opacity duration-500"
+        style={{ opacity: shown ? 1 : 0 }}
+      >
         {b.interior && (
           <Image
             src={asset(b.interior)}
