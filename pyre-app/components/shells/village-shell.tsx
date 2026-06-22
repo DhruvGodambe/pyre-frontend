@@ -453,18 +453,30 @@ function ExteriorScene({
       <div
         className="absolute inset-0"
         style={{
-          transform: shown ? "scale(1)" : "scale(1.08)",
+          transform: shown ? "scale(1)" : "scale(1.06)",
           opacity: shown ? 1 : 0,
           transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1), opacity 600ms ease-out",
         }}
       >
+        {/* Blurred, dimmed copy fills the viewport edges (the scene is 5:4, so on
+            a wide screen object-contain would otherwise leave bare bars). */}
+        <Image
+          src={asset(b.exterior!)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          aria-hidden
+          className="object-cover scale-110 blur-2xl brightness-[0.4] select-none pointer-events-none"
+        />
+        {/* The full scene, uncropped. */}
         <Image
           src={asset(b.exterior!)}
           alt={b.name}
           fill
           priority
           sizes="100vw"
-          className="object-cover select-none pointer-events-none"
+          className="object-contain select-none pointer-events-none"
         />
       </div>
 
