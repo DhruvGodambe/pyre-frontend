@@ -18,9 +18,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // clone() keeps basePath (/app), so this resolves to /app/login.
+  // clone() keeps basePath (/app), so this resolves to /app/login. Carry where
+  // they were headed as ?next so a deep-link (e.g. /app/ashencup) survives the
+  // gate and lands on the right building after login.
+  const dest = request.nextUrl.pathname; // basePath-relative, e.g. "/ashencup"
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
+  loginUrl.search = "";
+  if (dest && dest !== "/") loginUrl.searchParams.set("next", dest);
   return NextResponse.redirect(loginUrl);
 }
 

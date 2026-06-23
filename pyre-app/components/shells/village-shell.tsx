@@ -55,7 +55,7 @@ export function VillageShell() {
   const [arrived, setArrived] = useState(false);
   const { status } = useWallet();
   const { isSet } = useIdentity();
-  const { pending, clearPending } = useNavigation();
+  const { pending, clearPending, syncUrl } = useNavigation();
   const awake = status === "connected" || isSet;
   const tour = useTour();
 
@@ -98,11 +98,25 @@ export function VillageShell() {
   // inside the target building. If there's a tab to open, leave `pending` for the
   // panel to consume; otherwise clear it here so it can't re-fire stale.
   useEffect(() => {
-    if (pending && pending.building !== "gate") {
-      setView({ id: pending.building as BuildingId, mode: "inside" });
-      if (!pending.tab) clearPending();
+    if (!pending || pending.building === "gate") return;
+    if (pending.building === "") {
+      // Browser Back from a building → return to the map.
+      setView(null);
+      setFocusId(null);
+      clearPending();
+      return;
     }
+    setView({ id: pending.building as BuildingId, mode: "inside" });
+    if (!pending.tab) clearPending();
   }, [pending, clearPending]);
+
+  // Reflect the open building in the URL (no reload), so each has a shareable
+  // link (/app/ashencup …). Skipped during the tour (it rips through buildings)
+  // and only while awake. Back/forward is handled by the navigation provider.
+  useEffect(() => {
+    if (!awake || tour.active) return;
+    syncUrl(view?.mode === "inside" ? view.id : null);
+  }, [awake, tour.active, view, syncUrl]);
 
   // --- Camera + spotlight -------------------------------------------------
   // The same camera serves the guided tour AND a normal building click. Pan the

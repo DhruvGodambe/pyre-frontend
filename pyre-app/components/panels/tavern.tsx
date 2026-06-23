@@ -342,8 +342,14 @@ function QuestStep({
 function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDone: () => void }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
+  // Fire the completion exactly once: onBothDone is a new closure each render and
+  // its mutation re-renders the parent, which would otherwise re-fire the effect.
+  const fired = useRef(false);
   useEffect(() => {
-    if (liked && reposted) onBothDone();
+    if (liked && reposted && !fired.current) {
+      fired.current = true;
+      onBothDone();
+    }
   }, [liked, reposted, onBothDone]);
 
   const pill = (done: boolean) =>

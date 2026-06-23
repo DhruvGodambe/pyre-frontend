@@ -9,7 +9,7 @@
    building into view. Tab selection is handled inside the target panel, so we
    only clear `pending` here when there's no tab left for a panel to consume. */
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BUILDINGS } from "@/components/buildings";
 import { BuildingPanel } from "@/components/ui/sealed-preview";
 import { ConnectButton } from "@/components/connect-button";
@@ -64,6 +64,12 @@ export function MobileShell() {
 
   useEffect(() => {
     if (!pending) return;
+    if (pending.building === "") {
+      // Browser Back to the map root → top of the dashboard.
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      clearPending();
+      return;
+    }
     document
       .getElementById(`b-${pending.building}`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -90,7 +96,9 @@ export function MobileShell() {
       <div className="space-y-4">
         {stacked.map(({ id }) => (
           <div key={id} id={`b-${id}`} className="scroll-mt-20">
-            <BuildingPanel id={id} />
+            <DeferUntilNear>
+              <BuildingPanel id={id} />
+            </DeferUntilNear>
           </div>
         ))}
       </div>
@@ -106,6 +114,37 @@ export function MobileShell() {
           intro at z-50, and is revealed for returning/skipped visitors). */}
       {!isSet && <MobileGate />}
     </main>
+  );
+}
+
+/* Defers mounting a stacked panel until it's near the viewport, so a phone's
+   first paint isn't blocked by every building mounting + firing its data queries
+   and polling timers at once (the Ashen Cup, first/in-view, mounts immediately).
+   Mounts once and stays mounted. The outer id (b-<building>) lives on the parent,
+   so deep-links and the tour can still scroll here before it mounts. */
+function DeferUntilNear({ children, minHeight = 320 }: { children: React.ReactNode; minHeight?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (shown) return;
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" } // mount a little before it scrolls into view
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown]);
+  return (
+    <div ref={ref} style={shown ? undefined : { minHeight }}>
+      {shown ? children : null}
+    </div>
   );
 }
 

@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { useTour } from "@/lib/tour";
-import { useCompleteQuestTask } from "@/lib/hooks";
+import { useCompleteQuestTask, useQuestTasks } from "@/lib/hooks";
 import { useIsDesktop } from "@/components/ui/use-media";
 import { asset } from "@/lib/config";
 
@@ -65,14 +65,17 @@ export function TourHighlight({ targetId }: { targetId: string }) {
 export function TourNarration() {
   const tour = useTour();
   const complete = useCompleteQuestTask();
+  const tasks = useQuestTasks();
   const isDesktop = useIsDesktop();
   const [muted, setMuted] = useState(false);
 
   // Finishing the tour (clicking through the LAST beat, not skipping) instantly
   // grants the "Let the Emberkeeper guide you" quest, the first win that kicks
-  // off quest momentum. Then tour.next() lands them in the Ashen Cup.
+  // off quest momentum. Then tour.next() lands them in the Ashen Cup. Guard on
+  // not-already-done so a replay (the tour is replayable) doesn't re-credit it.
+  const introDone = tasks.data?.find((t) => t.id === "intro")?.done ?? false;
   const onPrimary = () => {
-    if (tour.isLastBeat) complete.mutate("intro");
+    if (tour.isLastBeat && !introDone) complete.mutate("intro");
     tour.next();
   };
   const audioRef = useRef<HTMLAudioElement | null>(null);

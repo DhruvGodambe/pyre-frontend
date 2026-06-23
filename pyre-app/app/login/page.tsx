@@ -22,7 +22,11 @@ export default function LoginPage() {
       body: JSON.stringify({ password }),
     });
     if (res.ok) {
-      router.push("/");
+      // Honour ?next (a relative deep-link path) so shared building links land
+      // where intended after the gate. Relative-only, to avoid open redirects.
+      const next = new URLSearchParams(window.location.search).get("next");
+      const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      router.push(dest);
       router.refresh();
     } else {
       setError("The flame rejects this key.");
