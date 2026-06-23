@@ -26,7 +26,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // '/' covers the app index (which under basePath is the bare /app — the whole
-  // single-page app). The second entry covers every other route except the
-  // login page, the login API, and static assets.
-  matcher: ["/", "/((?!login|_next/static|_next/image|favicon.ico|api/login).*)"],
+  // single-page app). The second entry gates every PAGE + API, but deliberately
+  // lets STATIC ASSETS through untouched: the world art/audio/video, fonts and
+  // token logos (any path under world//tokens/, or with a file extension).
+  // Routing those through this middleware blocked edge caching, which made the
+  // media load slowly and the large audio files never finish buffering.
+  matcher: [
+    "/",
+    "/((?!login|_next/static|_next/image|favicon.ico|api/login|world/|tokens/|.*\\.(?:webp|png|jpe?g|svg|gif|mp3|mp4|webm|woff2?|ttf|otf|ico)).*)",
+  ],
 };
