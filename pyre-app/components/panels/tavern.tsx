@@ -17,6 +17,7 @@
      submit their wallet manually (lib/identity). */
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   useQuestTasks,
   useCompleteQuestTask,
@@ -26,11 +27,12 @@ import {
 } from "@/lib/hooks";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
+import { useTour } from "@/lib/tour";
 import { Panel, Badge, Button, Field, ProgressBar } from "@/components/ui/primitives";
 import { EmberCount } from "@/components/world-hud";
 import { Skeleton, EmptyState, StateView } from "@/components/ui/state";
 import { NEWLY_LIT_WINDOW } from "@/lib/quests/catalog";
-import { tweetIntent, referralLink } from "@/lib/social";
+import { tweetIntent, referralLink, likeIntent, repostIntent, MANIFESTO_TWEET_ID } from "@/lib/social";
 import { shortAddress, formatCountdown } from "@/lib/format";
 import type { QuestTask } from "@/lib/types";
 
@@ -92,8 +94,10 @@ function QuestFunnel() {
   const lb = useQuestLeaderboard();
   const complete = useCompleteQuestTask();
   const submit = useSubmitWallet();
+  const tour = useTour();
   const { mode, address, username, connectWallet } = useIdentity();
   const [wallet, setWallet] = useState("");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const submitted = tasks.data?.find((t) => t.id === "submit")?.done ?? false;
 
@@ -172,6 +176,8 @@ function QuestFunnel() {
                     last={i === quests.length - 1}
                     spotlight={t.id === nextId}
                     onComplete={() => complete.mutate(t.id)}
+                    onStartTour={() => tour.start()}
+                    onOpenQuiz={() => setQuizOpen(true)}
                   />
                 ))}
               </ol>
@@ -199,6 +205,16 @@ function QuestFunnel() {
           );
         }}
       </StateView>
+
+      {quizOpen && (
+        <QuizModal
+          onClose={() => setQuizOpen(false)}
+          onPass={() => {
+            complete.mutate("quiz");
+            setQuizOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -213,6 +229,8 @@ function QuestStep({
   last,
   spotlight,
   onComplete,
+  onStartTour,
+  onOpenQuiz,
 }: {
   task: QuestTask;
   index: number;
@@ -220,6 +238,8 @@ function QuestStep({
   last: boolean;
   spotlight: boolean;
   onComplete: () => void;
+  onStartTour: () => void;
+  onOpenQuiz: () => void;
 }) {
   const locked = task.unlockAt !== null && task.unlockAt > Date.now();
   const isNew = !task.done && !locked && Date.now() - task.addedAt < NEWLY_LIT_WINDOW;
@@ -284,10 +304,23 @@ function QuestStep({
             : task.description}
         </p>
 
-        {/* Call to action only on the open quests, emphasised on the spotlight. */}
+        {/* Call to action only on the open quests, emphasised on the spotlight.
+            Two quests act in-app instead of opening a link: the tour relaunches
+            the guided walk (finishing it credits this), the quiz opens the
+            comprehension quiz. The rest open their link and self-attest. */}
         {!task.done && !locked && (
           <div className="mt-2">
-            {task.href ? (
+            {task.id === "intro" ? (
+              <button onClick={onStartTour}>
+                <CtaPill spotlight={spotlight}>Take the tour →</CtaPill>
+              </button>
+            ) : task.id === "quiz" ? (
+              <button onClick={onOpenQuiz}>
+                <CtaPill spotlight={spotlight}>Take the quiz →</CtaPill>
+              </button>
+            ) : task.id === "share" ? (
+              <ShareActions spotlight={spotlight} onBothDone={onComplete} />
+            ) : task.href ? (
               <a href={task.href} target="_blank" rel="noreferrer" onClick={onComplete}>
                 <CtaPill spotlight={spotlight}>Go →</CtaPill>
               </a>
@@ -303,6 +336,49 @@ function QuestStep({
   );
 }
 
+/* The "Like + repost the manifesto" rite needs TWO X actions (no single intent
+   does both), so it renders two buttons and only completes once both are done.
+   Self-attested like every click rite. */
+function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDone: () => void }) {
+  const [liked, setLiked] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  useEffect(() => {
+    if (liked && reposted) onBothDone();
+  }, [liked, reposted, onBothDone]);
+
+  const pill = (done: boolean) =>
+    `inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+      done
+        ? "border border-success/40 bg-success/15 text-success"
+        : spotlight
+        ? "bg-brand text-bg hover:bg-brand-deep"
+        : "border border-brand/40 bg-brand/15 text-brand hover:bg-brand/25"
+    }`;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <a
+        href={likeIntent(MANIFESTO_TWEET_ID)}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => setLiked(true)}
+        className={pill(liked)}
+      >
+        {liked ? "♥ Liked" : "♥ Like"}
+      </a>
+      <a
+        href={repostIntent(MANIFESTO_TWEET_ID)}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => setReposted(true)}
+        className={pill(reposted)}
+      >
+        {reposted ? "↻ Reposted" : "↻ Repost"}
+      </a>
+    </div>
+  );
+}
+
 function CtaPill({ children, spotlight }: { children: React.ReactNode; spotlight: boolean }) {
   return spotlight ? (
     <span className="inline-flex items-center rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-bg transition-colors hover:bg-brand-deep">
@@ -312,6 +388,128 @@ function CtaPill({ children, spotlight }: { children: React.ReactNode; spotlight
     <span className="inline-flex items-center rounded-sm border border-brand/40 bg-brand/15 px-2 py-0.5 text-xs text-brand transition-colors hover:bg-brand/25">
       {children}
     </span>
+  );
+}
+
+/* ============================================================== QUIZ ==== */
+/* The Emberkeeper's comprehension quiz, the second quest. Comes right after the
+   tour so a visitor who just learned the loop proves it and racks up a SECOND
+   completion fast, building quest momentum. All three right = the rite is
+   granted; wrong picks turn red to retry (correct answers aren't revealed). */
+const QUIZ: { q: string; options: string[]; answer: number }[] = [
+  {
+    q: "What happens to the $PYRE you stake?",
+    options: [
+      "It earns ETH yield and is shielded from decay",
+      "It is burned permanently",
+      "Nothing, it just sits in your wallet",
+    ],
+    answer: 0,
+  },
+  {
+    q: "What does burning $PYRE do?",
+    options: [
+      "Gives you more $PYRE back",
+      "Forges and levels your Acolyte, raising your yield multiplier",
+      "Instantly unstakes your tokens",
+    ],
+    answer: 1,
+  },
+  {
+    q: "What happens to $PYRE you do NOT stake?",
+    options: [
+      "It earns the most yield",
+      "It is safe forever",
+      "It slowly decays",
+    ],
+    answer: 2,
+  },
+];
+
+function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => void }) {
+  const [answers, setAnswers] = useState<(number | null)[]>(() => QUIZ.map(() => null));
+  const [checked, setChecked] = useState(false);
+
+  const allAnswered = answers.every((a) => a !== null);
+  const allCorrect = answers.every((a, i) => a === QUIZ[i].answer);
+
+  const submitAnswers = () => {
+    setChecked(true);
+    if (allCorrect) onPass(); // grants the rite + closes
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg/85 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-panel bg-surface border border-surface-3/60 shadow-panel p-6 animate-entry"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-1 flex items-start justify-between gap-3">
+          <h2 className="font-display text-2xl text-brand">The Emberkeeper&rsquo;s quiz</h2>
+          <button onClick={onClose} className="text-text-3 hover:text-text-2 text-sm">
+            Close
+          </button>
+        </div>
+        <p className="mb-4 text-text-2 text-sm">
+          Three quick questions to prove you understood the tour. Get all three right to earn the rite.
+        </p>
+
+        <div className="space-y-5">
+          {QUIZ.map((item, qi) => (
+            <div key={qi}>
+              <p className="mb-2 text-sm font-medium text-text">
+                {qi + 1}. {item.q}
+              </p>
+              <div className="space-y-1.5">
+                {item.options.map((opt, oi) => {
+                  const selected = answers[qi] === oi;
+                  const wrong = checked && selected && oi !== item.answer;
+                  const right = checked && selected && oi === item.answer;
+                  return (
+                    <button
+                      key={oi}
+                      onClick={() => {
+                        setChecked(false);
+                        setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)));
+                      }}
+                      className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                        right
+                          ? "border-success bg-success/15 text-success"
+                          : wrong
+                          ? "border-danger bg-danger/15 text-danger"
+                          : selected
+                          ? "border-brand bg-brand/15 text-brand"
+                          : "border-surface-3 bg-surface-2 text-text-2 hover:border-brand/40"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {checked && !allCorrect && (
+          <p className="mt-4 text-xs text-danger">
+            Not quite. The picks in red are wrong, change them and try again.
+          </p>
+        )}
+
+        <button
+          onClick={submitAnswers}
+          disabled={!allAnswered}
+          className="mt-5 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {allAnswered ? "Submit answers" : "Answer all three to submit"}
+        </button>
+      </div>
+    </div>,
+    document.body
   );
 }
 

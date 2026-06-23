@@ -11,9 +11,12 @@
 
 import { useEffect } from "react";
 import { BUILDINGS } from "@/components/buildings";
+import { BuildingPanel } from "@/components/ui/sealed-preview";
 import { ConnectButton } from "@/components/connect-button";
+import { EntryFork } from "@/components/ui/entry-fork";
 import { useNavigation } from "@/lib/navigation";
 import { useIdentity } from "@/lib/identity";
+import { usePreview } from "@/lib/preview";
 import { useTour } from "@/lib/tour";
 import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
 import { TourNarration, TourHighlight } from "@/components/tour-ui";
@@ -48,9 +51,16 @@ export function MobileShell() {
       );
     }
   }, [tour.active, tour.beat, tourTarget]);
-  const stacked = BUILDINGS.filter((b) => b.mobileOrder !== null).sort(
+  const { launched } = usePreview();
+  const ordered = BUILDINGS.filter((b) => b.mobileOrder !== null).sort(
     (a, b) => (a.mobileOrder ?? 0) - (b.mobileOrder ?? 0)
   );
+  // Pre-launch the Ashen Cup is the ONLY live building, so float it to the top
+  // on mobile, the funnel must be above the fold, not buried under five sealed
+  // previews. At launch the normal priority order returns.
+  const stacked = launched
+    ? ordered
+    : [...ordered.filter((b) => b.id === "tavern"), ...ordered.filter((b) => b.id !== "tavern")];
 
   useEffect(() => {
     if (!pending) return;
@@ -78,9 +88,9 @@ export function MobileShell() {
       </header>
 
       <div className="space-y-4">
-        {stacked.map(({ id, Panel }) => (
+        {stacked.map(({ id }) => (
           <div key={id} id={`b-${id}`} className="scroll-mt-20">
-            <Panel />
+            <BuildingPanel id={id} />
           </div>
         ))}
       </div>
@@ -88,6 +98,31 @@ export function MobileShell() {
       {/* Guided tour (mobile): same narration, scroll + spotlight instead of a camera. */}
       {tour.active && tour.beat && <TourNarration />}
       {tour.active && tourTarget && <TourHighlight targetId={tourTarget} />}
+
+      {/* Entry gate: desktop has the full-screen GateLanding; mobile had only the
+          first-visit intro, so a returning visitor with no identity hit a wall of
+          sealed previews with no guest path. Whenever there's no identity, cover
+          the dashboard with the connect-or-guest fork (sits under the first-visit
+          intro at z-50, and is revealed for returning/skipped visitors). */}
+      {!isSet && <MobileGate />}
     </main>
+  );
+}
+
+/* The mobile entry surface, shown whenever there is no identity. Mirrors the
+   desktop GateLanding's purpose (choose how you enter) using the shared
+   EntryFork, so the low-friction guest path is never desktop-only. */
+function MobileGate() {
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-bg/95 backdrop-blur-sm">
+      <div className="px-6 pt-6">
+        <span className="font-display text-2xl text-brand tracking-wide">PYRE</span>
+      </div>
+      <div className="flex flex-1 items-center justify-center p-5">
+        <div className="w-full max-w-sm rounded-2xl bg-surface/90 border border-brand/20 p-6 shadow-panel ring-1 ring-inset ring-white/5">
+          <EntryFork />
+        </div>
+      </div>
+    </div>
   );
 }

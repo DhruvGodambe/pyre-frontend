@@ -14,6 +14,17 @@ import type { Address, TokenInfo } from "./types";
 export const USE_MOCK =
   process.env.NEXT_PUBLIC_USE_MOCK !== "false"; // default: mock on
 
+/* ----------------------------------------------------------------------------
+   LAUNCHED = the launch switch. Pre-launch (false, the default) the whole world
+   is a sealed PREVIEW: every building can be entered and admired, but only the
+   Ashen Cup actually works (quests + wallet submit), so the entire pre-launch
+   funnel points there. At launch, set NEXT_PUBLIC_LAUNCHED=true (alongside
+   NEXT_PUBLIC_USE_MOCK=false) and every building opens against the contracts.
+   Flipped MANUALLY at launch, decoupled from USE_MOCK so the sealed state can be
+   demoed on mock data too. See components/ui/sealed-preview.tsx.
+   -------------------------------------------------------------------------- */
+export const LAUNCHED = process.env.NEXT_PUBLIC_LAUNCHED === "true"; // default: pre-launch
+
 /** The app is served under /app (next.config.mjs basePath). Raw assets, the
     intro video, and <Image> sources (Next does NOT reliably prefix basePath on
     image src in this multi-zone setup), must add it. Use asset() for any file

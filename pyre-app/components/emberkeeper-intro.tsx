@@ -28,16 +28,16 @@
    reskins with the rest of the app when the designer's look lands.
    ========================================================================== */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
-import { ProgressBar, Button, Field } from "@/components/ui/primitives";
+import { ProgressBar } from "@/components/ui/primitives";
+import { EntryFork } from "@/components/ui/entry-fork";
 import { QUEST_CATALOG } from "@/lib/quests/catalog";
 import { useCompleteQuestTask, useReferral } from "@/lib/hooks";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { useTour } from "@/lib/tour";
-import { useWallet } from "@/lib/wallet";
 import { shortAddress } from "@/lib/format";
 import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
 import { USE_MOCK, asset } from "@/lib/config";
@@ -205,17 +205,18 @@ export function EmberkeeperIntro() {
     setOpen(false);
   };
   // The closing hand-off: drop the visitor straight into The Tavern → Rites.
+  // (No "intro" credit here, that quest is the guided TOUR, granted on finishing
+  // it. Someone who skips straight to the rites can take the tour from there.)
   const enterRites = () => {
-    complete.mutate("intro"); // getting through the intro IS the first rite
     navigate({ building: "tavern", tab: "rites" });
     finish();
   };
 
   // Hand off from the lore/identity intro to the guided Tour, one onboarding.
   // Desktop flies the camera over the map; mobile scrolls + spotlights panels.
-  // Completing the intro credits the "intro" rite (skipping does not).
+  // The "intro" rite is credited when the tour is FINISHED (see tour-ui.tsx),
+  // not here, so the reward lands as the payoff for doing the walk.
   const beginTour = () => {
-    complete.mutate("intro");
     finish();
     tour.start();
   };
@@ -437,24 +438,7 @@ function BuildingScene({ id }: { id: BuildingId }) {
 /* The fork: connect a wallet, or enter as a named guest. Connecting is never
    forced, many people are wary of it, so guest is an equal, first-class path. */
 function IdentityScene({ onChose }: { onChose: () => void }) {
-  const { mode, address, username, connectWallet, continueAsGuest, reset } = useIdentity();
-  const { status } = useWallet();
-  const [guestOpen, setGuestOpen] = useState(false);
-  const [name, setName] = useState("");
-  const advanced = useRef(false);
-  // Was an identity already set when this scene mounted? (i.e. Back navigation.)
-  // If so, don't auto-advance, let the visitor sit and use Back / Continue.
-  const startedSet = useRef(mode !== null);
-
-  // Auto-advance only on a FRESH wallet connect made on this scene.
-  useEffect(() => {
-    if (mode === "wallet" && !startedSet.current && !advanced.current) {
-      advanced.current = true;
-      onChose();
-    }
-  }, [mode, onChose]);
-
-  const connecting = status === "connecting";
+  const { mode, address, username, reset } = useIdentity();
 
   // Already chosen (revisited via Back): confirm + let the footer Continue.
   if (mode) {
@@ -477,59 +461,11 @@ function IdentityScene({ onChose }: { onChose: () => void }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="font-display text-3xl text-brand">How will you enter?</h2>
-      <p className="text-text-2 text-base leading-relaxed">
-        The fire doesn&rsquo;t demand your wallet. Connect if you like, or stay a
-        guest and keep your distance. Either way, the quests are open to you.
-      </p>
-
-      {!guestOpen ? (
-        <div className="space-y-2">
-          <button
-            onClick={connectWallet}
-            disabled={connecting}
-            className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
-          >
-            <div className="text-sm font-medium">
-              {connecting ? "Connecting…" : "Connect wallet"}
-            </div>
-            <div className="text-bg/70 text-xs">
-              Your address is your entry, so there's nothing else to submit.
-            </div>
-          </button>
-          <button
-            onClick={() => setGuestOpen(true)}
-            className="w-full text-left rounded-md bg-surface-2 text-text border border-surface-3 px-4 py-3 hover:bg-surface-3 transition-colors"
-          >
-            <div className="text-sm font-medium">Continue as guest</div>
-            <div className="text-text-3 text-xs">
-              Stay private. Pick a name now, add your wallet at the very end.
-            </div>
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Field label="Choose a name" value={name} onChange={setName} placeholder="stranger" />
-          <Button
-            onClick={() => {
-              continueAsGuest(name);
-              onChose();
-            }}
-            disabled={name.trim().length < 2}
-            className="w-full"
-          >
-            Enter as {name.trim() || "guest"}
-          </Button>
-          <button
-            onClick={() => setGuestOpen(false)}
-            className="w-full text-text-3 text-xs hover:text-text-2 transition-colors pt-1"
-          >
-            ← back to options
-          </button>
-        </div>
-      )}
-    </div>
+    <EntryFork
+      heading="How will you enter?"
+      blurb="The fire doesn’t demand your wallet. Connect if you like, or stay a guest and keep your distance. Either way, the quests are open to you."
+      onChose={onChose}
+    />
   );
 }
 

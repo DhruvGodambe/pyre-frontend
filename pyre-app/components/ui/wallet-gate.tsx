@@ -26,7 +26,7 @@ export function RequireWallet({
         message={message}
         action={
           <Button onClick={connect} disabled={status === "connecting"}>
-            {status === "connecting" ? "Waking…" : "Connect Wallet"}
+            {status === "connecting" ? "Connecting…" : "Connect Wallet"}
           </Button>
         }
       />

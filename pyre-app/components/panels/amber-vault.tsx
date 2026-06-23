@@ -62,6 +62,10 @@ export function AmberVaultPanel() {
                       {a.isImmolated && <Badge tone="danger">Immolated</Badge>}
                     </div>
                     <Stat label="Cumulative burned" value={formatToken(a.cumulativeBurnWeight)} />
+                    {/* Sell: hand off to the Black Market's "Your Acolyte" tab. */}
+                    <NavCta to="market" tab="yours" variant="ghost" className="w-full sm:w-auto">
+                      Sell on the Black Market →
+                    </NavCta>
                   </div>
                 </div>
 

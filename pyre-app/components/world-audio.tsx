@@ -1,11 +1,15 @@
 "use client";
 
 /* BUILDING AUDIO, the per-building background music.
-   Mounted by the shell while a building is open (its exterior view or inside).
-   Plays that building's looping track, fades in on enter and out on leave, and
-   carries a single persisted mute toggle (shared across buildings). Entering a
-   building is a click, so autoplay is allowed; if the browser still refuses,
-   play() rejects quietly and the mute button lets the user start it. */
+
+   ONE persistent <audio> element, mounted for the whole awake world and just
+   re-pointed at each building's track via the `src` prop (null = nothing open →
+   fade out). Reusing a single element is deliberate: creating/destroying an
+   Audio per building (the old approach) churned the browser's autoplay
+   permission and, under React StrictMode's double-invoke, interrupted play()
+   mid-start, so music played only sometimes. Entering a building is a click, so
+   autoplay is allowed; if the browser still refuses, we retry on the next
+   pointer gesture. A single persisted mute toggle is shared across buildings. */
 
 import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/config";
@@ -13,56 +17,75 @@ import { asset } from "@/lib/config";
 const MUTE_KEY = "pyre_world_muted";
 const VOLUME = 0.45;
 
-export function BuildingAudio({ src }: { src: string }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+export function BuildingAudio({ src }: { src: string | null }) {
+  const elRef = useRef<HTMLAudioElement | null>(null);
+  const rafRef = useRef(0);
   const [muted, setMuted] = useState(false);
 
-  // Create + play the loop for this building. Re-runs when the building changes.
+  // Restore the shared mute choice once.
   useEffect(() => {
-    const startMuted =
-      typeof localStorage !== "undefined" && localStorage.getItem(MUTE_KEY) === "1";
-    setMuted(startMuted);
+    setMuted(typeof localStorage !== "undefined" && localStorage.getItem(MUTE_KEY) === "1");
+  }, []);
 
-    const a = new Audio(asset(src));
-    a.loop = true;
-    a.volume = 0;
-    a.muted = startMuted;
-    audioRef.current = a;
+  // Drive the single persistent element from `src`.
+  useEffect(() => {
+    if (!elRef.current) {
+      const a = new Audio();
+      a.loop = true;
+      a.volume = 0;
+      elRef.current = a;
+    }
+    const el = elRef.current;
 
-    let raf = 0;
-    a.play()
-      .then(() => {
-        const start = performance.now();
-        const tick = (t: number) => {
-          a.volume = VOLUME * Math.min(1, (t - start) / 800); // fade in over 800ms
-          if (a.volume < VOLUME) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelAnimationFrame(raf);
-      const start = performance.now();
-      const from = a.volume;
-      const out = (t: number) => {
-        const k = Math.min(1, (t - start) / 350); // fade out over 350ms
-        a.volume = from * (1 - k);
-        if (k < 1) requestAnimationFrame(out);
-        else {
-          a.pause();
-          a.src = "";
-        }
+    const fadeTo = (target: number, ms: number, done?: () => void) => {
+      cancelAnimationFrame(rafRef.current);
+      const from = el.volume;
+      const t0 = performance.now();
+      const step = (t: number) => {
+        const k = Math.min(1, (t - t0) / ms);
+        el.volume = from + (target - from) * k;
+        if (k < 1) rafRef.current = requestAnimationFrame(step);
+        else done?.();
       };
-      requestAnimationFrame(out);
-      audioRef.current = null;
+      rafRef.current = requestAnimationFrame(step);
     };
-  }, [src]);
 
-  // Apply mute toggles to the live element.
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = muted;
-  }, [muted]);
+    // Nothing open: fade the current track out and pause, but KEEP the element.
+    if (!src) {
+      fadeTo(0, 350, () => el.pause());
+      return () => cancelAnimationFrame(rafRef.current);
+    }
+
+    // Point the element at this building's track (only reload if it changed).
+    const full = asset(src);
+    if (!el.src.endsWith(src)) el.src = full;
+    el.muted = muted;
+    el.volume = 0;
+
+    const rampUp = () => fadeTo(muted ? 0 : VOLUME, 800);
+    el.play()
+      .then(rampUp)
+      .catch(() => {
+        // Autoplay blocked (no warm gesture): start on the next click anywhere.
+        const onGesture = () => {
+          document.removeEventListener("pointerdown", onGesture);
+          el.play().then(rampUp).catch(() => {});
+        };
+        document.addEventListener("pointerdown", onGesture, { once: true });
+      });
+
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [src, muted]);
+
+  // Stop on true unmount (leaving the awake world). Keep the ref so StrictMode's
+  // remount reuses the same element instead of spawning a new one.
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(rafRef.current);
+      elRef.current?.pause();
+    },
+    []
+  );
 
   const toggle = () =>
     setMuted((m) => {
@@ -70,10 +93,13 @@ export function BuildingAudio({ src }: { src: string }) {
       try {
         localStorage.setItem(MUTE_KEY, next ? "1" : "0");
       } catch {
-        /* private mode / disabled storage: just keep it in memory */
+        /* private mode / disabled storage: keep it in memory */
       }
       return next;
     });
+
+  // No control when nothing is playing.
+  if (!src) return null;
 
   return (
     <button

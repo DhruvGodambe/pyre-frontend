@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PYRE - Manifesto Threads Preview</title>
+<style>
+  :root{
+    --bg:#0a0705; --card:#15100c; --line:#2a2018; --text:#ECE6DC;
+    --muted:#8c8175; --gold:#C9A96E; --fire:#ff7a18;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1c120a 0%,var(--bg) 60%);
+    color:var(--text);font:16px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:620px;margin:0 auto;padding:40px 16px 120px}
+  header.top{text-align:center;margin-bottom:8px}
+  header.top h1{font-weight:800;letter-spacing:.18em;margin:0;font-size:30px}
+  header.top h1 span{color:var(--fire)}
+  header.top p{color:var(--muted);margin:6px 0 0;font-size:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:18px 0 34px}
+  .legend a{color:var(--gold);text-decoration:none;font-size:13px;border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px;background:var(--card)}
+  .legend a:hover{border-color:var(--fire);color:var(--fire)}
+  .thread{margin:0 0 56px}
+  .thead{display:flex;align-items:baseline;gap:10px;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .thead .badge{font-size:12px;color:var(--bg);background:var(--fire);font-weight:700;
+    padding:3px 9px;border-radius:6px;letter-spacing:.04em}
+  .thead h2{font-size:18px;margin:0;font-weight:700}
+  .thead .sub{color:var(--muted);font-size:13px;margin-left:auto}
+  .tweet{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .av{flex:0 0 44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#ffb347,#ff5e00 55%,#7a1f00);
+    display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid #5a2a00}
+  .av span{filter:drop-shadow(0 0 4px #000)}
+  .body{flex:1;min-width:0}
+  .name{font-weight:700}
+  .name b{font-weight:700}
+  .name .h{color:var(--muted);font-weight:400;margin-left:6px;font-size:14px}
+  .num{color:var(--muted);font-size:13px;float:right}
+  .txt{margin:6px 0 0;white-space:pre-wrap}
+  .media{margin:12px 0 2px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#000}
+  .media img{display:block;width:100%;height:auto}
+  .cap{color:var(--muted);font-size:12px;margin:6px 2px 0;font-style:italic}
+  .reply{color:var(--muted);font-size:13px;margin-top:10px;padding-left:56px}
+  .reply b{color:var(--gold)}
+  .note{color:var(--muted);font-size:13px;padding:8px 0 0 56px}
+  footer{color:var(--muted);text-align:center;font-size:12px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>PY<span>R</span>E</h1>
+    <p>Manifesto launch sequence &middot; preview &middot; @pyre_protocol</p>
+  </header>
+  <nav class="legend">
+    <a href="#t1">1 &middot; Thesis</a>
+    <a href="#t2">2 &middot; Decay</a>
+    <a href="#t3">3 &middot; Burn</a>
+    <a href="#t4">4 &middot; Real Yield</a>
+    <a href="#t5">5 &middot; Trust</a>
+  </nav>
+
+  <!-- TEMPLATE NOTE: tweets rendered as static mock X posts -->
+  <div id="threads"></div>
+
+  <footer>Local preview only. Copy of record lives in marketing/manifesto-threads.md</footer>
+</div>
+
+<script>
+const ASSET = "../Other/";
+const threads = [
+  {
+    id:"t1", badge:"01", title:"The Thesis", sub:"pinned launch post",
+    tweets:[
+      {t:`Every token in your wallet is being quietly diluted to pay someone who is already halfway out the door.\n\nYou don't see it, because they call it "rewards."\n\nPYRE is built to end that. 🔥`,
+       media:"army_moving.jpeg", cap:"Hero: army_moving.jpeg (a movement forming). Or lead with bonfire_man.mp4 video for max dwell."},
+      {t:`Here is the move almost every yield token runs:\n\nPrint new supply. Hand it to whoever farms hardest. Let them sell it to the believers who stayed.\n\nThe loyal fund the disloyal, every cycle. That is not a bug in the model. It is the model.`},
+      {t:`PYRE takes away the printer.\n\nSupply here shrinks, it does not grow. The yield you earn is real ETH pulled from actual trading, not minted out of thin air and handed back to you.\n\nNobody is diluted to pay you. The market is.`},
+      {t:`The deal is simple and a little ruthless.\n\nHold $PYRE idle and it decays, every hour. Stake it and the decay stops and the ETH begins. The token has an opinion about sitting still, and it is not a generous one.`},
+      {t:`What you earn in PYRE tracks one thing: how much you are willing to commit, and for how long.\n\nThat is the whole philosophy. We are going to take the fire apart piece by piece, starting here.\n\nFollow @pyre_protocol. We are almost lit. 🔥`},
+    ],
+    reply:`First reply carries the link: pyreprotocol.com (never in tweet 1).`
+  },
+  {
+    id:"t2", badge:"02", title:"Decay", sub:"a token that gets lighter in your hands",
+    tweets:[
+      {t:`Picture a token that gets lighter in your hands the longer you hold it.\n\nNot a figure of speech. $PYRE physically shrinks in any idle wallet, every hour, on the clock.\n\nWe did that on purpose. Here is why it is a feature. 🔥`,
+       media:"burn_token.png", cap:"Hero: burn_token.png (the sigil melting). Decay and deflation in one frame."},
+      {t:`Inflation, token unlocks, endless emissions. Supply creeps up, your slice creeps down, and the chart buries it under green candles.\n\nDecay is that same gravity. We made it honest and put it on a clock you can actually watch.`},
+      {t:`Every hour, idle $PYRE decays. Staked $PYRE does not. That one rule does all the work.\n\nSitting still has a cost. Showing up removes it. There is no neutral position in PYRE, and holding the line is exactly what the cost is for.`},
+      {t:`Call it pressure with a direction. It pushes every holder toward the same choice: do something, or watch the position thin.\n\nDecay is also deflation. As idle supply burns down, what remains gets scarcer for the people who stayed in.`},
+      {t:`A token that punishes neglect is a token nobody can farm and forget.\n\nThat is the point. Decay is how PYRE keeps only the people who mean it.\n\nFollow @pyre_protocol. 🔥`},
+    ]
+  },
+  {
+    id:"t3", badge:"03", title:"The Burn", sub:"destruction as proof &middot; NFT on-ramp",
+    tweets:[
+      {t:`There is one action in PYRE you can never undo, and it is the one that makes you strongest.\n\nBurning your own tokens. On purpose. Forever.\n\nLet me explain why anyone would. 🔥`,
+       media:"man_looking_fire.jpeg", cap:"Hero: man_looking_fire.jpeg (the forged individual)."},
+      {t:`When you burn $PYRE, it is gone. No buyback, no unlock, no take-backs.\n\nIn return, the fire forges you an Acolyte: a living NFT that is both your rank in the order and permanent, on-chain proof of what you were willing to give up.`},
+      {t:`The Acolyte earns its keep. It multiplies the ETH yield on everything you have staked, up to three times over.\n\nBurning by itself pays you nothing. It makes everything you stake worth more.`},
+      {t:`You cannot buy one. No mint, no allowlist, no whitelist to win. The only way in is through the fire.\n\nAnd it is alive. Your Acolyte evolves as you burn, Ember to Flame to Forge to Pyre, each form rarer and stronger than the last. The earliest to commit carry marks no one can mint again.`},
+      {t:`Burn past the final tier and you reach the Hall of the Immolated, the inner order at the heart of the protocol.\n\nAt that point the Acolyte stops being something you hold. It becomes who you are here.`,
+       media:"fire_man.jpeg", cap:"Secondary image: fire_man.jpeg (the ranked order / the Immolated)."},
+      {t:`Why destroy something to get ahead? Because in a market built entirely on exits, the most honest signal left is the bridge you are willing to burn behind you.\n\nStake to survive. Burn to transcend.\n\nFollow @pyre_protocol. 🔥`},
+    ],
+    note:`Collector pull is subtle here; the dedicated Acolyte art-reveal post (outside this arc) is the real NFT magnet, lands when tier art is final.`
+  },
+  {
+    id:"t4", badge:"04", title:"Real Yield", sub:"where the ETH comes from",
+    tweets:[
+      {t:`One question separates real crypto yield from a countdown to zero:\n\nWhere does the money actually come from?\n\nIf a project cannot answer that cleanly, the answer is usually you. Here is PYRE's answer, in full. 🔥`,
+       media:"fire_man2.jpeg", cap:"Hero: fire_man2.jpeg (the faithful gathered, the shared yield pool)."},
+      {t:`PYRE pays in ETH. Actual ETH, not freshly minted $PYRE dressed up as a reward.\n\nEvery trade through the PYRE pool pays a fee. Those fees collect into a yield pool. Stake, and you earn a share of that pool by weight.`},
+      {t:`Read that twice, because it is the whole game. The yield comes from trading activity, not from inflation.\n\nNo new supply is printed to pay you. Nobody behind you is diluted to cash you out. The volume pays. Full stop.`},
+      {t:`This is why PYRE can run for years without eating itself.\n\nInflation-funded yield needs a constant feed of new buyers to survive. It is a game of musical chairs that always ends with people standing. Fee-funded yield needs only what every real market already has: people trading.`},
+      {t:`"Sustainable" is a dull word for a sharp idea. Your rewards never depend on someone after you taking a loss.\n\nStake $PYRE. Earn ETH the market actually produced.\n\nFollow @pyre_protocol. 🔥`},
+    ]
+  },
+  {
+    id:"t5", badge:"05", title:"Trust", sub:"the rules bind us too",
+    tweets:[
+      {t:`The fastest way to lose money in crypto is to trust a team that kept an off switch for themselves.\n\nPYRE does not have one. Not for you, not for us. Let me show you exactly what we gave up. 🔥`,
+       media:"bonfire_man_2.jpeg", cap:"Hero: bonfire_man_2.jpeg (equal circle around the fire, nobody stands above it)."},
+      {t:`No mint function we can press later. No hidden admin key over the supply. No "pause" that quietly freezes your funds and never ours.\n\nThe rules that bind you bind the people who wrote them, equally.`},
+      {t:`PYRE runs on Ethereum, on immutable contracts, with a Uniswap v4 hook doing the work out in the open.\n\nOnce it ships, the decay, the yield, the burn: all of it runs on rails nobody can yank. Us included. Us especially.`},
+      {t:`This cost us something, and we shipped it anyway.\n\nWe cannot bail you out, but we also cannot rug you. We cannot tune the numbers in our favor at 3am. Any edge we wanted, we had to write into the rules in daylight, where you can read it.`},
+      {t:`Trust should not be a vibe. It should be something you can verify and we cannot break.\n\nThat is the floor PYRE stands on. The fire, the yield, the Acolytes, all of it sits on top.\n\nFollow @pyre_protocol. When the contracts are live, do not trust us. Check. 🔥`},
+    ]
+  },
+];
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+const root = document.getElementById("threads");
+threads.forEach(th=>{
+  const n = th.tweets.length;
+  let html = `<section class="thread" id="${th.id}">
+    <div class="thead"><span class="badge">${th.badge}</span><h2>${th.title}</h2><span class="sub">${th.sub}</span></div>`;
+  th.tweets.forEach((tw,i)=>{
+    html += `<div class="tweet">
+      <div class="av"><span>&#128293;</span></div>
+      <div class="body">
+        <div class="name"><b>PYRE</b><span class="h">@pyre_protocol</span><span class="num">${i+1}/${n}</span></div>
+        <div class="txt">${esc(tw.t)}</div>
+        ${tw.media?`<div class="media"><img src="${ASSET}${tw.media}" alt="${tw.media}"></div>${tw.cap?`<div class="cap">${tw.cap}</div>`:""}`:""}
+      </div>
+    </div>`;
+  });
+  if(th.reply) html += `<div class="reply"><b>&#8627; reply 1:</b> ${th.reply}</div>`;
+  if(th.note) html += `<div class="note">${th.note}</div>`;
+  html += `</section>`;
+  root.insertAdjacentHTML("beforeend", html);
+});
+</script>
+</body>
+</html>

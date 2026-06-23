@@ -18,6 +18,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { BuildingId } from "@/components/buildings";
+import { usePreview } from "@/lib/preview";
+import { useNavigation } from "@/lib/navigation";
 
 export type TourPhase = "outside" | "inside";
 
@@ -41,9 +43,20 @@ const ORDER: BuildingId[] = [
    narration plays it automatically (with a mute toggle). No code change needed. */
 export interface TourLine {
   text: string;
+  /** Pre-launch narration: same beat, future tense (the building is a sealed
+      preview, so "at launch you'll..." not "stake here now"). Falls back to
+      `text` when unset. Picked via LAUNCHED at build time, see `say()`. */
+  preText?: string;
   /** path (via asset()) to the Tutor's spoken clip for this beat; undefined = silent. */
   voice?: string;
 }
+
+/* Before launch the world is a sealed preview, so the tour speaks in future
+   tense and sells what's coming; at launch it speaks in the present and walks
+   you through doing it. The `launched` flag (from the launch phase) flips every
+   line; buildBeats() rebuilds the walk for the current phase. */
+const say = (l: TourLine, launched: boolean): string =>
+  launched ? l.text : l.preText ?? l.text;
 
 /* An inside step ALSO points at the actual UI: `highlight` is the DOM id of the
    section the line is about (e.g. the Forge's Stake box), which the tour glows /
@@ -57,28 +70,36 @@ export interface TourInsideStep extends TourLine {
 
 const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }> = {
   bonfire: {
-    outside: { text: "Let's start at the center: the Bonfire. Every $PYRE anyone burns shows up here." },
+    outside: {
+      text: "Let's start at the center: the Bonfire. Every $PYRE anyone burns shows up here.",
+      preText: "Let's start at the center: the Bonfire. At launch, every $PYRE anyone burns will show up here, live.",
+    },
     inside: [
       {
         text: "This is the total $PYRE burned across everyone, updating live.",
+        preText: "This will be the total $PYRE burned across everyone, updating live once the fire is lit.",
       },
     ],
   },
   forge: {
     outside: {
       text: "The Forge is where you stake $PYRE to earn ETH (and stop decay), and burn $PYRE to create your Acolyte NFT. Let's go in.",
+      preText: "The Forge is where you'll stake $PYRE to earn ETH (and stop decay), and burn $PYRE to create your Acolyte NFT. Take a look inside.",
     },
     inside: [
       {
         text: "First, stake your $PYRE here. That stops decay and starts earning you ETH.",
+        preText: "At launch you'll stake your $PYRE here. That stops decay and starts earning you ETH.",
         highlight: "forge-stake",
       },
       {
         text: "Then burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
+        preText: "Then you'll burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
         highlight: "forge-burn",
       },
       {
         text: "Your Acolyte climbs four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
+        preText: "Your Acolyte will climb four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
         highlight: "forge-ladder",
       },
     ],
@@ -88,6 +109,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Everything that's yours lives here: your Acolyte, your balances and your yield, with quick ways back to the action.",
+        preText: "At launch, everything that's yours will live here: your Acolyte, your balances and your yield, with quick ways back to the action.",
         highlight: "vault-actions",
       },
     ],
@@ -97,36 +119,51 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "From here you read the whole protocol at a glance: supply, decay, burns and yield. No wallet needed to look.",
+        preText: "At launch you'll read the whole protocol here at a glance: supply, decay, burns and yield. No wallet needed to look.",
       },
     ],
   },
   exchange: {
-    outside: { text: "Where you trade: the Grand Exchange." },
+    outside: {
+      text: "Where you trade: the Grand Exchange.",
+      preText: "Where you'll trade: the Grand Exchange.",
+    },
     inside: [
       {
         text: "Swap ETH and $PYRE here, with every fee shown upfront.",
+        preText: "At launch you'll swap ETH and $PYRE here, with every fee shown upfront.",
         highlight: "exchange-swap",
       },
     ],
   },
   market: {
     outside: { text: "Buy and sell NFTs: the Black Market." },
-    inside: [{ text: "Browse and buy Acolytes that other people have created." }],
+    inside: [
+      {
+        text: "Browse and buy Acolytes that other people have created.",
+        preText: "At launch you'll browse and buy Acolytes that other people have created.",
+      },
+    ],
   },
   immolated: {
     outside: { text: "For top holders: the Hall of the Immolated." },
     inside: [
       {
         text: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
+        preText: "At launch, reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
         highlight: "immolated-action",
       },
     ],
   },
   tavern: {
-    outside: { text: "And the Ashen Cup, where you earn rewards before launch." },
+    outside: {
+      text: "And the Ashen Cup, where you earn rewards before launch.",
+      preText: "And the Ashen Cup, the one door already open. This is where you earn rewards before launch.",
+    },
     inside: [
       {
         text: "Here are the quests. Complete them to earn Points and climb the leaderboard. Let's do your first.",
+        preText: "Here are the quests, open right now. Complete them to earn Points, climb the leaderboard and lock in your place before the gates open. Let's do your first.",
         highlight: "tavern-rites",
       },
     ],
@@ -152,30 +189,37 @@ export interface TourBeat {
 
 /* The opening establishing shot: the camera stays wide on the whole kingdom while
    the Emberkeeper sets the scene, before the first zoom to the Bonfire. */
-const OVERVIEW_BEAT: TourBeat = {
-  phase: "outside",
-  overview: true,
+const OVERVIEW_LINE: TourLine = {
   text: "Welcome to PYRE. The idea is simple: stake and burn $PYRE to earn ETH yield and level up your Acolyte NFT. Let me show you around, building by building.",
-  step: 0,
-  total: ORDER.length,
+  preText: "Welcome to PYRE. The idea is simple: stake and burn $PYRE to earn ETH yield and level up your Acolyte NFT. The village is built and almost ready, let me show you what's coming, and how to earn your place before the gates open.",
 };
 
-const BEATS: TourBeat[] = [
-  OVERVIEW_BEAT,
-  ...ORDER.flatMap((building, i) => {
-    const l = LINES[building];
-    const base = { building, step: i + 1, total: ORDER.length };
-    const outside: TourBeat = { ...base, phase: "outside", text: l.outside.text, voice: l.outside.voice };
-    const inside: TourBeat[] = l.inside.map((s) => ({
-      ...base,
-      phase: "inside",
-      text: s.text,
-      voice: s.voice,
-      highlight: s.highlight,
-    }));
-    return [outside, ...inside];
-  }),
-];
+/* Build the whole walk for the current launch phase. Pre-launch beats speak in
+   future tense (sealed previews); launched beats walk you through doing it. */
+function buildBeats(launched: boolean): TourBeat[] {
+  return [
+    {
+      phase: "outside",
+      overview: true,
+      text: say(OVERVIEW_LINE, launched),
+      step: 0,
+      total: ORDER.length,
+    },
+    ...ORDER.flatMap((building, i) => {
+      const l = LINES[building];
+      const base = { building, step: i + 1, total: ORDER.length };
+      const outside: TourBeat = { ...base, phase: "outside", text: say(l.outside, launched), voice: l.outside.voice };
+      const inside: TourBeat[] = l.inside.map((s) => ({
+        ...base,
+        phase: "inside",
+        text: say(s, launched),
+        voice: s.voice,
+        highlight: s.highlight,
+      }));
+      return [outside, ...inside];
+    }),
+  ];
+}
 
 interface TourValue {
   active: boolean;
@@ -191,39 +235,46 @@ interface TourValue {
 const TourContext = createContext<TourValue | null>(null);
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
+  const { launched } = usePreview();
+  const { navigate } = useNavigation();
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
+
+  // The walk is rebuilt for the current launch phase, so flipping Pre-launch ↔
+  // Launched (live, in mock) re-narrates the tour in the right tense.
+  const beats = useMemo(() => buildBeats(launched), [launched]);
+
+  // Every exit from the tour (finishing the last beat OR skipping) lands the
+  // visitor in the Ashen Cup quests, the one live action. Without this the tour
+  // just stops on the bare map and the funnel's whole point is lost.
+  const endInAshenCup = useCallback(() => {
+    setActive(false);
+    navigate({ building: "tavern", tab: "rites" });
+  }, [navigate]);
 
   const start = useCallback(() => {
     setIndex(0);
     setActive(true);
   }, []);
-  const next = useCallback(
-    () =>
-      setIndex((i) => {
-        if (i >= BEATS.length - 1) {
-          setActive(false);
-          return i;
-        }
-        return i + 1;
-      }),
-    []
-  );
+  const next = useCallback(() => {
+    if (index >= beats.length - 1) endInAshenCup();
+    else setIndex((i) => i + 1);
+  }, [index, beats.length, endInAshenCup]);
   const back = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
-  const skip = useCallback(() => setActive(false), []);
+  const skip = useCallback(() => endInAshenCup(), [endInAshenCup]);
 
   const value = useMemo<TourValue>(
     () => ({
       active,
       index,
-      beat: active ? BEATS[index] : null,
-      isLastBeat: index >= BEATS.length - 1,
+      beat: active ? beats[index] : null,
+      isLastBeat: index >= beats.length - 1,
       start,
       next,
       back,
       skip,
     }),
-    [active, index, start, next, back, skip]
+    [active, index, beats, start, next, back, skip]
   );
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;

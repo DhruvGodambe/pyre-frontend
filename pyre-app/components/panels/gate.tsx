@@ -9,18 +9,16 @@
    everything. Spec: 05-ui-screens.md → "The Gate".
    Used by the Village shell as the dormant entry overlay. */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useIdentity } from "@/lib/identity";
 import { useWallet } from "@/lib/wallet";
-import { Button, Field } from "@/components/ui/primitives";
+import { EntryFork } from "@/components/ui/entry-fork";
 import { shortAddress } from "@/lib/format";
 
 export function GatePanel({ onEntered }: { onEntered?: () => void }) {
-  const { mode, address, username, connectWallet, continueAsGuest, reset } = useIdentity();
+  const { mode, address, username, connectWallet, reset } = useIdentity();
   const { status } = useWallet();
   const connecting = status === "connecting";
-  const [guestOpen, setGuestOpen] = useState(false);
-  const [name, setName] = useState("");
 
   // Was an identity already set when the Gate opened? If so this is the "manage
   // your entry" visit (clicked from inside the awake village), not the dormant
@@ -43,9 +41,9 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
     return (
       <div className="py-10 px-6 space-y-4 w-[min(92vw,24rem)]">
         <div className="text-center space-y-3">
-          <div className="text-5xl" aria-hidden>
-            🏮
-          </div>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand/10 ring-1 ring-brand/30">
+            <span className="text-2xl" aria-hidden>✦</span>
+          </span>
           <h2 className="font-display text-3xl text-brand">You&rsquo;re in</h2>
           <p className="text-text-2 text-sm max-w-xs mx-auto">
             {mode === "wallet"
@@ -91,60 +89,8 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
   }
 
   return (
-    <div className="py-10 px-6 space-y-4 w-[min(92vw,24rem)]">
-      <div className="text-center space-y-3">
-        <div className="text-5xl" aria-hidden>
-          🏮
-        </div>
-        <h2 className="font-display text-3xl text-brand">Welcome to PYRE</h2>
-        <p className="text-text-2 text-sm max-w-xs mx-auto">
-          You don&rsquo;t need a wallet to start. Connect one if you like, or
-          continue as a guest, either way you get full access.
-        </p>
-      </div>
-
-      {!guestOpen ? (
-        <div className="space-y-2">
-          <button
-            onClick={connectWallet}
-            disabled={connecting}
-            className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
-          >
-            <div className="text-sm font-medium">
-              {connecting ? "Connecting…" : "Connect wallet"}
-            </div>
-            <div className="text-bg/70 text-xs">
-              Your address is your account, there&rsquo;s nothing else to submit.
-            </div>
-          </button>
-          <button
-            onClick={() => setGuestOpen(true)}
-            className="w-full text-left rounded-md bg-surface-2 text-text border border-surface-3 px-4 py-3 hover:bg-surface-3 transition-colors"
-          >
-            <div className="text-sm font-medium">Continue as guest</div>
-            <div className="text-text-3 text-xs">
-              Stay private. Pick a name now, add your wallet at the very end.
-            </div>
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <Field label="Choose a name" value={name} onChange={setName} placeholder="stranger" />
-          <Button
-            onClick={() => continueAsGuest(name)}
-            disabled={name.trim().length < 2}
-            className="w-full"
-          >
-            Enter as {name.trim() || "guest"}
-          </Button>
-          <button
-            onClick={() => setGuestOpen(false)}
-            className="w-full text-text-3 text-xs hover:text-text-2 transition-colors pt-1"
-          >
-            ← back to options
-          </button>
-        </div>
-      )}
+    <div className="py-9 px-7 w-[min(92vw,25rem)]">
+      <EntryFork />
     </div>
   );
 }

@@ -14,7 +14,7 @@
    ========================================================================== */
 
 import type { QuestTask } from "../types";
-import { X_PROFILE_URL } from "../social";
+import { X_PROFILE_URL, COMMUNITY_URL, MANIFESTO_TWEET_URL } from "../social";
 
 /** When the pre-launch funnel opens. Adjust when the launch window is fixed. */
 export const FUNNEL_OPENS_AT = Date.UTC(2026, 5, 14, 0, 0, 0); // 2026-06-14 UTC
@@ -52,15 +52,29 @@ export interface QuestDef {
 export const QUEST_CATALOG: QuestDef[] = [
   {
     id: "intro",
-    title: "Finish the intro tour",
-    description: "Watch the welcome and quick tour of the app.",
+    title: "Let the Emberkeeper guide you through Pyre",
+    description: "Take the Emberkeeper's guided tour of the village.",
     href: null,
     unlockAt: null,
     required: true,
-    // Credited in code when the intro hands off to the tour (not a link click).
+    // Credited in code when the visitor FINISHES the guided tour (the Tavern's
+    // "Start" relaunches the tour; reaching the end grants this). The instant
+    // reward on finishing is what kicks off the quest momentum.
     completion: "click",
     points: 20,
     addedAt: FUNNEL_OPENS_AT - 14 * DAYS,
+  },
+  {
+    id: "quiz",
+    title: "Pass the Emberkeeper's quiz",
+    description: "Answer a few quick questions to prove you understood the tour.",
+    href: null,
+    unlockAt: null,
+    required: true,
+    // Credited when the visitor answers the in-app quiz correctly (not a link).
+    completion: "click",
+    points: 25,
+    addedAt: FUNNEL_OPENS_AT - 10 * DAYS,
   },
   {
     id: "follow",
@@ -76,8 +90,10 @@ export const QUEST_CATALOG: QuestDef[] = [
   {
     id: "share",
     title: "Share the manifesto",
-    description: "Repost the pinned manifesto.",
-    href: "https://x.com",
+    description: "Like and repost the pinned manifesto.",
+    // Rendered as two actions (Like + Repost) in the Tavern; this is the fallback
+    // link to the post itself.
+    href: MANIFESTO_TWEET_URL,
     unlockAt: null,
     required: true,
     completion: "click",
@@ -85,21 +101,10 @@ export const QUEST_CATALOG: QuestDef[] = [
     addedAt: FUNNEL_OPENS_AT - 14 * DAYS,
   },
   {
-    id: "quiz",
-    title: "Take the quiz",
-    description: "Answer 3 quick questions about the project.",
-    href: null,
-    unlockAt: null,
-    required: true,
-    completion: "click",
-    points: 25,
-    addedAt: FUNNEL_OPENS_AT - 10 * DAYS,
-  },
-  {
     id: "join",
     title: "Join the community",
-    description: "Join the Telegram / Discord.",
-    href: "https://t.me",
+    description: "Join the official Telegram.",
+    href: COMMUNITY_URL,
     unlockAt: null,
     required: true,
     completion: "click",

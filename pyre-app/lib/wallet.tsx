@@ -46,6 +46,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
+/* A wallet context pinned to a sample CONNECTED address, used only to render
+   sealed pre-launch previews (components/ui/sealed-preview.tsx). It makes
+   wallet-gated panels show their real, populated UI instead of a connect wall,
+   so visitors see the quality of what we built. Scoped to the preview subtree,
+   the real wallet is untouched; connect/disconnect are no-ops (it's inert). */
+export function PreviewWalletProvider({ children }: { children: React.ReactNode }) {
+  const value = useMemo<WalletContextValue>(
+    () => ({ status: "connected", address: MOCK_ADDRESS, connect: () => {}, disconnect: () => {} }),
+    []
+  );
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
+}
+
 export function useWallet(): WalletContextValue {
   const ctx = useContext(WalletContext);
   if (!ctx) throw new Error("useWallet must be used within <WalletProvider>");

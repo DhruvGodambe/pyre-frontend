@@ -29,10 +29,15 @@ export async function GET() {
   const sessionId = await getOrCreateSessionId();
   const rows = await getQuestStore().getLeaderboard();
 
-  // How many sessions each referral code brought in.
+  // How many ACTIVE friends each referral code brought in. A referral only
+  // counts once the friend takes a real action (completes a rite or submits a
+  // wallet), so the loop rewards real users, not link-spam / empty pageloads.
   const referralCount = new Map<string, number>();
   for (const r of rows) {
-    if (r.referredBy) referralCount.set(r.referredBy, (referralCount.get(r.referredBy) ?? 0) + 1);
+    const active = r.taskIds.length > 0 || r.submitted;
+    if (r.referredBy && active) {
+      referralCount.set(r.referredBy, (referralCount.get(r.referredBy) ?? 0) + 1);
+    }
   }
 
   const ranked = rows

@@ -8,10 +8,17 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { setMockPersona, type Persona } from "./datasource";
+import { LAUNCHED } from "./config";
 
 interface PreviewValue {
   persona: Persona;
   setPersona: (p: Persona) => void;
+  /** Runtime launch phase. Mirrors the LAUNCHED build flag, but the Design
+      Preview switcher can flip it live (mock only) so the sealed pre-launch
+      world and the open launched world can both be previewed without a restart.
+      The sealed panels and the guided tour both read this. */
+  launched: boolean;
+  setLaunched: (v: boolean) => void;
 }
 
 const PreviewContext = createContext<PreviewValue | null>(null);
@@ -20,6 +27,7 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   // Must match DEFAULT_PERSONA in lib/datasource/mock.ts.
   const [persona, setP] = useState<Persona>("veteran");
+  const [launched, setLaunched] = useState<boolean>(LAUNCHED);
 
   const setPersona = useCallback(
     (p: Persona) => {
@@ -30,7 +38,10 @@ export function PreviewProvider({ children }: { children: React.ReactNode }) {
     [qc]
   );
 
-  const value = useMemo(() => ({ persona, setPersona }), [persona, setPersona]);
+  const value = useMemo(
+    () => ({ persona, setPersona, launched, setLaunched }),
+    [persona, setPersona, launched]
+  );
   return <PreviewContext.Provider value={value}>{children}</PreviewContext.Provider>;
 }
 

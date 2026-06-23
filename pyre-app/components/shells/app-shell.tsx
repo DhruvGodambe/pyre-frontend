@@ -33,10 +33,12 @@ export function AppShell() {
       {isDesktop ? <VillageShell /> : <MobileShell />}
       <PreviewSwitcher />
       {/* The cinematic brand film, plays first on arrival, over everything,
-          with a Skip. When it ends/skips, the Emberkeeper onboarding takes over. */}
+          with a Skip. When it ends/skips, the world is revealed. */}
       <PyreIntro />
-      {/* The real, user-facing first-time onboarding (shows in every mode). */}
-      <EmberkeeperIntro />
+      {/* First-time onboarding. Desktop arrives at the Gate landing (in the
+          VillageShell), which delivers the lore + entry; this modal is the
+          mobile take (no village to land in there). */}
+      {!isDesktop && <EmberkeeperIntro />}
       {/* The mock-only design-preview aid (different audience: the designer). */}
       <DesignerIntro />
     </>

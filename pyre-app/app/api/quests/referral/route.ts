@@ -23,7 +23,13 @@ export async function GET() {
   const sessionId = await getOrCreateSessionId();
   const store = getQuestStore();
   const referral = await store.getReferral(sessionId, mintCode());
-  const count = await store.countReferrals(referral.code);
+  // Count only ACTIVE referred friends (completed a rite or submitted a wallet),
+  // so the displayed count matches what the leaderboard actually credits and the
+  // loop can't be inflated by bare ?ref= pageloads. Mirrors leaderboard/route.ts.
+  const rows = await store.getLeaderboard();
+  const count = rows.filter(
+    (r) => r.referredBy === referral.code && (r.taskIds.length > 0 || r.submitted)
+  ).length;
   return NextResponse.json({
     code: referral.code,
     referredBy: referral.referredBy,

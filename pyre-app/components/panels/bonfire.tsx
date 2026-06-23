@@ -32,7 +32,7 @@ export function BonfirePanel() {
           <div className="rounded-panel bg-surface shadow-panel border border-surface-3/60 p-6 text-center relative overflow-hidden">
             <div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: "radial-gradient(circle at 50% 80%, var(--color-brand)18, transparent 60%)" }}
+              style={{ background: "radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 60%)" }}
             />
             <div className={`${f.scale} animate-pulse`} aria-hidden>
               {f.glyph}

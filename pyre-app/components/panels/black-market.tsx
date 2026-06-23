@@ -14,17 +14,24 @@
    risen yet"). Filters reuse the same MarketFilter across both tabs so the
    designer can see one consistent control bar driving the whole building. */
 
-import { useState } from "react";
-import { useMarketListings, useMarketActivity } from "@/lib/hooks";
-import { Panel, Badge } from "@/components/ui/primitives";
+import { useEffect, useState } from "react";
+import { useMarketListings, useMarketActivity, useAcolyte } from "@/lib/hooks";
+import { useNavigation } from "@/lib/navigation";
+import { Panel, Badge, Stat } from "@/components/ui/primitives";
 import { StateView, EmptyState } from "@/components/ui/state";
+import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
 import { Tabs } from "@/components/ui/tabs";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
-import { formatEth, formatAgo, shortAddress } from "@/lib/format";
-import { STAGES, type Stage } from "@/lib/constants";
+import { formatEth, formatAgo, shortAddress, formatToken } from "@/lib/format";
+import { STAGES, acolyteName, type Stage } from "@/lib/constants";
 import type { MarketFilter, MarketSort } from "@/lib/datasource";
 import type { Acolyte, MarketActivityKind } from "@/lib/types";
+
+/* The Black Market is a branded window over OpenSea/Blur (no PYRE listing
+   contract), so listing your own Acolyte links out to the marketplace, where
+   the trade actually settles. */
+const MARKETPLACE_URL = "https://opensea.io/";
 
 /* Tier accent colours, same tokens the Acolyte art uses, so the filter chips and
    the artwork read as one system once the designer's palette lands. */
@@ -61,6 +68,17 @@ export function BlackMarketPanel() {
   const [filter, setFilter] = useState<MarketFilter>({ sort: "price-asc" });
   const filterActive = !!filter.stage || !!filter.lpOnly || !!filter.immolatedOnly;
 
+  // Controlled tabs so a deep-link can open a specific one, e.g. the Vault's
+  // "Sell" button navigates to { building: "market", tab: "yours" }.
+  const [active, setActive] = useState("listings");
+  const { pending, clearPending } = useNavigation();
+  useEffect(() => {
+    if (pending?.building !== "market") return;
+    const t = pending.tab;
+    if (t === "yours" || t === "listings" || t === "activity") setActive(t);
+    clearPending();
+  }, [pending, clearPending]);
+
   const tabs = [
     {
       id: "listings",
@@ -72,12 +90,19 @@ export function BlackMarketPanel() {
       label: "Recent activity",
       content: <ActivityTab filter={filter} filterActive={filterActive} />,
     },
+    {
+      id: "yours",
+      label: "Your Acolyte",
+      content: <YourAcolyteTab />,
+    },
   ];
 
   return (
     <Panel title="The Black Market" tagline="Buy & sell Acolytes">
-      <FilterBar filter={filter} setFilter={setFilter} />
-      <Tabs tabs={tabs} />
+      {/* The tier/variant filter drives the market tabs, not your own single
+          Acolyte, so hide it on the "Your Acolyte" tab. */}
+      {active !== "yours" && <FilterBar filter={filter} setFilter={setFilter} />}
+      <Tabs tabs={tabs} active={active} onChange={setActive} />
     </Panel>
   );
 }
@@ -291,7 +316,7 @@ function ActivityTab({ filter, filterActive }: { filter: MarketFilter; filterAct
                     </div>
                     <div className="shrink-0 text-right">
                       <div className="tabular text-text text-sm">
-                        {e.kind === "delisting" ? "—" : formatEth(e.priceEth)}
+                        {e.kind === "delisting" ? "n/a" : formatEth(e.priceEth)}
                       </div>
                       <div className="text-text-3 text-[11px]">{formatAgo(e.at)}</div>
                     </div>
@@ -303,6 +328,68 @@ function ActivityTab({ filter, filterActive }: { filter: MarketFilter; filterAct
         )
       }
     </StateView>
+  );
+}
+
+/* --- Your Acolyte tab: view the Acolyte you own + list it for sale -------
+   Each wallet forges a single Acolyte, so this shows yours (if any) with a
+   link out to list it on the wrapped marketplace. */
+function YourAcolyteTab() {
+  const acolyte = useAcolyte();
+  return (
+    <RequireWallet message="Connect your wallet to see the Acolyte you own.">
+      <StateView query={acolyte}>
+        {(a) =>
+          !a.exists ? (
+            <EmptyState
+              icon="🜂"
+              title="You have no Acolyte to sell yet"
+              message="You haven't forged an Acolyte. Burn $PYRE in The Forge to create one, then you can list it for sale here."
+              action={
+                <NavCta to="forge" tab="burn" className="">
+                  Forge an Acolyte
+                </NavCta>
+              }
+            />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left">
+                <AcolyteArt acolyte={a} size={132} />
+                <div className="space-y-2">
+                  <div>
+                    <span className="font-display text-2xl text-brand">{acolyteName(a.stage)}</span>
+                    {a.tokenId != null && (
+                      <span className="text-text-3 tabular ml-2">#{a.tokenId}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                    <Badge tone="brand">{a.multiplier}× yield</Badge>
+                    {a.isLP && <Badge tone="brand">LP variant</Badge>}
+                    {a.isImmolated && <Badge tone="danger">Immolated</Badge>}
+                  </div>
+                  <Stat label="Cumulative burned" value={formatToken(a.cumulativeBurnWeight)} />
+                </div>
+              </div>
+
+              <div className="rounded-md bg-surface-2 border border-surface-3/60 p-4 space-y-3">
+                <p className="text-text-2 text-sm">
+                  PYRE doesn&rsquo;t custody your Acolyte. Listing opens on OpenSea, where the sale
+                  settles, and your listing then shows up in the Listings tab here.
+                </p>
+                <a
+                  href={MARKETPLACE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block w-full rounded-md bg-brand text-bg px-4 py-2.5 text-center text-sm font-medium transition-colors duration-fast hover:bg-brand-deep"
+                >
+                  List for sale on OpenSea →
+                </a>
+              </div>
+            </div>
+          )
+        }
+      </StateView>
+    </RequireWallet>
   );
 }
 
