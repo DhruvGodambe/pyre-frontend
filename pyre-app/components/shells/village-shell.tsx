@@ -559,7 +559,7 @@ function ExteriorScene({
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/75 to-transparent pointer-events-none" />
 
       <div className="absolute top-4 left-4 z-10">
-        <ImageButton name="return" label="Back to the map" width={172} onClick={back} />
+        <ImageButton name="return" label="Back to the map" width={252} onClick={back} />
       </div>
 
       <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-6">
@@ -635,7 +635,7 @@ function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
       </div>
 
       <div className="fixed top-4 left-4 z-10">
-        <ImageButton name="return" label={`Leave ${b.name.replace(/^The /, "the ")}`} width={172} onClick={leave} />
+        <ImageButton name="return" label={`Leave ${b.name.replace(/^The /, "the ")}`} width={252} onClick={leave} />
       </div>
 
       <FitToViewport wide={b.wide}>
