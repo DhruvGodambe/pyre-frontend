@@ -5,9 +5,50 @@ Every feature is a **panel**. The panels are the same everywhere — what change
 **Two shells, one set of panels:**
 
 - **Mobile → the Dashboard.** One scrolling page, panels stacked in priority order. This is what most users get, because most users arrive on a phone via X. **Design mobile first.** Overlapping/broken phone layouts have burned us before.
-- **Desktop → the Village.** Each panel lives inside its building. Click a building → entry animation → that panel opens full-screen.
+- **Desktop → the Village.** Each panel lives inside its building. Click a building → entry animation → you step into the room and the panel opens **over the interior art** (it does *not* fill the screen — see **Panels over the interior** below).
 
 So "The Forge" (a building in the Village) and "the staking panel" (a zone on the mobile Dashboard) are **the same screen in two frames.** Design the panel once; we place it in both. Every panel ships mobile + desktop.
+
+---
+
+## Panels over the interior — let the room breathe
+
+You are painting **9 building interiors** (asset list in 08). On desktop, when a
+visitor steps inside, the feature panel sits *on top of* that interior. Right now
+the skeleton's placeholder panel is an opaque slab parked dead-centre with a flat
+dark wash over the whole room — so the interior you painted is almost entirely
+hidden. **Don't design it that way.** The interior is a hero asset; the panel is a
+pane of glass floating in front of it, never a wall that replaces it.
+
+The direction we want:
+
+- **Frosted glass, not a solid block.** The panel surface is **translucent with a
+  backdrop blur** — the room glows through it, softened. Numbers and buttons stay
+  crisp on top; the art reads behind. Think etched glass / lacquered horn lit from
+  within, not a printed card.
+- **Restrained footprint — leave the room visible around it.** The panel must not
+  cover the whole screen. Targets (desktop):
+  - **Standard panels** (Vault, Observatory, Exchange, Hall, Market): ≈ **440–560 px**
+    wide, with **at least ~20–25% of the screen clear on each side**.
+  - **Wide panels** (Forge, Ashen Cup — they have side-by-side controls): **≤ ~70%**
+    of screen width, never edge to edge.
+  - Always leave **generous top and bottom margin** — the room should be visible
+    above and below the panel, not just in thin slivers.
+- **Protect each room's focal point.** Compose the interior so its hero element
+  (the Forge's fire, the Vault's door, the Observatory's sky) is **not** dead-centre
+  where the panel lands — offset it, or design the panel to sit toward one side so
+  the focal art stays in view. Tell us where you want the panel anchored per room.
+- **Localise the darkening, don't wash the whole screen.** Drop the full-screen
+  dark overlay. If text needs more contrast, put a **soft local scrim / vignette
+  only behind the content**, fading to fully clear at the edges. The corners and
+  margins of every room should sit at **full vibrancy**.
+- **Mobile is exempt.** On the phone Dashboard the panel *is* the scrolling page,
+  so there's no room behind it — this whole section is a **desktop-Village** concern.
+  The frosted look can carry over, but the footprint rules above are desktop-only.
+
+Net test: standing inside any building, a visitor should still clearly see and feel
+the room you painted — through the glass and all around it — while every number and
+button stays perfectly legible.
 
 ---
 
