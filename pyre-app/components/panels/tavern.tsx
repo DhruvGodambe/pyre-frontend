@@ -209,10 +209,7 @@ function QuestFunnel() {
       {quizOpen && (
         <QuizModal
           onClose={() => setQuizOpen(false)}
-          onPass={() => {
-            complete.mutate("quiz");
-            setQuizOpen(false);
-          }}
+          onPass={() => complete.mutate("quiz")}
         />
       )}
     </div>
@@ -342,15 +339,25 @@ function QuestStep({
 function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDone: () => void }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
-  // Fire the completion exactly once: onBothDone is a new closure each render and
-  // its mutation re-renders the parent, which would otherwise re-fire the effect.
+  const [verifying, setVerifying] = useState(false);
+  // Fire the completion exactly once, and only after a short verification beat.
   const fired = useRef(false);
-  useEffect(() => {
-    if (liked && reposted && !fired.current) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Both X actions open in a new tab and are self-attested. Once BOTH have been
+  // clicked, run a ~5s "verifying" pass before crediting the rite, so it reads as
+  // a real check, nobody clicks straight through without actually liking +
+  // reposting. Started from the click (not an effect) so the timer is set once and
+  // never reset by re-renders. Completion is optimistic, so the rite ticks done
+  // the instant the timer fires.
+  const beginVerify = (nextLiked: boolean, nextReposted: boolean) => {
+    if (nextLiked && nextReposted && !fired.current) {
       fired.current = true;
-      onBothDone();
+      setVerifying(true);
+      timer.current = setTimeout(onBothDone, 5000);
     }
-  }, [liked, reposted, onBothDone]);
+  };
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const pill = (done: boolean) =>
     `inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -362,25 +369,39 @@ function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDon
     }`;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <a
-        href={likeIntent(MANIFESTO_TWEET_ID)}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => setLiked(true)}
-        className={pill(liked)}
-      >
-        {liked ? "♥ Liked" : "♥ Like"}
-      </a>
-      <a
-        href={repostIntent(MANIFESTO_TWEET_ID)}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => setReposted(true)}
-        className={pill(reposted)}
-      >
-        {reposted ? "↻ Reposted" : "↻ Repost"}
-      </a>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          href={likeIntent(MANIFESTO_TWEET_ID)}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => {
+            setLiked(true);
+            beginVerify(true, reposted);
+          }}
+          className={pill(liked)}
+        >
+          {liked ? "♥ Liked" : "♥ Like"}
+        </a>
+        <a
+          href={repostIntent(MANIFESTO_TWEET_ID)}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => {
+            setReposted(true);
+            beginVerify(liked, true);
+          }}
+          className={pill(reposted)}
+        >
+          {reposted ? "↻ Reposted" : "↻ Repost"}
+        </a>
+      </div>
+      {verifying && (
+        <div className="flex items-center gap-2 text-xs text-text-3">
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-text-3/30 border-t-brand" />
+          Verifying your like and repost…
+        </div>
+      )}
     </div>
   );
 }
@@ -435,13 +456,20 @@ const QUIZ: { q: string; options: string[]; answer: number }[] = [
 function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => void }) {
   const [answers, setAnswers] = useState<(number | null)[]>(() => QUIZ.map(() => null));
   const [checked, setChecked] = useState(false);
+  // Once all three are right we credit the rite straight away (completion is
+  // optimistic, so the quest ticks done instantly behind the modal) but hold the
+  // window open for a short "Correct!" beat, so it never closes onto a dead gap.
+  const [passed, setPassed] = useState(false);
 
   const allAnswered = answers.every((a) => a !== null);
   const allCorrect = answers.every((a, i) => a === QUIZ[i].answer);
 
   const submitAnswers = () => {
     setChecked(true);
-    if (allCorrect) onPass(); // grants the rite + closes
+    if (!allCorrect) return;
+    setPassed(true);
+    onPass(); // grants the rite (optimistic → marks done at once)
+    setTimeout(onClose, 1100); // let the success land, then close
   };
 
   return createPortal(
@@ -477,11 +505,12 @@ function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => voi
                   return (
                     <button
                       key={oi}
+                      disabled={passed}
                       onClick={() => {
                         setChecked(false);
                         setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)));
                       }}
-                      className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                      className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors disabled:cursor-default ${
                         right
                           ? "border-success bg-success/15 text-success"
                           : wrong
@@ -500,19 +529,25 @@ function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => voi
           ))}
         </div>
 
-        {checked && !allCorrect && (
+        {checked && !allCorrect && !passed && (
           <p className="mt-4 text-xs text-danger">
             Not quite. The picks in red are wrong, change them and try again.
           </p>
         )}
 
-        <button
-          onClick={submitAnswers}
-          disabled={!allAnswered}
-          className="mt-5 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {allAnswered ? "Submit answers" : "Answer all three to submit"}
-        </button>
+        {passed ? (
+          <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-md border border-success/40 bg-success/15 px-4 py-2.5 text-sm font-medium text-success">
+            ✓ All correct, granting your rite.
+          </div>
+        ) : (
+          <button
+            onClick={submitAnswers}
+            disabled={!allAnswered}
+            className="mt-5 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {allAnswered ? "Submit answers" : "Answer all three to submit"}
+          </button>
+        )}
       </div>
     </div>,
     document.body

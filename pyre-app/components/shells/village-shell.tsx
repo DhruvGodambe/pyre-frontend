@@ -532,10 +532,10 @@ function ExteriorScene({
           transition: "transform 1900ms cubic-bezier(0.16,1,0.3,1), opacity 700ms ease-out",
         }}
       >
-        {/* The art is ~5:4 and the screen is wider, so it can't fill edge-to-edge
-            AND stay whole. Solution: a bright, blurred copy of the scene fills the
-            whole background (no black bars), and the COMPLETE image sits sharp and
-            uncropped on top. */}
+        {/* The exteriors are now true 16:9 full scenes, so they fill the screen
+            edge-to-edge (object-cover). A blurred copy sits underneath as a safety
+            backdrop for the off-16:9 desktop aspect ratios (ultrawide, 16:10), so
+            any sliver the cover leaves never shows a hard edge. */}
         <Image
           src={asset(b.exterior!)}
           alt=""
@@ -551,7 +551,7 @@ function ExteriorScene({
           fill
           priority
           sizes="100vw"
-          className="object-contain select-none pointer-events-none"
+          className="object-cover select-none pointer-events-none"
         />
       </div>
 

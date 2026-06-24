@@ -18,7 +18,7 @@ import { getDataSource } from "./datasource";
 import { useWallet } from "./wallet";
 import { fetchQuestLeaderboard, fetchReferral } from "./quests/client";
 import type { MarketFilter, SwapParams } from "./datasource";
-import type { Address, SwapDirection, SwapQuoteParams } from "./types";
+import type { Address, SwapDirection, SwapQuoteParams, QuestTask } from "./types";
 
 const ds = () => getDataSource();
 
@@ -253,9 +253,37 @@ function useQuestTx<V>(run: (variables: V) => Promise<{ ok: boolean; error?: str
   });
 }
 
-// mutate(taskId)
-export const useCompleteQuestTask = () =>
-  useQuestTx<string>((taskId) => ds().completeQuestTask(taskId));
+// mutate(taskId). Optimistic: flip the task to done the instant it's claimed, so
+// the UI never shows a dead gap between the click and the backend confirming (the
+// quiz reveal, the share rite). Rolls back if the write fails.
+export function useCompleteQuestTask() {
+  const { address } = useWallet();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const res = await ds().completeQuestTask(taskId);
+      if (!res.ok) throw new Error(res.error ?? "Something went wrong");
+      return res;
+    },
+    onMutate: async (taskId: string) => {
+      const key = KEY.quests(address);
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<QuestTask[]>(key);
+      qc.setQueryData<QuestTask[]>(key, (old) =>
+        old?.map((t) => (t.id === taskId ? { ...t, done: true } : t))
+      );
+      return { prev, key };
+    },
+    onError: (_e, _taskId, ctx) => {
+      if (ctx?.prev) qc.setQueryData(ctx.key, ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: KEY.quests(address) });
+      qc.invalidateQueries({ queryKey: KEY.staking(address) });
+      qc.invalidateQueries({ queryKey: ["questLeaderboard"] });
+    },
+  });
+}
 // mutate(walletText)
 export const useSubmitWallet = () =>
   useQuestTx<string>((wallet) => ds().submitWallet(wallet));
