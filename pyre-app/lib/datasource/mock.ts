@@ -658,8 +658,15 @@ export class MockDataSource implements DataSource {
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 
-  async burnLP(_address: Address, _ethAmount: bigint, pyreAmount: bigint): Promise<TxResult> {
+  async burnLP(_address: Address, ethAmount: bigint, pyreAmount: bigint): Promise<TxResult> {
     await wait(TX_MS);
+    // An LP burn pairs $PYRE WITH ETH, both are required and both are spent.
+    if (ethAmount <= 0n) return { ok: false, error: "LP burn requires ETH paired with your $PYRE" };
+    if (pyreAmount <= 0n) return { ok: false, error: "Enter a $PYRE amount" };
+    if (pyreAmount > this.world.liquid) return { ok: false, error: "Insufficient $PYRE balance" };
+    if (ethAmount > this.world.ethBalance) return { ok: false, error: "Insufficient ETH balance" };
+    this.world.liquid -= pyreAmount;
+    this.world.ethBalance -= ethAmount;
     const weight = BigInt(Math.round(Number(pyreAmount) * LP_WEIGHT_BONUS));
     this.world.cumulativeBurnWeight += weight;
     this.world.totalBurned += pyreAmount;

@@ -21,6 +21,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GameIcon } from "./game-icon";
+import { formatToken, formatEth, toNumber } from "@/lib/format";
 
 const easeOut = (k: number) => 1 - Math.pow(1 - k, 3);
 
@@ -50,6 +51,99 @@ export function StakeFlame({ intensity }: { intensity: number }) {
       >
         <GameIcon name="fireToken" size={size} />
       </div>
+    </div>
+  );
+}
+
+/** THE HEARTH, a picture of your stake instead of a row of numbers. Shows the
+    kept fire (grows with what's protected), a protection gauge (staked = warded
+    gold, unstaked = exposed + decaying), and pending ETH. As you type a stake
+    amount, the gauge previews the slice moving from exposed → warded and the fire
+    grows with it. */
+export function StakeHearth({
+  staked,
+  unstaked,
+  pendingEth,
+  addingTokens = 0,
+  decay,
+}: {
+  staked: bigint;
+  unstaked: bigint;
+  pendingEth: bigint;
+  /** amount being typed in, previewed as moving from unstaked → staked. */
+  addingTokens?: number;
+  decay?: string;
+}) {
+  const stakedT = toNumber(staked);
+  const unstakedT = toNumber(unstaked);
+  const total = Math.max(1, stakedT + unstakedT);
+  const adding = Math.max(0, Math.min(addingTokens, unstakedT)); // can't stake more than held
+  const stakedPct = (stakedT / total) * 100;
+  const addingPct = (adding / total) * 100;
+  const unstakedPct = Math.max(0, 100 - stakedPct - addingPct);
+  const protectedFrac = Math.min(1, (stakedT + adding) / total);
+
+  return (
+    <div className="rounded-md border border-surface-3/50 bg-surface-2/40 p-3">
+      <StakeFlame intensity={protectedFrac} />
+
+      {/* protection gauge: warded (gold) vs exposed (decaying) */}
+      <div className="mt-1 flex h-3 w-full overflow-hidden rounded-full bg-surface-3/40">
+        <div
+          className="h-full bg-gradient-to-r from-brand-deep to-brand transition-all duration-300"
+          style={{ width: `${stakedPct}%` }}
+        />
+        {addingPct > 0 && (
+          <div
+            className="h-full bg-brand-soft transition-all duration-300"
+            style={{ width: `${addingPct}%`, animation: "hearth-pending 1s ease-in-out infinite" }}
+          />
+        )}
+        <div className="relative h-full transition-all duration-300" style={{ width: `${unstakedPct}%` }}>
+          <div className="absolute inset-0 bg-danger/25" />
+          {/* decay shimmer: the exposed $PYRE is quietly burning away */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-danger) 45%, transparent), transparent)",
+              animation: "hearth-decay 1.8s linear infinite",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* labels under each end of the gauge */}
+      <div className="mt-2 flex items-start justify-between text-[11px]">
+        <span className="text-text-2">
+          <span className="mr-1 inline-block h-2 w-2 rounded-full bg-brand align-middle" />
+          Staked <span className="tabular text-text">{formatToken(staked)}</span>
+          <span className="block pl-3 text-success">earning</span>
+        </span>
+        <span className="text-right text-text-2">
+          Unstaked <span className="tabular text-text">{formatToken(unstaked)}</span>
+          <span className="mr-0 ml-1 inline-block h-2 w-2 rounded-full bg-danger/60 align-middle" />
+          {decay ? <span className="block pr-3 text-danger">−{decay}/hr decay</span> : null}
+        </span>
+      </div>
+
+      {/* pending ETH, the reward filling up */}
+      <div className="mt-2.5 flex items-center justify-center gap-1.5 border-t border-surface-3/40 pt-2 text-xs">
+        <span className="h-2 w-2 rounded-full bg-brand" style={{ animation: "hearth-pending 1.4s ease-in-out infinite" }} />
+        <span className="text-text-3">Pending reward</span>
+        <span className="tabular text-brand">{formatEth(pendingEth)} ETH</span>
+      </div>
+
+      <style>{`
+        @keyframes hearth-decay {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes hearth-pending {
+          0%,100% { opacity: 0.55; }
+          50%     { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

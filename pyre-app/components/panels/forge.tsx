@@ -40,7 +40,7 @@ import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { ForgeReveal, type RevealData } from "@/components/ui/forge-reveal";
-import { StakeFlame, StakeWarding } from "@/components/ui/stake-warding";
+import { StakeHearth, StakeWarding } from "@/components/ui/stake-warding";
 import { playStakeWard } from "@/lib/sfx";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { USE_MOCK } from "@/lib/config";
@@ -196,12 +196,7 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
               burns actually pay off on. Unstaking returns your $PYRE slowly over 7 days.
             </p>
           </Disclosure>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <Cue label="Unstaked" value={formatToken(p.liquidBalance)} note={decay ? `−${decay}/hr decay` : ""} danger />
-            <Cue label="Staked" value={formatToken(p.stakedBalance)} note="earning" />
-            <Cue label="Pending ETH" value={formatEth(p.pendingRewardsEth)} accent />
-          </div>
-          <StakeRitual p={p} />
+          <StakeRitual p={p} decay={decay} />
           <ClaimRow pending={p.pendingRewardsEth} />
         </Card>
 
@@ -316,28 +311,6 @@ function BoxHeader({ glyph, title, sub }: { glyph: string; title: string; sub: s
         <div className="font-display text-xl text-text">{title}</div>
         <div className="text-text-3 text-[11px] uppercase tracking-widest">{sub}</div>
       </div>
-    </div>
-  );
-}
-
-function Cue({
-  label,
-  value,
-  note,
-  danger,
-  accent,
-}: {
-  label: string;
-  value: string;
-  note?: string;
-  danger?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <div>
-      <div className="text-text-3 text-[10px] uppercase tracking-wider">{label}</div>
-      <div className={`tabular text-sm ${accent ? "text-brand" : "text-text"}`}>{value}</div>
-      {note && <div className={`text-[10px] ${danger ? "text-danger" : "text-text-3"}`}>{note}</div>}
     </div>
   );
 }
@@ -621,7 +594,11 @@ function BurnRitual({
   // $PYRE. With nothing staked, a burn (especially a permanent LP burn) earns
   // nothing, so we warn loudly and require an explicit acknowledgement.
   const noStake = p.stakedBalance <= 0n;
-  const blocked = amt <= 0n || (noStake && !ack);
+  // An LP burn pairs $PYRE WITH ETH, both are required. Burning "LP" with zero
+  // ETH is just a plain burn and must be blocked.
+  const ethAmt = parseToken(eth);
+  const lpMissingEth = lp && ethAmt <= 0n;
+  const blocked = amt <= 0n || lpMissingEth || (noStake && !ack);
 
   return (
     <div className="space-y-3">
@@ -645,6 +622,9 @@ function BurnRitual({
         <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
       </div>
       {lp && <Field label="Paired ETH" value={eth} onChange={setEth} suffix="ETH" />}
+      {lp && lpMissingEth && amt > 0n && (
+        <p className="text-danger text-[11px]">An LP burn must pair ETH with your $PYRE. Enter an ETH amount.</p>
+      )}
       {lp && (
         <p className="text-text-3 text-[11px]">
           This adds your $PYRE + ETH to the pool and <span className="text-text-2">locks it there
@@ -683,7 +663,7 @@ function BurnRitual({
         <TxButton
           tx={burnLP}
           disabled={blocked}
-          onClick={() => burnLP.mutate({ eth: parseToken(eth), pyre: amt })}
+          onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
           pendingLabel="Burning…"
         >
           Burn LP
@@ -700,7 +680,7 @@ function BurnRitual({
 }
 
 /* Stake / unstake (and the slow unstaking return). */
-function StakeRitual({ p }: { p: StakingPosition }) {
+function StakeRitual({ p, decay }: { p: StakingPosition; decay?: string }) {
   const [amount, setAmount] = useState("");
   const stake = useStake();
   const unstake = useUnstake();
@@ -728,10 +708,6 @@ function StakeRitual({ p }: { p: StakingPosition }) {
     return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn ETH and stop the decay." />;
   }
 
-  // Flame intensity = how much of your spendable $PYRE this stake commits.
-  const intensity =
-    p.liquidBalance > 0n ? toNumber(amt) / toNumber(p.liquidBalance) : amt > 0n ? 1 : 0;
-
   const onStake = () => {
     const from = toNumber(p.stakedBalance);
     pending.current = { from, to: from + toNumber(amt) };
@@ -744,7 +720,13 @@ function StakeRitual({ p }: { p: StakingPosition }) {
         Staking locks your $PYRE: it stops decaying and earns ETH, multiplied by your Acolyte&rsquo;s
         stage.
       </p>
-      <StakeFlame intensity={intensity} />
+      <StakeHearth
+        staked={p.stakedBalance}
+        unstaked={p.liquidBalance}
+        pendingEth={p.pendingRewardsEth}
+        addingTokens={toNumber(amt)}
+        decay={decay}
+      />
       <div className="space-y-1.5">
         <AmountControls balance={p.liquidBalance} onPick={setAmount} />
         <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
