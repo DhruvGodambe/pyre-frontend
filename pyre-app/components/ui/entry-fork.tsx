@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useIdentity } from "@/lib/identity";
 import { useWallet } from "@/lib/wallet";
+import { GameIcon } from "./game-icon";
 
 /* The PYRE mark: a small ember flame in the brand gradient. Replaces the old
    🏮 emoji, which read as a paper lantern and broke the tone. */
@@ -89,20 +90,6 @@ function ChoiceRow({
   );
 }
 
-const WalletIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v1H5.5A2.5 2.5 0 0 1 3 7.5Z" fill="currentColor" />
-    <rect x="3" y="7" width="18" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
-    <circle cx="16.5" cy="13" r="1.4" fill="currentColor" />
-  </svg>
-);
-const GuestIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M5 19.5c0-3.6 3.1-6 7-6s7 2.4 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
 /* `heading`/`blurb` let each caller set the voice (Gate vs intro). `onChose`
    fires once a fresh identity is set (caller decides what happens next). */
 export function EntryFork({
@@ -150,13 +137,13 @@ export function EntryFork({
               primary
               onClick={connectWallet}
               disabled={connecting}
-              icon={<WalletIcon />}
+              icon={<GameIcon name="wallet" size={30} />}
               title={connecting ? "Connecting…" : "Connect wallet"}
               sub="Your address is your account, nothing else to submit."
             />
             <ChoiceRow
               onClick={() => setGuestOpen(true)}
-              icon={<GuestIcon />}
+              icon={<GameIcon name="guest" size={30} />}
               title="Continue as guest"
               sub="Stay private. Pick a name now, add a wallet at the end."
             />

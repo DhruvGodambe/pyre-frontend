@@ -21,6 +21,7 @@ import { useIdentity } from "@/lib/identity";
 import { useWallet } from "@/lib/wallet";
 import { useNavigation } from "@/lib/navigation";
 import { AcolyteAvatar } from "@/components/ui/acolyte-art";
+import { GameIcon } from "@/components/ui/game-icon";
 import {
   shortAddress,
   formatEth,
@@ -92,8 +93,8 @@ export function WorldRiteProgress() {
           style={{ width: `${pct * 100}%` }}
         />
       </span>
-      <span className="flex items-center gap-1 text-sm text-brand">
-        🔥 <EmberCount value={embers} />
+      <span className="flex items-center gap-1.5 text-sm text-brand">
+        <GameIcon name="fireToken" size={16} /> <EmberCount value={embers} />
       </span>
       {complete && <span className="text-success text-xs">✓</span>}
     </button>

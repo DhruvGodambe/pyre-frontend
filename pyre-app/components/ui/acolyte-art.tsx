@@ -4,7 +4,9 @@
    in the skeleton. */
 
 import type { Acolyte } from "@/lib/types";
+import type { Stage } from "@/lib/constants";
 import { Badge } from "./primitives";
+import { GameIcon, tierCrest } from "./game-icon";
 
 const STAGE_COLOR: Record<number, string> = {
   1: "var(--color-stage-ember)",
@@ -38,9 +40,11 @@ export function AcolyteArt({
         background: `radial-gradient(circle at 50% 60%, ${STAGE_COLOR[acolyte.stage]}55, var(--color-surface) 70%)`,
       }}
     >
-      <span className="text-6xl" aria-hidden>
-        🔥
-      </span>
+      <GameIcon
+        name={tierCrest(acolyte.stage as Stage, acolyte.isImmolated)}
+        size={Math.round(size * 0.62)}
+        alt=""
+      />
       {acolyte.isLP && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -88,7 +92,10 @@ export function AcolyteAvatar({
       }}
       aria-hidden
     >
-      <span style={{ fontSize: size * 0.5 }}>🔥</span>
+      <GameIcon
+        name={tierCrest(acolyte.stage as Stage, acolyte.isImmolated)}
+        size={Math.round(size * 0.78)}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { PreviewWalletProvider } from "@/lib/wallet";
 import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { NavCta } from "./nav-cta";
 import { ErrorBoundary } from "./error-boundary";
+import { GameIcon } from "./game-icon";
 
 /* The only buildings LIVE before launch. The Ashen Cup (tavern) carries the
    whole pre-launch funnel: quests + wallet submit. */
@@ -70,12 +71,7 @@ function SealedBanner({ id }: { id: BuildingId }) {
   return (
     <div className="rounded-panel border border-brand/30 bg-gradient-to-b from-brand/10 to-surface/50 px-4 py-3.5 shadow-panel backdrop-blur-sm">
       <div className="flex items-start gap-3">
-        <span
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand/15 text-brand text-lg"
-          aria-hidden
-        >
-          🜂
-        </span>
+        <GameIcon name="lock" size={36} className="shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-text text-sm font-medium">{b.name} opens at launch</span>

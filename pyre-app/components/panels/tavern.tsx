@@ -29,6 +29,7 @@ import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { useTour } from "@/lib/tour";
 import { Panel, Badge, Button, Field, ProgressBar } from "@/components/ui/primitives";
+import { GameIcon } from "@/components/ui/game-icon";
 import { EmberCount } from "@/components/world-hud";
 import { Skeleton, EmptyState, StateView } from "@/components/ui/state";
 import { NEWLY_LIT_WINDOW } from "@/lib/quests/catalog";
@@ -149,8 +150,8 @@ function QuestFunnel() {
               {/* Ember total, ticks up on completion. */}
               <div className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
                 <span className="text-text-3 text-xs uppercase tracking-wider">Points earned</span>
-                <span className="tabular text-brand text-lg">
-                  🔥 <EmberCount value={totalEmbers} />
+                <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg">
+                  <GameIcon name="fireToken" size={18} /> <EmberCount value={totalEmbers} />
                 </span>
               </div>
 
@@ -258,7 +259,7 @@ function QuestStep({
             spotlight ? "shadow-[0_0_0_4px_rgba(255,122,26,0.12)]" : ""
           }`}
         >
-          {task.done ? "✓" : locked ? "🔒" : index + 1}
+          {task.done ? "✓" : locked ? <GameIcon name="lock" size={13} /> : index + 1}
         </span>
         {!last && (
           <span className={`w-px flex-1 my-1 ${task.done ? "bg-success/40" : "bg-surface-3"}`} />
@@ -706,7 +707,7 @@ function GateNote({
 }) {
   return (
     <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
-      🔒 Complete every quest first. Finish{" "}
+      <GameIcon name="lock" size={13} className="mr-1" /> Complete every quest first. Finish{" "}
       <span className="text-brand">
         {remaining} more {remaining === 1 ? "quest" : "quests"}
       </span>{" "}
@@ -792,7 +793,7 @@ function SummonSection() {
         </div>
         <div className="rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
           <div className="text-text-3 text-[11px] uppercase tracking-wider">Points from invites</div>
-          <div className="tabular text-brand text-2xl">🔥 {earned}</div>
+          <div className="inline-flex items-center gap-1.5 tabular text-brand text-2xl"><GameIcon name="fireToken" size={22} /> {earned}</div>
         </div>
       </div>
 
@@ -818,7 +819,7 @@ function SummonSection() {
                       : "border-surface-3 text-text-3"
                   }`}
                 >
-                  {hit ? "🔥" : m.at}
+                  {hit ? <GameIcon name="fireToken" size={14} /> : m.at}
                 </span>
                 <span className={`text-[10px] ${hit ? "text-text-2" : "text-text-3"}`}>{m.title}</span>
               </div>
@@ -869,6 +870,15 @@ function SummonSection() {
 
 /* =========================================================== LEADERBOARD == */
 
+/* Top-3 get podium medals (gold/silver/bronze); everyone else a plain number. */
+const MEDAL: Record<number, "gold" | "silver" | "bronze"> = { 1: "gold", 2: "silver", 3: "bronze" };
+
+function RankMark({ rank }: { rank: number }) {
+  const medal = MEDAL[rank];
+  if (medal) return <GameIcon name={medal} size={24} alt={`Rank ${rank}`} className="shrink-0" />;
+  return <span className="text-text-3 tabular w-6 text-center shrink-0">#{rank}</span>;
+}
+
 function QuestLeaderboard() {
   const lb = useQuestLeaderboard();
   return (
@@ -884,24 +894,30 @@ function QuestLeaderboard() {
               {data.top.map((r) => (
                 <li
                   key={r.rank}
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
+                  className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm ${
                     r.you ? "bg-brand/10 border border-brand/40" : "bg-surface-2"
                   }`}
                 >
-                  <span className="text-text-2 tabular truncate">
-                    <span className="text-text-3">#{r.rank}</span> {r.name}
+                  <span className="flex items-center gap-2 text-text-2 tabular truncate">
+                    <RankMark rank={r.rank} />
+                    <span className="truncate">{r.name}</span>
                     {r.you && <span className="text-brand"> (you)</span>}
                   </span>
-                  <span className="tabular text-brand shrink-0">🔥 {r.embers}</span>
+                  <span className="flex items-center gap-1 tabular text-brand shrink-0">
+                    <GameIcon name="fireToken" size={16} /> {r.embers}
+                  </span>
                 </li>
               ))}
             </ol>
             {data.you && !data.top.some((t) => t.you) && (
-              <div className="flex items-center justify-between rounded-md px-3 py-2 text-sm bg-brand/10 border border-brand/40">
-                <span className="text-text-2 tabular">
-                  <span className="text-text-3">#{data.you.rank}</span> You
+              <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm bg-brand/10 border border-brand/40">
+                <span className="flex items-center gap-2 text-text-2 tabular">
+                  <RankMark rank={data.you.rank} />
+                  <span>You</span>
                 </span>
-                <span className="tabular text-brand shrink-0">🔥 {data.you.embers}</span>
+                <span className="flex items-center gap-1 tabular text-brand shrink-0">
+                  <GameIcon name="fireToken" size={16} /> {data.you.embers}
+                </span>
               </div>
             )}
           </div>

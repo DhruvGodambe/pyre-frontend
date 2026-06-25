@@ -37,6 +37,7 @@ import { StateView } from "@/components/ui/state";
 import { TxButton } from "@/components/ui/tx-button";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
+import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { formatToken, formatEth, formatPercent, parseToken, toNumber } from "@/lib/format";
 import { STAGES, acolyteName, type Stage } from "@/lib/constants";
@@ -400,9 +401,7 @@ function ForgeHero({ acolyte, size = 150 }: { acolyte: Acolyte; size?: number })
         background: "radial-gradient(circle at 50% 70%, var(--color-stage-ember)33, var(--color-surface) 72%)",
       }}
     >
-      <span className="opacity-50 animate-pulse" style={{ fontSize: size * 0.34 }} aria-hidden>
-        🔥
-      </span>
+      <GameIcon name="ember" size={Math.round(size * 0.5)} className="opacity-40 animate-pulse grayscale" />
       <span className="absolute bottom-2 text-text-3 text-[10px] uppercase tracking-widest">none yet</span>
     </div>
   );
@@ -420,17 +419,15 @@ function StageLadder({ a }: { a: Acolyte }) {
         return (
           <div key={s} className={`flex flex-col items-center text-center gap-0.5 ${tone}`}>
             <span
-              className={`grid h-7 w-7 place-items-center rounded-full border text-[11px] ${
-                current
-                  ? "border-brand bg-brand/15"
-                  : reached
-                  ? "border-brand/40"
-                  : max
-                  ? "border-brand/30"
-                  : "border-surface-3"
+              className={`grid h-10 w-10 place-items-center rounded-full ${
+                current ? "ring-2 ring-brand bg-brand/10" : ""
               }`}
             >
-              {reached ? "✓" : max ? "★" : "🔒"}
+              {reached || current ? (
+                <GameIcon name={tierCrest(s)} size={36} alt={STAGES[s].name} />
+              ) : (
+                <GameIcon name="lock" size={22} className="opacity-70" />
+              )}
             </span>
             <span className="font-display text-xs leading-none">{STAGES[s].name}</span>
             <span className="tabular text-[10px]">{STAGES[s].multiplier}×</span>

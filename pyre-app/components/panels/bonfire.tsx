@@ -12,12 +12,15 @@ import { NavCta } from "@/components/ui/nav-cta";
 import { formatToken, formatAgo, shortAddress } from "@/lib/format";
 import type { ActivityEvent } from "@/lib/types";
 import type { BonfireState } from "@/lib/constants";
+import { GameIcon } from "@/components/ui/game-icon";
 
-const FLAME: Record<BonfireState, { glyph: string; label: string; scale: string }> = {
-  kindling: { glyph: "🔥", label: "Kindling", scale: "text-5xl" },
-  burning: { glyph: "🔥", label: "Burning", scale: "text-6xl" },
-  raging: { glyph: "🔥", label: "Raging", scale: "text-7xl" },
-  inferno: { glyph: "🔥", label: "Inferno", scale: "text-8xl" },
+/* The fire grows with the all-time burn total: the same flame token, larger as
+   the bonfire climbs kindling → inferno. */
+const FLAME: Record<BonfireState, { label: string; size: number }> = {
+  kindling: { label: "Kindling", size: 72 },
+  burning: { label: "Burning", size: 96 },
+  raging: { label: "Raging", size: 120 },
+  inferno: { label: "Inferno", size: 152 },
 };
 
 export function BonfirePanel() {
@@ -34,8 +37,8 @@ export function BonfirePanel() {
               className="absolute inset-0 pointer-events-none"
               style={{ background: "radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 60%)" }}
             />
-            <div className={`${f.scale} animate-pulse`} aria-hidden>
-              {f.glyph}
+            <div className="flex justify-center animate-pulse" aria-hidden>
+              <GameIcon name="fireToken" size={f.size} />
             </div>
             <div className="font-display text-4xl text-brand tabular mt-2">
               {formatToken(s.totalBurned)}
