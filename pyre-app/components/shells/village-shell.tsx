@@ -26,10 +26,15 @@ import { useWallet } from "@/lib/wallet";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { asset, USE_MOCK } from "@/lib/config";
+import { playDoorOpen, playZoom } from "@/lib/sfx";
 
 type View = { id: BuildingId; mode: "preview" | "inside" | "connect" } | null;
 
 const enterLabel = (name: string) => `Enter ${name.replace(/^The /, "the ")}`;
+
+/* The village world's own background theme, played while roaming the map (no
+   building open). Each building swaps in its own track on entry. */
+const WORLD_THEME = "/world/audio/world.mp3";
 
 /* The world map's aspect ratio, the full, original Pyre_World_Clean.png
    (6688×3764). The stage COVERS the viewport at this ratio so building
@@ -165,6 +170,9 @@ export function VillageShell() {
 
   const clickBuilding = (id: BuildingId) => {
     if (tour.active) return; // the tour drives navigation
+    // A camera whoosh accompanies the fly-in; the building's loop music only
+    // starts once the camera lands (gated on `arrived` in the audio block below).
+    playZoom();
     // Every building (including the Bonfire and Gate) zooms in first; once the
     // camera lands, the destination is revealed: the 7 real buildings show their
     // exterior "at the door" scene, the Bonfire its scene, the Gate its connect
@@ -374,19 +382,35 @@ export function VillageShell() {
           <ExteriorScene
             id={focusId}
             onBack={() => setFocusId(null)}
-            onEnter={() => setView({ id: focusId, mode: "inside" })}
+            onEnter={() => {
+              // Door creak over the music (mixes in, never dims the track).
+              playDoorOpen();
+              setView({ id: focusId, mode: "inside" });
+            }}
           />
         )}
 
-      {/* Per-building background music: plays while a building is open (its
-          exterior view or inside), fades out on leave. Skipped during the tour
-          (which has its own narration). */}
+      {/* World + building music. The village world has its OWN theme that plays
+          while you roam the map; opening a building switches to that building's
+          track, and leaving it returns to the world theme. Skipped during the
+          tour (which has its own narration). */}
       {(() => {
-        const openId = !tour.active ? (view?.mode === "inside" ? view.id : focusId) : null;
-        // One persistent player, re-pointed at the open building's track (null =
-        // fade out). NOT keyed/remounted per building, that churn is exactly what
-        // made playback flaky. See components/world-audio.tsx.
-        const sound = (openId && BUILDING_BY_ID[openId].sound) || null;
+        // A building's track only takes over once we're inside it OR the camera
+        // has LANDED on its exterior (`arrived`). During the fly-in the world
+        // theme keeps playing under the zoom whoosh, then the building's loop
+        // fades in once its exterior is on screen.
+        const openId = !tour.active
+          ? view?.mode === "inside"
+            ? view.id
+            : focusId && arrived
+              ? focusId
+              : null
+          : null;
+        const buildingSound = openId ? BUILDING_BY_ID[openId].sound ?? null : null;
+        // No building open + awake → the village world theme. One persistent
+        // player, re-pointed (null = fade out). NOT keyed/remounted per track,
+        // that churn is what made playback flaky. See components/world-audio.tsx.
+        const sound = tour.active ? null : buildingSound ?? (awake ? WORLD_THEME : null);
         return <BuildingAudio src={sound} />;
       })()}
 
