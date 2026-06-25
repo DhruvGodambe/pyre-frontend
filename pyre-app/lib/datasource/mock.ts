@@ -241,9 +241,10 @@ function seedWorld(persona: Persona): World {
   switch (persona) {
     case "newcomer":
       return {
-        liquid: pyre(4_200),
+        liquid: pyre(1_000_000), // test wallet: 1M $PYRE to burn up the tiers + stake
         staked: 0n,
-        ethBalance: eth(0.42),
+        ethBalance: eth(100), // enough ETH to also test LP burns
+
         pendingRewardsEth: 0n,
         cumulativeBurnWeight: 0n,
         immolatedWeight: 0n,
