@@ -22,14 +22,21 @@ const isMuted = () => {
   }
 };
 
-/* The designer gave us three door-open takes. We rotate randomly for variety,
-   but never play the same one twice in a row so the repetition isn't obvious. */
+/* The designer gave us three door takes. Each building gets ONE of them, chosen
+   deterministically from its id, so entering and leaving the same building always
+   sound identical (and it stays consistent across visits), while different
+   buildings get different doors for variety. */
 const DOOR_OPEN = [
   "/world/audio/sfx/door-1.mp3",
   "/world/audio/sfx/door-2.wav",
   "/world/audio/sfx/door-3.wav",
 ];
-let lastDoor = -1;
+
+function doorIndex(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return h % DOOR_OPEN.length;
+}
 
 /** A bit louder than the music (VOLUME 0.45) so the effect reads over the track. */
 const SFX_VOLUME = 0.7;
@@ -47,12 +54,9 @@ function playOneShot(src: string, volume = SFX_VOLUME) {
   }
 }
 
-/** Door creak/open, played when stepping into a building (the "Enter" click). */
-export function playDoorOpen() {
-  let i = Math.floor(Math.random() * DOOR_OPEN.length);
-  if (i === lastDoor) i = (i + 1) % DOOR_OPEN.length; // avoid an immediate repeat
-  lastDoor = i;
-  playOneShot(DOOR_OPEN[i]);
+/** Door sound for a building, the SAME on enter and leave (keyed by building id). */
+export function playDoor(key: string) {
+  playOneShot(DOOR_OPEN[doorIndex(key)]);
 }
 
 /** Camera whoosh, played when clicking a building as the world flies in on it. */

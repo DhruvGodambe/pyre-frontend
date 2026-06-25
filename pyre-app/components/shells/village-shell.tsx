@@ -26,7 +26,7 @@ import { useWallet } from "@/lib/wallet";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { asset, USE_MOCK } from "@/lib/config";
-import { playDoorOpen, playZoom } from "@/lib/sfx";
+import { playDoor, playZoom } from "@/lib/sfx";
 
 type View = { id: BuildingId; mode: "preview" | "inside" | "connect" } | null;
 
@@ -383,8 +383,9 @@ export function VillageShell() {
             id={focusId}
             onBack={() => setFocusId(null)}
             onEnter={() => {
-              // Door creak over the music (mixes in, never dims the track).
-              playDoorOpen();
+              // Door over the music (mixes in, never dims). Keyed to the building
+              // so leaving plays the exact same door (see InteriorView).
+              playDoor(focusId);
               setView({ id: focusId, mode: "inside" });
             }}
           />
@@ -631,6 +632,9 @@ function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
     return () => cancelAnimationFrame(r);
   }, []);
   const leave = () => {
+    // Same door as entering this building (only buildings you actually enter
+    // through a door, i.e. those with an exterior; the Bonfire/Gate have none).
+    if (b.exterior) playDoor(id);
     setLeaving(true);
     setTimeout(onBack, 320);
   };
