@@ -30,6 +30,28 @@ const SEEN_KEY = "pyre_intro_video_seen";
 const VIDEO_SRC = `${BASE_PATH}/intro/pyre-intro.mp4`;
 const POSTER_SRC = `${BASE_PATH}/intro/poster.webp`;
 
+/* If the film stalls (buffering / decode hiccup) and never recovers, don't trap
+   the visitor on a frozen frame, auto-dismiss after this long with no progress. */
+const STALL_TIMEOUT_MS = 12000;
+
+/* localStorage can THROW (Safari Private Mode, disabled storage, quota full), not
+   just return null. A throw here must never break the intro: reads fall back to
+   "not seen yet", and a failed write must NOT stop the film from dismissing. */
+const seenIntro = () => {
+  try {
+    return localStorage.getItem(SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+const markSeen = () => {
+  try {
+    localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    /* private mode / full / blocked: just don't remember it, the film still ends */
+  }
+};
+
 export function PyreIntro() {
   const [open, setOpen] = useState(false);
   const [decided, setDecided] = useState(false);
@@ -44,7 +66,7 @@ export function PyreIntro() {
     const force =
       new URLSearchParams(window.location.search).has("video") ||
       window.location.hash === "#video";
-    setOpen(force || !localStorage.getItem(SEEN_KEY));
+    setOpen(force || !seenIntro());
     setDecided(true);
   }, []);
 
@@ -56,32 +78,73 @@ export function PyreIntro() {
     return () => clearTimeout(t);
   }, [decided, open]);
 
-  // Start playback WITH sound. If the browser refuses sound-on autoplay (no prior
-  // gesture), fall back to muted playback so the film still rolls, and let the
-  // "Sound on" control unmute it. Runs once the film is mounted (open).
+  // Play SMOOTHLY on slow connections: wait until the browser has buffered enough
+  // to play through before starting, instead of playing frames as they trickle in
+  // (which causes the buffer → play-a-little → stall → repeat stutter). The poster
+  // shows meanwhile. Plays WITH sound; if sound-on autoplay is refused (no prior
+  // gesture) we fall back to muted so the film still rolls, and the "Sound on"
+  // control unmutes it.
   useEffect(() => {
     if (!open) return;
     const v = videoRef.current;
     if (!v) return;
     let cancelled = false;
-    v.muted = false;
-    v.play()
-      .then(() => !cancelled && setMuted(false))
-      .catch(() => {
-        if (cancelled) return;
-        v.muted = true;
-        setMuted(true);
-        v.play().catch(() => {});
-      });
+
+    const start = () => {
+      if (cancelled) return;
+      v.muted = false;
+      v.play()
+        .then(() => !cancelled && setMuted(false))
+        .catch(() => {
+          if (cancelled) return;
+          v.muted = true;
+          setMuted(true);
+          v.play().catch(() => {});
+        });
+    };
+
+    // HAVE_ENOUGH_DATA (4) = the browser estimates it can reach the end without
+    // stalling. If we're already there, go; otherwise wait for canplaythrough.
+    if (v.readyState >= 4) start();
+    else v.addEventListener("canplaythrough", start, { once: true });
+
     return () => {
       cancelled = true;
+      v.removeEventListener("canplaythrough", start);
     };
   }, [open]);
 
   const finish = () => {
-    localStorage.setItem(SEEN_KEY, "1");
+    // Dismiss FIRST, then try to remember it. If persistence throws (blocked
+    // storage), the film must still go away, not trap the visitor on a frame.
     setOpen(false);
+    markSeen();
   };
+
+  // Safety net: if the film never makes progress (stuck buffering / decode hiccup,
+  // a frozen frame with the page "still loading"), auto-dismiss so nobody is
+  // stranded. The timer resets on every bit of real playback progress; it only
+  // fires when playback has genuinely stalled.
+  useEffect(() => {
+    if (!open) return;
+    const v = videoRef.current;
+    if (!v) return;
+    let timer = 0;
+    const arm = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(finish, STALL_TIMEOUT_MS);
+    };
+    arm(); // start the clock: if nothing happens at all, we still bail out
+    // Reset on real playback progress OR download progress, so a slow-but-loading
+    // film is never cut off; the timer only fires when BOTH have genuinely stalled.
+    v.addEventListener("timeupdate", arm);
+    v.addEventListener("progress", arm);
+    return () => {
+      window.clearTimeout(timer);
+      v.removeEventListener("timeupdate", arm);
+      v.removeEventListener("progress", arm);
+    };
+  }, [open]);
 
   const toggleSound = () => {
     const v = videoRef.current;
@@ -116,6 +179,7 @@ export function PyreIntro() {
         playsInline
         preload="auto"
         onEnded={finish}
+        onError={finish}
         className="w-full h-full object-contain"
       />
 
