@@ -22,6 +22,11 @@ const BUTTONS = {
   return: ["/world/ui/return_normal.webp", "/world/ui/return_hover.webp", 1254, 419],
   trade: ["/world/ui/trade_normal.webp", "/world/ui/trade_hover.webp", 1342, 173],
   support: ["/world/ui/support_normal.webp", "/world/ui/support_hover.webp", 626, 227],
+  // Designer action buttons (baked-in text). Pending state is shown by the
+  // overlay below, not by changing the label. burn = primary Burn $PYRE.
+  burn: ["/world/ui/burn_normal.png", "/world/ui/burn_hover.png", 1075, 203],
+  burnmore: ["/world/ui/burnmore_normal.png", "/world/ui/burnmore_hover.png", 686, 177],
+  stakemore: ["/world/ui/stakemore_normal.png", "/world/ui/stakemore_hover.png", 686, 177],
 } as const;
 
 export type ImageButtonName = keyof typeof BUTTONS;
@@ -32,26 +37,31 @@ export function ImageButton({
   label,
   width = 220,
   disabled = false,
+  pending = false,
   className = "",
 }: {
   name: ImageButtonName;
   onClick?: () => void;
   /** accessible label (the visible text is baked into the art). */
   label: string;
-  /** rendered width in px (height follows the art ratio). */
-  width?: number;
+  /** rendered width (px number, or a CSS length like "100%"). Height follows the art ratio. */
+  width?: number | string;
   disabled?: boolean;
+  /** in-flight: dim the art and show a spinner over it (the baked text can't change). */
+  pending?: boolean;
   className?: string;
 }) {
   const [hover, setHover] = useState(false);
   const [normal, hovered, w, h] = BUTTONS[name];
-  const src = hover && !disabled ? hovered : normal;
+  const inactive = disabled || pending;
+  const src = hover && !inactive ? hovered : normal;
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
+      disabled={inactive}
       aria-label={label}
+      aria-busy={pending}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
@@ -65,9 +75,16 @@ export function ImageButton({
         width={w}
         height={h}
         priority
-        className="w-full h-auto drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none"
+        className={`w-full h-auto drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none transition-opacity duration-fast ${
+          pending ? "opacity-40" : ""
+        }`}
         draggable={false}
       />
+      {pending && (
+        <span className="absolute inset-0 grid place-items-center" aria-hidden>
+          <span className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+        </span>
+      )}
     </button>
   );
 }

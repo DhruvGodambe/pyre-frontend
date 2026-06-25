@@ -34,7 +34,7 @@ import {
 import { useNavigation } from "@/lib/navigation";
 import { Stat, Field, ProgressBar, Badge, Button } from "@/components/ui/primitives";
 import { StateView } from "@/components/ui/state";
-import { TxButton } from "@/components/ui/tx-button";
+import { TxButton, TxImageButton } from "@/components/ui/tx-button";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
@@ -551,9 +551,7 @@ function BurnRitual({ p, a, onStakeFirst }: { p: StakingPosition; a: Acolyte; on
           Burn LP
         </TxButton>
       ) : (
-        <TxButton tx={burn} disabled={blocked} onClick={() => burn.mutate(amt)} pendingLabel="Burning…">
-          Burn $PYRE
-        </TxButton>
+        <TxImageButton tx={burn} name="burn" label="Burn $PYRE" disabled={blocked} onClick={() => burn.mutate(amt)} />
       )}
 
       {a.stage >= 4 && (
