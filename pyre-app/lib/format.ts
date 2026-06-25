@@ -81,6 +81,22 @@ export function decayPerHour(liquid: bigint, ratePerHour: number): bigint {
   return BigInt(Math.floor(Number(liquid) * ratePerHour));
 }
 
+/** bigint base units → an EXACT plain decimal string (no separators), for filling
+ *  an input that parseToken will re-parse losslessly. Trims trailing zeros.
+ *  Unlike formatToken this never compacts ("1.28M") or rounds. */
+export function toAmountString(value: bigint, decimals = DECIMALS): string {
+  if (value <= 0n) return "";
+  const base = 10n ** BigInt(decimals);
+  const whole = (value / base).toString();
+  const frac = (value % base).toString().padStart(decimals, "0").replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : whole;
+}
+
+/** A whole-percent (0–100) slice of a base-unit balance, exact in bigint. */
+export function percentOf(value: bigint, percent: number): bigint {
+  return (value * BigInt(Math.round(percent))) / 100n;
+}
+
 /** User input string ("1,250.5") → on-chain bigint. Returns 0n if invalid. */
 export function parseToken(input: string, decimals = DECIMALS): bigint {
   const clean = input.replace(/,/g, "").trim();

@@ -39,7 +39,15 @@ import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { RequireWallet } from "@/components/ui/wallet-gate";
-import { formatToken, formatEth, formatPercent, parseToken, toNumber } from "@/lib/format";
+import {
+  formatToken,
+  formatEth,
+  formatPercent,
+  parseToken,
+  toNumber,
+  toAmountString,
+  percentOf,
+} from "@/lib/format";
 import { STAGES, acolyteName, type Stage } from "@/lib/constants";
 import type { Acolyte, StakingPosition } from "@/lib/types";
 
@@ -464,6 +472,59 @@ function BuyNudge({ message }: { message: string }) {
   );
 }
 
+/* Balance + quick-fill row that sits directly above an amount input. It answers
+   "how much do I have?" (the balance is shown right by the field) and removes the
+   typing with 10 / 25 / 50 / 75% / Max buttons. `balance` is the spendable amount
+   the buttons divide and Max targets. */
+function AmountControls({
+  balance,
+  onPick,
+  label = "Wallet",
+  suffix = "$PYRE",
+}: {
+  balance: bigint;
+  onPick: (v: string) => void;
+  label?: string;
+  suffix?: string;
+}) {
+  const pick = (v: bigint) => onPick(toAmountString(v));
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+      <span className="text-text-3 text-[11px] uppercase tracking-wider">
+        {label}{" "}
+        <button
+          type="button"
+          onClick={() => pick(balance)}
+          className="tabular text-text-2 normal-case hover:text-brand"
+          title="Use full balance"
+        >
+          {formatToken(balance)} {suffix}
+        </button>
+      </span>
+      <div className="flex gap-1">
+        {[10, 25, 50, 75].map((p) => (
+          <QuickBtn key={p} onClick={() => pick(percentOf(balance, p))}>
+            {p}%
+          </QuickBtn>
+        ))}
+        <QuickBtn onClick={() => pick(balance)}>Max</QuickBtn>
+      </div>
+    </div>
+  );
+}
+
+function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-sm border border-surface-3 bg-surface-2 px-2 py-1 text-[11px] text-text-2 transition-colors duration-fast hover:border-brand/60 hover:text-brand"
+    >
+      {children}
+    </button>
+  );
+}
+
 /* ======================================================================== */
 /* The actions                                                              */
 /* ======================================================================== */
@@ -505,7 +566,10 @@ function BurnRitual({ p, a, onStakeFirst }: { p: StakingPosition; a: Acolyte; on
         </button>
       </div>
 
-      <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
+      <div className="space-y-1.5">
+        <AmountControls balance={p.liquidBalance} onPick={setAmount} />
+        <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
+      </div>
       {lp && <Field label="Paired ETH" value={eth} onChange={setEth} suffix="ETH" />}
       {lp && (
         <p className="text-text-3 text-[11px]">
@@ -580,7 +644,10 @@ function StakeRitual({ p }: { p: StakingPosition }) {
         Staking locks your $PYRE: it stops decaying and earns ETH, multiplied by your Acolyte&rsquo;s
         stage.
       </p>
-      <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
+      <div className="space-y-1.5">
+        <AmountControls balance={p.liquidBalance} onPick={setAmount} />
+        <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <TxButton tx={stake} disabled={amt <= 0n} onClick={() => stake.mutate(amt)} pendingLabel="Staking…">
           Stake $PYRE
