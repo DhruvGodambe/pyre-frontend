@@ -235,7 +235,9 @@
       "Bash(vercel --prod --yes)",
       "Bash(curl *)",
       "Bash(node -e ' *)",
-      "PowerShell($c = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Select-Object -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force; \"killed $_\" } catch {} } }; cd C:\\\\Users\\\\USER\\\\projects\\\\PYRE\\\\pyre-app; if \\(Test-Path .next\\) { Remove-Item -Recurse -Force .next; \"cleared .next\" })"
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Select-Object -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force; \"killed $_\" } catch {} } }; cd C:\\\\Users\\\\USER\\\\projects\\\\PYRE\\\\pyre-app; if \\(Test-Path .next\\) { Remove-Item -Recurse -Force .next; \"cleared .next\" })",
+      "Bash(rm -f package.json package-lock.json)",
+      "Bash(node tools/selectors.js)"
     ]
   }
 }

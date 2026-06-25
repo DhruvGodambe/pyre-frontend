@@ -59,3 +59,23 @@ export function playDoorOpen() {
 export function playZoom() {
   playOneShot("/world/audio/sfx/zoom.wav");
 }
+
+/* ---- FORGE REVEAL SOUNDS (designer to deliver) -------------------------------
+   The designer is making a Forge sting per tier upgrade, plus one for the LP
+   burn. Until the files land these 404 and playback silently no-ops, so the
+   cinematic still runs, just muted. File names the app expects:
+     /world/audio/sfx/forge-tier-1.mp3 … forge-tier-4.mp3
+     /world/audio/sfx/forge-tier-immolated.mp3
+     /world/audio/sfx/forge-lp-burn.mp3
+   ---------------------------------------------------------------------------- */
+
+/** Tier upgrade sting (one per tier). `stage` 1-4, or immolated. */
+export function playForgeTierUp(stage: number, isImmolated = false) {
+  const file = isImmolated ? "forge-tier-immolated" : `forge-tier-${stage}`;
+  playOneShot(`/world/audio/sfx/${file}.mp3`, 0.85);
+}
+
+/** LP burn sting (the bigger, permanent sacrifice). */
+export function playLpBurn() {
+  playOneShot("/world/audio/sfx/forge-lp-burn.mp3", 0.85);
+}

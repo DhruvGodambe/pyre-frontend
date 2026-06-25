@@ -19,7 +19,8 @@
    DESIGNER SCAFFOLD: real, wired to the mock, every state reachable. Styling is
    token-driven. Navigation-aware via useNavigation({ building: "forge", tab }). */
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   useStakingPosition,
   useAcolyte,
@@ -38,7 +39,9 @@ import { TxButton, TxImageButton } from "@/components/ui/tx-button";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
+import { ForgeReveal, type RevealData } from "@/components/ui/forge-reveal";
 import { RequireWallet } from "@/components/ui/wallet-gate";
+import { USE_MOCK } from "@/lib/config";
 import {
   formatToken,
   formatEth,
@@ -105,6 +108,21 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
     );
     window.setTimeout(() => setFlash(null), 1600);
   };
+
+  // FORGE REVEAL cinematic (scaffold). Tier reveal fires when a burn crosses a
+  // tier / mints the first Acolyte / reaches Immolated; the LP reveal fires on an
+  // LP burn (see BurnRitual → onLpBurned). See components/ui/forge-reveal.tsx.
+  const [reveal, setReveal] = useState<RevealData | null>(null);
+  const prevTier = useRef<{ stage: number; immolated: boolean } | null>(null);
+  useEffect(() => {
+    const cur = { stage: a.exists ? a.stage : 0, immolated: a.isImmolated };
+    const prior = prevTier.current;
+    prevTier.current = cur;
+    if (!prior) return; // first render: record baseline, never reveal on load
+    if (cur.stage > prior.stage || (cur.immolated && !prior.immolated)) {
+      setReveal({ kind: "tier", acolyte: a, prevStage: prior.stage });
+    }
+  }, [a.exists, a.stage, a.isImmolated, a]);
 
   return (
     <div className="space-y-4">
@@ -215,10 +233,43 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
               <ProgressBar value={tier.pct} />
             </div>
           )}
-          <BurnRitual p={p} a={a} onStakeFirst={stakeFirst} />
+          <BurnRitual
+            p={p}
+            a={a}
+            onStakeFirst={stakeFirst}
+            onLpBurned={() => setReveal({ kind: "lp", acolyte: a })}
+          />
         </Card>
         </div>
       </div>
+
+      {/* The cinematic (scaffold). Portaled full-screen; see forge-reveal.tsx. */}
+      {reveal && <ForgeReveal data={reveal} onClose={() => setReveal(null)} />}
+
+      {/* MOCK-ONLY: preview each cinematic on demand (the Forge is inert in the
+          sealed pre-launch preview, so this control is portaled to escape it).
+          Never ships, gated on USE_MOCK. */}
+      {USE_MOCK &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed bottom-3 left-1/2 z-[70] -translate-x-1/2 flex gap-2">
+            <button
+              onClick={() =>
+                setReveal({ kind: "tier", acolyte: a, prevStage: Math.max(0, (a.stage || 1) - 1) })
+              }
+              className="rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
+            >
+              ▶ Tier reveal
+            </button>
+            <button
+              onClick={() => setReveal({ kind: "lp", acolyte: a })}
+              className="rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-danger hover:text-danger transition-colors"
+            >
+              ▶ LP reveal
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -530,7 +581,18 @@ function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => v
 /* ======================================================================== */
 
 /* Burn → forge/level the Acolyte. */
-function BurnRitual({ p, a, onStakeFirst }: { p: StakingPosition; a: Acolyte; onStakeFirst: () => void }) {
+function BurnRitual({
+  p,
+  a,
+  onStakeFirst,
+  onLpBurned,
+}: {
+  p: StakingPosition;
+  a: Acolyte;
+  onStakeFirst: () => void;
+  /** Fired once when an LP burn confirms, so the Forge can play the LP cinematic. */
+  onLpBurned?: () => void;
+}) {
   const [amount, setAmount] = useState("");
   const [lp, setLp] = useState(false);
   const [eth, setEth] = useState("");
@@ -538,6 +600,16 @@ function BurnRitual({ p, a, onStakeFirst }: { p: StakingPosition; a: Acolyte; on
   const burn = useBurnTokens();
   const burnLP = useBurnLP();
   const amt = parseToken(amount);
+
+  // The LP burn is its own cinematic moment (bigger, permanent sacrifice).
+  const lpFired = useRef(false);
+  useEffect(() => {
+    if (burnLP.isSuccess && !lpFired.current) {
+      lpFired.current = true;
+      onLpBurned?.();
+    }
+    if (!burnLP.isSuccess) lpFired.current = false; // reset for the next LP burn
+  }, [burnLP.isSuccess, onLpBurned]);
 
   if (p.liquidBalance <= 0n) {
     return <BuyNudge message="You have no $PYRE to burn. Buy some, then come back to level your Acolyte." />;
