@@ -18,6 +18,7 @@ import { EntryFork } from "@/components/ui/entry-fork";
 import { useTour } from "@/lib/tour";
 import { DOCS_URL } from "@/lib/social";
 import { asset } from "@/lib/config";
+import { storageGet, storageSet } from "@/lib/safe-storage";
 
 const SEEN_KEY = "pyre_intro_seen";
 
@@ -60,7 +61,7 @@ export function GateLanding({
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    const fresh = !localStorage.getItem(SEEN_KEY);
+    const fresh = !storageGet(SEEN_KEY);
     setFirstTime(fresh);
     setLoreDone(!fresh);
     const r = requestAnimationFrame(() => setShown(true));
@@ -75,7 +76,7 @@ export function GateLanding({
       // The "intro" rite is the guided TOUR now, credited when it's FINISHED
       // (see tour-ui.tsx), so we only start the tour here, not grant it.
       if (firstTime) tour.start();
-      localStorage.setItem(SEEN_KEY, "1");
+      storageSet(SEEN_KEY, "1");
       onDone();
     }, 650);
     return () => clearTimeout(t);

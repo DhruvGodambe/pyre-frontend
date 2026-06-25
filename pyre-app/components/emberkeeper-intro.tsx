@@ -41,6 +41,7 @@ import { useTour } from "@/lib/tour";
 import { shortAddress } from "@/lib/format";
 import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
 import { USE_MOCK, asset } from "@/lib/config";
+import { storageGet, storageSet, storageRemove } from "@/lib/safe-storage";
 
 /* localStorage keys, "seen" gates the auto-show; "step" makes it resumable. */
 const SEEN_KEY = "pyre_intro_seen";
@@ -155,15 +156,15 @@ export function EmberkeeperIntro() {
       setOpen(true);
       return;
     }
-    if (localStorage.getItem(SEEN_KEY)) return;
-    const saved = Number(localStorage.getItem(STEP_KEY) ?? 0);
+    if (storageGet(SEEN_KEY)) return;
+    const saved = Number(storageGet(STEP_KEY) ?? 0);
     setStep(Number.isFinite(saved) ? Math.min(saved, SCENES.length - 1) : 0);
     setOpen(true);
   }, []);
 
   // Persist the step so a refresh / wallet popup resumes instead of restarting.
   useEffect(() => {
-    if (open) localStorage.setItem(STEP_KEY, String(step));
+    if (open) storageSet(STEP_KEY, String(step));
   }, [open, step]);
 
   if (!ready || !open) {
@@ -180,8 +181,8 @@ export function EmberkeeperIntro() {
       <button
         onClick={() => {
           identity.reset(); // clears guest (local + server) + disconnects wallet
-          localStorage.removeItem(SEEN_KEY);
-          localStorage.removeItem(STEP_KEY);
+          storageRemove(SEEN_KEY);
+          storageRemove(STEP_KEY);
           setStep(0);
           setOpen(true);
         }}
@@ -200,9 +201,11 @@ export function EmberkeeperIntro() {
   const next = () => setStep((s) => Math.min(s + 1, SCENES.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
   const finish = () => {
-    localStorage.setItem(SEEN_KEY, "1");
-    localStorage.removeItem(STEP_KEY);
+    // Dismiss FIRST, then persist. A blocked/full-storage write must never stop
+    // the intro from closing (that would strand the visitor behind the overlay).
     setOpen(false);
+    storageSet(SEEN_KEY, "1");
+    storageRemove(STEP_KEY);
   };
   // The closing hand-off: drop the visitor straight into The Tavern → Rites.
   // (No "intro" credit here, that quest is the guided TOUR, granted on finishing

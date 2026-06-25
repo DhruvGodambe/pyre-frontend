@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { USE_MOCK } from "@/lib/config";
+import { storageGet, storageSet } from "@/lib/safe-storage";
 
 const SEEN_KEY = "pyre_designer_intro_seen";
 
@@ -19,15 +20,15 @@ export function DesignerIntro() {
     // Yield to the user-facing Emberkeeper intro: don't auto-open over it on a
     // first visit. Once that's been seen (or skipped), this aid auto-opens for
     // the designer. The "?" button re-opens it any time regardless.
-    const userIntroSeen = localStorage.getItem("pyre_intro_seen");
-    if (userIntroSeen && !localStorage.getItem(SEEN_KEY)) setOpen(true);
+    const userIntroSeen = storageGet("pyre_intro_seen");
+    if (userIntroSeen && !storageGet(SEEN_KEY)) setOpen(true);
   }, []);
 
   if (!USE_MOCK || !ready) return null;
 
   const dismiss = () => {
-    localStorage.setItem(SEEN_KEY, "1");
     setOpen(false);
+    storageSet(SEEN_KEY, "1");
   };
 
   return (

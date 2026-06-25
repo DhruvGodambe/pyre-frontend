@@ -14,6 +14,7 @@ import { usePreview } from "@/lib/preview";
 import { PreviewWalletProvider } from "@/lib/wallet";
 import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { NavCta } from "./nav-cta";
+import { ErrorBoundary } from "./error-boundary";
 
 /* The only buildings LIVE before launch. The Ashen Cup (tavern) carries the
    whole pre-launch funnel: quests + wallet submit. */
@@ -36,9 +37,17 @@ const TEASER: Partial<Record<BuildingId, string>> = {
    assistive tech), so visitors admire the craft without being able to act. */
 export function BuildingPanel({ id }: { id: BuildingId }) {
   const { launched } = usePreview();
-  const Panel = BUILDING_BY_ID[id].Panel;
+  const b = BUILDING_BY_ID[id];
+  const Panel = b.Panel;
   const sealed = !launched && !OPEN_PRE_LAUNCH.includes(id);
-  if (!sealed) return <Panel />;
+  // A single panel that throws (data error, failed media on a degraded device)
+  // must not blank the whole building / dashboard, contain it per panel.
+  if (!sealed)
+    return (
+      <ErrorBoundary label={b.name}>
+        <Panel />
+      </ErrorBoundary>
+    );
   return (
     <div className="space-y-3">
       <SealedBanner id={id} />
@@ -46,9 +55,11 @@ export function BuildingPanel({ id }: { id: BuildingId }) {
           connected wallet, so gated panels show their real, populated UI rather
           than a connect wall, the whole point is to show the craft. */}
       <div className="pointer-events-none select-none" aria-hidden tabIndex={-1}>
-        <PreviewWalletProvider>
-          <Panel />
-        </PreviewWalletProvider>
+        <ErrorBoundary label={b.name}>
+          <PreviewWalletProvider>
+            <Panel />
+          </PreviewWalletProvider>
+        </ErrorBoundary>
       </div>
     </div>
   );

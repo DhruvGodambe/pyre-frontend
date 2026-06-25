@@ -30,6 +30,7 @@ import {
 import type { Address } from "./types";
 import { useWallet } from "./wallet";
 import { fetchIdentity, saveIdentity, clearIdentity } from "./quests/client";
+import { storageGet, storageSet, storageRemove } from "./safe-storage";
 
 export type IdentityMode = "wallet" | "guest";
 
@@ -61,7 +62,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   // reads before anything could clear it.
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = storageGet(KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.username) setGuest({ username: String(parsed.username) });
@@ -83,7 +84,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
 
   // Persist the guest choice only when set; reset() does the removal explicitly.
   useEffect(() => {
-    if (guest) localStorage.setItem(KEY, JSON.stringify(guest));
+    if (guest) storageSet(KEY, JSON.stringify(guest));
   }, [guest]);
 
   const connected = wallet.status === "connected";
@@ -105,7 +106,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const reset = useCallback(() => {
-    localStorage.removeItem(KEY);
+    storageRemove(KEY);
     setGuest(null);
     savedWallet.current = null;
     void clearIdentity();

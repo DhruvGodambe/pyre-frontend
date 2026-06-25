@@ -12,6 +12,7 @@ import { PreviewSwitcher } from "@/components/preview-switcher";
 import { DesignerIntro } from "@/components/designer-intro";
 import { EmberkeeperIntro } from "@/components/emberkeeper-intro";
 import { PyreIntro } from "@/components/pyre-intro";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { captureReferral } from "@/lib/quests/client";
 
 export function AppShell() {
@@ -30,7 +31,9 @@ export function AppShell() {
 
   return (
     <>
-      {isDesktop ? <VillageShell /> : <MobileShell />}
+      {/* Last-resort net: if a shell throws, show a reload card instead of a
+          blank page (matters most on degraded devices, full disk, failed media). */}
+      <ErrorBoundary>{isDesktop ? <VillageShell /> : <MobileShell />}</ErrorBoundary>
       <PreviewSwitcher />
       {/* The cinematic brand film, plays first on arrival, over everything,
           with a Skip. When it ends/skips, the world is revealed. */}
