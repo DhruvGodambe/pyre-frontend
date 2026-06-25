@@ -51,6 +51,17 @@ Tell us the format and we will wire it; until then the placeholder beats play (s
 
 **Per-tier Acolyte art** also feeds this (the figure that rises). That's the same art tracked in *Pyre Acolyte NFTs*, still pending. A single shared Acolyte placeholder is in use for now.
 
+## Bonus: the staking "Warding" moment
+Staking is the opposite pole to burning, not destruction for power, but giving your $PYRE to the fire's **keeping** (it stops decaying and earns ETH). So it gets a *lighter* experience than the burn cinematic (staking is frequent and incremental, a full takeover each time would annoy):
+
+- **Living input:** a flame in the Stake box that **grows** as the amount rises (already built, functional).
+- **Confirmation flourish (~2s, in-panel):** embers rise, a protective ring ignites around the staked total, the total counts up, "Your fire is kept." (already built, functional).
+
+A functional version ships now; you're welcome to elevate the visuals. One sound to deliver, softer than the burn stings:
+```
+/world/audio/sfx/stake-ward.mp3
+```
+
 ## Status
-- App scaffold: **done** (triggers on tier-up + LP burn; full-screen; Continue/auto-dismiss). Tunable in `components/ui/forge-reveal.tsx`.
-- Waiting on you: the six sounds above + the cinematic visual direction (and per-tier Acolyte art).
+- App scaffold: **done**, tier reveal + LP reveal (full-screen, `components/ui/forge-reveal.tsx`) and the staking Warding (in-panel, `components/ui/stake-warding.tsx`), all triggering at the right moments with placeholder visuals + silent sound slots.
+- Waiting on you: the six cinematic sounds + the stake-ward sound, the cinematic visual direction, and the per-tier Acolyte art.

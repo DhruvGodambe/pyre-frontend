@@ -40,6 +40,8 @@ import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { ForgeReveal, type RevealData } from "@/components/ui/forge-reveal";
+import { StakeFlame, StakeWarding } from "@/components/ui/stake-warding";
+import { playStakeWard } from "@/lib/sfx";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { USE_MOCK } from "@/lib/config";
 import {
@@ -704,24 +706,51 @@ function StakeRitual({ p }: { p: StakingPosition }) {
   const unstake = useUnstake();
   const amt = parseToken(amount);
 
+  // THE WARDING (staking experience). The fire grows with the amount; a fast
+  // in-panel flourish plays on a successful stake. We capture the totals at click
+  // time so the count-up is correct regardless of refetch timing.
+  const [warding, setWarding] = useState<{ from: number; to: number } | null>(null);
+  const pending = useRef<{ from: number; to: number } | null>(null);
+  const wardedFired = useRef(false);
+  useEffect(() => {
+    if (stake.isSuccess && !wardedFired.current && pending.current) {
+      wardedFired.current = true;
+      setWarding(pending.current);
+      playStakeWard();
+      setAmount("");
+    }
+    if (!stake.isSuccess) wardedFired.current = false;
+  }, [stake.isSuccess]);
+
   if (p.drip) return <DripPanel drip={p.drip} />;
 
   if (p.liquidBalance <= 0n && p.stakedBalance <= 0n) {
     return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn ETH and stop the decay." />;
   }
 
+  // Flame intensity = how much of your spendable $PYRE this stake commits.
+  const intensity =
+    p.liquidBalance > 0n ? toNumber(amt) / toNumber(p.liquidBalance) : amt > 0n ? 1 : 0;
+
+  const onStake = () => {
+    const from = toNumber(p.stakedBalance);
+    pending.current = { from, to: from + toNumber(amt) };
+    stake.mutate(amt);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-3">
       <p className="text-text-3 text-xs">
         Staking locks your $PYRE: it stops decaying and earns ETH, multiplied by your Acolyte&rsquo;s
         stage.
       </p>
+      <StakeFlame intensity={intensity} />
       <div className="space-y-1.5">
         <AmountControls balance={p.liquidBalance} onPick={setAmount} />
         <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <TxButton tx={stake} disabled={amt <= 0n} onClick={() => stake.mutate(amt)} pendingLabel="Staking…">
+        <TxButton tx={stake} disabled={amt <= 0n} onClick={onStake} pendingLabel="Staking…">
           Stake $PYRE
         </TxButton>
         <TxButton
@@ -734,6 +763,10 @@ function StakeRitual({ p }: { p: StakingPosition }) {
           Unstake · 7 days
         </TxButton>
       </div>
+
+      {warding && (
+        <StakeWarding fromTokens={warding.from} toTokens={warding.to} onDone={() => setWarding(null)} />
+      )}
     </div>
   );
 }

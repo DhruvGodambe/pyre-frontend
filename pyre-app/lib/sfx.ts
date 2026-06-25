@@ -79,3 +79,8 @@ export function playForgeTierUp(stage: number, isImmolated = false) {
 export function playLpBurn() {
   playOneShot("/world/audio/sfx/forge-lp-burn.mp3", 0.85);
 }
+
+/** Stake "warding" sound (commit → protection). Softer than the burn stings. */
+export function playStakeWard() {
+  playOneShot("/world/audio/sfx/stake-ward.mp3", 0.7);
+}
