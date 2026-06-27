@@ -96,6 +96,13 @@ export const CODEX: CodexChapter[] = [
         ],
       },
       {
+        heading: "Burn tokens vs Burn LP",
+        paragraphs: [
+          "There are two ways to burn, each its own track with the same four tiers and the same amounts. Burn tokens: burn $PYRE on its own. Burn LP: pair your $PYRE with $ETH and add both to the pool permanently (you cannot withdraw either).",
+          "An LP Acolyte earns +20% more $ETH yield than a plain-burn Acolyte of the same tier, and it is the exclusive LP version: rarer and visibly set apart from plain-burn Acolytes. A deeper commitment, since you also give $ETH and lock it in the pool forever.",
+        ],
+      },
+      {
         paragraphs: [
           "Burning alone earns nothing. The Acolyte multiplies the yield you earn from staking, so the two acts are meant to be done together: stake to earn, burn to multiply.",
           "A fifth mark, the Immolated Acolyte, waits beyond the top tier. The Hall above will tell you how to claim it.",

@@ -170,7 +170,7 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
           style={{ opacity: shown ? 1 : 0, transition: "opacity 600ms ease 600ms" }}
         >
           {isLp ? (
-            <>Your $PYRE and $ETH are bound to the fire forever, <span className="text-text">+20% burn weight</span>.</>
+            <>Your $PYRE and $ETH are bound to the fire forever. This Acolyte earns <span className="text-text">+20% $ETH yield</span>.</>
           ) : prevMult ? (
             <>Yield multiplier <span className="text-text-3">{prevMult}×</span> → <span className="text-brand">{newMult}×</span> on your staked $PYRE.</>
           ) : (

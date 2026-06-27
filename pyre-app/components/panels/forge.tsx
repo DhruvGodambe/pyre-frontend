@@ -212,9 +212,18 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
               That multiplier only applies to <span className="text-text">staked</span> $PYRE, a
               burn on its own earns nothing. Stake first, then burn to multiply it.
             </p>
+            <p>There are two ways to burn, each its own track with the same four tiers:</p>
             <p>
-              <span className="text-text">Burn LP (+20%)</span> pairs your $PYRE with $ETH, adds it
-              to the pool and locks it there forever, a bigger sacrifice, so a bigger bonus.
+              <span className="text-text">Burn tokens</span>: burn $PYRE on its own to forge your
+              Acolyte and climb the tiers.
+            </p>
+            <p>
+              <span className="text-text">Burn LP</span>: pair your $PYRE with $ETH and add both to
+              the pool <span className="text-text">permanently</span> (you can&rsquo;t withdraw
+              either). Same tiers, same amounts, but an LP Acolyte earns{" "}
+              <span className="text-brand">+20% more $ETH yield</span> than a plain-burn one of the
+              same tier, and it&rsquo;s the <span className="text-text">exclusive LP version</span>:
+              rarer and visibly set apart from plain-burn Acolytes.
             </p>
           </Disclosure>
           {a.stage >= 4 ? (
@@ -626,10 +635,22 @@ function BurnRitual({
         <p className="text-danger text-[11px]">An LP burn must pair $ETH with your $PYRE. Enter an $ETH amount.</p>
       )}
       {lp && (
-        <p className="text-text-3 text-[11px]">
-          This adds your $PYRE + $ETH to the pool and <span className="text-text-2">locks it there
-          permanently</span>, you won&rsquo;t get it back.
-        </p>
+        <div className="rounded-md bg-surface-2 px-3 py-2 text-[11px] text-text-3 space-y-1">
+          <p>
+            <span className="text-brand">+20% more $ETH yield</span> than a plain-burn Acolyte of
+            the same tier.
+          </p>
+          <p>
+            Forges the <span className="text-text-2">exclusive LP Acolyte</span>, rarer and distinct
+            from plain-burn ones.
+          </p>
+          <p>Same tiers: burn the same amounts to climb.</p>
+          <p>
+            Your $PYRE + $ETH are added to the pool and{" "}
+            <span className="text-text-2">locked there permanently</span>, you won&rsquo;t get them
+            back.
+          </p>
+        </div>
       )}
 
       {/* GUARDRAIL, burning with nothing staked. */}
