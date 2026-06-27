@@ -89,8 +89,9 @@ export interface MultiplierBoost {
 
 /* --- Hall of the Immolated ---------------------------------------------- */
 export interface ImmolatedPosition {
-  isMember: boolean; // reached stage 4 + min extra burn
-  weight: bigint; // your immolated burn weight
+  isMember: boolean; // has ascended (joined the Immolated)
+  eligible: boolean; // reached the peak by burning at the Forge, can ascend now
+  weight: bigint; // your immolated burn weight (your share of the pool)
   pendingYieldEth: bigint;
   rank: number | null; // your rank among all Immolated
   poolTotalWeight: bigint;

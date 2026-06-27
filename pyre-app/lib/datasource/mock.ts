@@ -17,7 +17,6 @@ import {
   bonfireState,
   pyre,
   WAD,
-  IMMOLATED_MIN_BURN,
   LP_WEIGHT_BONUS,
   POOL_FEE_BPS,
   HOOK_FEE_BPS,
@@ -416,9 +415,13 @@ export class MockDataSource implements DataSource {
     await wait(LATENCY_MS);
     const w = this.world;
     const { stage } = stageFromWeight(w.cumulativeBurnWeight);
-    const isMember = stage >= 4 && w.immolatedWeight >= IMMOLATED_MIN_BURN;
+    // Eligible = reached the peak (Pyre) by burning at the Forge. Member = has
+    // ascended in the Hall (immolatedWeight set to their burn weight).
+    const eligible = stage >= 4;
+    const isMember = w.immolatedWeight > 0n;
     return {
       isMember,
+      eligible,
       weight: w.immolatedWeight,
       pendingYieldEth: w.immolatedPendingEth,
       rank: isMember ? 23 : null,
@@ -701,11 +704,14 @@ export class MockDataSource implements DataSource {
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 
-  async immolatedBurn(_address: Address, amount: bigint): Promise<TxResult> {
+  async ascendImmolated(_address: Address): Promise<TxResult> {
     await wait(TX_MS);
-    if (amount < IMMOLATED_MIN_BURN) return { ok: false, error: "Below minimum burn" };
-    this.world.immolatedWeight += amount;
-    this.world.totalBurned += amount;
+    const { stage } = stageFromWeight(this.world.cumulativeBurnWeight);
+    if (stage < 4) return { ok: false, error: "Not yet at the peak, keep burning at the Forge" };
+    if (this.world.immolatedWeight > 0n) return { ok: false, error: "Already ascended" };
+    // No separate burn (all burning is at the Forge): ascending just enrols you,
+    // your share of the Hall is weighted by your total burn weight.
+    this.world.immolatedWeight = this.world.cumulativeBurnWeight;
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 

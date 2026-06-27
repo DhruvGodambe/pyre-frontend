@@ -213,8 +213,8 @@ export const useUnstake = () =>
   useTx<bigint>((a, amount) => ds().unstake(a, amount), POSITION_KEYS);
 export const useBurnTokens = () =>
   useTx<bigint>((a, amount) => ds().burnTokens(a, amount), POSITION_KEYS);
-export const useImmolatedBurn = () =>
-  useTx<bigint>((a, amount) => ds().immolatedBurn(a, amount), POSITION_KEYS);
+export const useAscendImmolated = () =>
+  useTx((a) => ds().ascendImmolated(a), POSITION_KEYS);
 // mutate(), no args
 export const useClaimDrip = () =>
   useTx((a) => ds().claimDrip(a), POSITION_KEYS);

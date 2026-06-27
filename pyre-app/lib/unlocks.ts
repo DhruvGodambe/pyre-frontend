@@ -90,7 +90,7 @@ export function computeLock(
         : {
             locked: true,
             label: "Locked",
-            hint: "Reach the Pyre tier, then burn into the Hall.",
+            hint: "Burn past the Pyre tier at the Forge to ascend to the Immolated.",
             cta: { to: "forge", label: "Climb tiers at the Forge" },
           };
     default:

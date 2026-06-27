@@ -94,7 +94,9 @@ export interface DataSource {
   burnTokens(address: Address, amount: bigint): Promise<TxResult>;
   burnLP(address: Address, ethAmount: bigint, pyreAmount: bigint): Promise<TxResult>;
   claimStakingRewards(address: Address): Promise<TxResult>;
-  immolatedBurn(address: Address, amount: bigint): Promise<TxResult>;
+  /** Ascend to the Immolated once eligible (reached the peak by burning at the
+      Forge). No separate burn, all burning happens at the Forge. */
+  ascendImmolated(address: Address): Promise<TxResult>;
   claimImmolatedYield(address: Address): Promise<TxResult>;
   /** Approve PYRE to Permit2 (sell side). No-op/native on the buy side. */
   approveToken(address: Address): Promise<TxResult>;

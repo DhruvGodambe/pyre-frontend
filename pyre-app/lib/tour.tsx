@@ -91,13 +91,13 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
         preText: "This is where you'll stake your $PYRE. That stops decay and starts earning you ETH.",
       },
       {
-        text: "Then burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
-        preText: "Then you'll burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
+        text: "Then burn $PYRE here to create your Acolyte NFT, which multiplies that ETH yield up to 3×.",
+        preText: "Then you'll burn $PYRE here to create your Acolyte NFT, which multiplies that ETH yield up to 3×.",
         art: "/world/acolytes/acolyte.png",
       },
       {
-        text: "Your Acolyte climbs four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
-        preText: "Your Acolyte will climb four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
+        text: "Your Acolyte climbs four tiers as you burn more, all right here at the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Keep burning beyond Pyre and you ascend to the rarest form of all, the Immolated Acolyte, the highest rank in the village. Its Hall sits above.",
+        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Keep burning beyond Pyre and you'll ascend to the rarest form of all, the Immolated Acolyte, the highest rank in the village. Its Hall sits above.",
       },
     ],
   },
@@ -144,8 +144,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     outside: { text: "For top holders: the Hall of the Immolated." },
     inside: [
       {
-        text: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
-        preText: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
+        text: "When your burning at the Forge lifts you past Pyre into the Immolated, this Hall opens to you: ascend here to take the highest rank in the village, with the strongest pull on the yield.",
+        preText: "When your burning at the Forge lifts you past Pyre into the Immolated, this Hall opens to you: ascend here to take the highest rank in the village, with the strongest pull on the yield.",
       },
     ],
   },

@@ -138,7 +138,7 @@ export class ChainDataSource implements DataSource {
   burnTokens(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
   burnLP(_a: Address, _e: bigint, _p: bigint): Promise<TxResult> { return NOT_WIRED(); }
   claimStakingRewards(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
-  immolatedBurn(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
+  ascendImmolated(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
   claimImmolatedYield(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
   approveToken(_a: Address): Promise<TxResult> { return NOT_WIRED(); } // → PyreToken.approve(permit2)
   swap(_a: Address, _p: SwapParams): Promise<TxResult> { return NOT_WIRED(); } // → Universal Router.execute

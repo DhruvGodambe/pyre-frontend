@@ -310,15 +310,33 @@ export function VillageShell() {
                       : undefined
                   }
                 >
-                  <Image
-                    src={asset(b.art)}
-                    alt={b.name}
-                    width={1484}
-                    height={1060}
-                    sizes="30vw"
-                    className="w-full h-auto select-none"
-                    draggable={false}
-                  />
+                  {/* The Bonfire is the living center: an alpha (transparent)
+                      WebM loops in place of the static cutout. Same composition,
+                      so it sits on the map exactly like the other art. The static
+                      webp is the poster (instant first frame + fallback). */}
+                  {b.id === "bonfire" ? (
+                    <video
+                      src={asset("/world/buildings/bonfire.webm")}
+                      poster={asset(b.art)}
+                      width={1484}
+                      height={1060}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-auto select-none pointer-events-none"
+                    />
+                  ) : (
+                    <Image
+                      src={asset(b.art)}
+                      alt={b.name}
+                      width={1484}
+                      height={1060}
+                      sizes="30vw"
+                      className="w-full h-auto select-none"
+                      draggable={false}
+                    />
+                  )}
                 </span>
               ) : (
                 /* Art not delivered / pulled, a compact labelled signpost. */

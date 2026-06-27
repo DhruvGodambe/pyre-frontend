@@ -152,7 +152,21 @@ export function MobileShell() {
                 }}
                 aria-label={`${b.name}, ${b.tagline}`}
               >
-                {b.art ? (
+                {b.id === "bonfire" ? (
+                  /* The living center: alpha (transparent) WebM loop, same
+                     composition as the static cutout. Poster = static webp. */
+                  <video
+                    src={asset("/world/buildings/bonfire.webm")}
+                    poster={b.art ? asset(b.art) : undefined}
+                    width={1484}
+                    height={1060}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-auto select-none pointer-events-none [filter:drop-shadow(0_6px_8px_rgba(0,0,0,0.55))]"
+                  />
+                ) : b.art ? (
                   <Image
                     src={asset(b.art)}
                     alt={b.name}
