@@ -199,8 +199,8 @@ function computePoolQuote(p: SwapQuoteParams): SwapQuote {
         feeTier: POOL.feeTier,
         isDynamicFee: POOL.isDynamicFee,
         hook: MOCK_HOOK,
-        tokenIn: isBuy ? "ETH" : "PYRE",
-        tokenOut: isBuy ? "PYRE" : "ETH",
+        tokenIn: isBuy ? "$ETH" : "PYRE",
+        tokenOut: isBuy ? "PYRE" : "$ETH",
       },
     ],
     gasEstimate: toWei(gasEth),
@@ -403,7 +403,7 @@ export class MockDataSource implements DataSource {
       note: string
     ): ActivityEvent => ({ id: `me-${i}`, kind, address, amount, note, at: now - i * 5_400_000 });
     return [
-      mk(1, "claim", w.pendingRewardsEth, "claimed ETH yield"),
+      mk(1, "claim", w.pendingRewardsEth, "claimed $ETH yield"),
       mk(2, "burn", pyre(40_000), "burned $PYRE"),
       mk(3, "stake", pyre(180_000), "staked $PYRE"),
       mk(4, "mint", pyre(10_000), "EMBER minted"),
@@ -451,8 +451,8 @@ export class MockDataSource implements DataSource {
       burn: "burned $PYRE",
       stake: "staked $PYRE",
       mint: "FLAME unlocked",
-      claim: "claimed ETH yield",
-      swap: "swapped ETH → $PYRE",
+      claim: "claimed $ETH yield",
+      swap: "swapped $ETH → $PYRE",
     };
     const now = Date.now();
     return Array.from({ length: 20 }, (_, i) => {
@@ -685,10 +685,10 @@ export class MockDataSource implements DataSource {
   async burnLP(_address: Address, ethAmount: bigint, pyreAmount: bigint): Promise<TxResult> {
     await wait(TX_MS);
     // An LP burn pairs $PYRE WITH ETH, both are required and both are spent.
-    if (ethAmount <= 0n) return { ok: false, error: "LP burn requires ETH paired with your $PYRE" };
+    if (ethAmount <= 0n) return { ok: false, error: "LP burn requires $ETH paired with your $PYRE" };
     if (pyreAmount <= 0n) return { ok: false, error: "Enter a $PYRE amount" };
     if (pyreAmount > this.world.liquid) return { ok: false, error: "Insufficient $PYRE balance" };
-    if (ethAmount > this.world.ethBalance) return { ok: false, error: "Insufficient ETH balance" };
+    if (ethAmount > this.world.ethBalance) return { ok: false, error: "Insufficient $ETH balance" };
     this.world.liquid -= pyreAmount;
     this.world.ethBalance -= ethAmount;
     const weight = BigInt(Math.round(Number(pyreAmount) * LP_WEIGHT_BONUS));
@@ -742,7 +742,7 @@ export class MockDataSource implements DataSource {
     const payIn = quote.input.amount;
     const getOut = quote.output.amount;
     if (params.direction === "buy") {
-      if (payIn > this.world.ethBalance) return { ok: false, error: "Insufficient ETH balance" };
+      if (payIn > this.world.ethBalance) return { ok: false, error: "Insufficient $ETH balance" };
       this.world.ethBalance -= payIn;
       this.world.liquid += getOut;
     } else {

@@ -94,7 +94,7 @@ export function AmberVaultPanel() {
                       <div className="grid grid-cols-2 gap-4 pt-2 border-t border-surface-3/60">
                         <Stat label="Liquid balance" value={formatToken(p.liquidBalance)} sub={decayLabel} />
                         <Stat label="Staked (safe)" value={formatToken(p.stakedBalance)} />
-                        <Stat label="Pending ETH" value={formatEth(p.pendingRewardsEth)} accent />
+                        <Stat label="Pending $ETH" value={formatEth(p.pendingRewardsEth)} accent />
                         {p.drip && (
                           <Stat
                             label="Drip returning"
@@ -150,7 +150,7 @@ export function AmberVaultPanel() {
 
 /* The pre-forge state. The most-visited empty state in the app, and the top of
    the funnel, so it SELLS the loop instead of dead-ending: stake $PYRE to earn
-   ETH, burn $PYRE to forge your Acolyte and multiply that yield (up to 3×). The
+   $ETH, burn $PYRE to forge your Acolyte and multiply that yield (up to 3×). The
    primary CTA adapts to whether they hold any $PYRE yet. */
 function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
   const emberTarget = STAGES[1].threshold; // 10,000 burned forges the first Acolyte
@@ -165,7 +165,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
         </div>
         <h3 className="font-display text-2xl text-brand">You don&rsquo;t have an Acolyte yet</h3>
         <p className="text-text-2 text-sm max-w-sm mx-auto">
-          Stake $PYRE to earn ETH yield and protect it from decay. Then burn $PYRE to create your
+          Stake $PYRE to earn $ETH yield and protect it from decay. Then burn $PYRE to create your
           Acolyte, an NFT that multiplies that yield, rising tier by tier from Ember Acolyte up to
           Pyre Acolyte (3×). Unstaked $PYRE only decays.
         </p>
@@ -174,7 +174,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
       {/* The loop, at a glance */}
       <div className="grid grid-cols-3 gap-2">
         <Step n={1} label="Buy $PYRE" done={hasPyre} />
-        <Step n={2} label="Stake · earn ETH" />
+        <Step n={2} label="Stake · earn $ETH" />
         <Step n={3} label="Burn · ×3 yield" />
       </div>
 
@@ -194,7 +194,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
       <div className="space-y-2">
         {hasPyre ? (
           <>
-            <NavCta to="forge" tab="stake">Stake to start earning ETH</NavCta>
+            <NavCta to="forge" tab="stake">Stake to start earning $ETH</NavCta>
             <NavCta to="forge" tab="burn" variant="ghost">Burn to forge your Acolyte</NavCta>
           </>
         ) : (

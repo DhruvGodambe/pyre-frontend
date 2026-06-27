@@ -44,7 +44,7 @@ export function ObservatoryPanel() {
               </Badge>
             </div>
 
-            {/* Reward pool, ETH gathered from fees and waiting for the next
+            {/* Reward pool, $ETH gathered from fees and waiting for the next
                 distribution to stakers + Acolytes. */}
             <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
               <div>
@@ -65,7 +65,7 @@ export function ObservatoryPanel() {
               <Stat label="Staking ratio" value={formatPercent(s.stakingRatio)} />
               <Stat label="Active Acolytes" value={s.activeAcolytes.toLocaleString()} />
               <Stat label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />
-              <Stat label="ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />
+              <Stat label="$ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />
             </div>
 
             {/* Era countdown */}

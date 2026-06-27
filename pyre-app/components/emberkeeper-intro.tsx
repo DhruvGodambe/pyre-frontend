@@ -73,13 +73,13 @@ const TOUR_LINE: Record<BuildingId, string> = {
   bonfire:
     "The heart of it all. Every $PYRE fed to the fire feeds this flame. Watch the burn climb, live.",
   forge:
-    "Where you act. Stake your $PYRE to earn ETH yield and shield it from the decay, then burn $PYRE to forge your Pyre Acolyte, which multiplies that yield up to 3×.",
+    "Where you act. Stake your $PYRE to earn $ETH yield and shield it from the decay, then burn $PYRE to forge your Pyre Acolyte, which multiplies that yield up to 3×.",
   vault:
     "Your own hold. Your Pyre Acolyte, your balances, your yield, your standing in the fire. Everything here is yours.",
   observatory:
     "The watchtower. Read the whole protocol at a glance: supply, decay, burns, yield. No wallet needed to look.",
   exchange:
-    "The trading floor. Swap ETH and $PYRE, every fee shown to you honestly. Nothing is hidden in the dark.",
+    "The trading floor. Swap $ETH and $PYRE, every fee shown to you honestly. Nothing is hidden in the dark.",
   market:
     "The bazaar. Browse and claim the Pyre Acolytes that other wallets have forged in the flame.",
   immolated:
@@ -106,7 +106,7 @@ const SCENES: Scene[] = [
     kind: "lore",
     title: "Welcome to PYRE.",
     body:
-      "PYRE is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn ETH yield and level up your NFT.",
+      "PYRE is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn $ETH yield and level up your NFT.",
   },
   {
     kind: "lore",

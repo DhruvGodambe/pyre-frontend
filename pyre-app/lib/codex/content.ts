@@ -33,14 +33,14 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "PYRE is a token built around one act: the burn. Tokens that sit idle slowly decay, returning to the fire. Tokens you commit to the flame work for you, earning real ETH yield and forging an Acolyte that grows stronger the more you give.",
+          "PYRE is a token built around one act: the burn. Tokens that sit idle slowly decay, returning to the fire. Tokens you commit to the flame work for you, earning real $ETH yield and forging an Acolyte that grows stronger the more you give.",
           "The village you are standing in is the protocol made visible. Every building is one part of the system. Walk it, and you understand it.",
         ],
       },
       {
         heading: "The two acts",
         bullets: [
-          "Stake: lock your $PYRE to earn ETH yield and stop it from decaying.",
+          "Stake: lock your $PYRE to earn $ETH yield and stop it from decaying.",
           "Burn: send $PYRE into the fire to forge and level your Acolyte, which multiplies your yield.",
         ],
       },
@@ -80,13 +80,13 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "Staking",
         paragraphs: [
-          "Stake your $PYRE at the Forge and two things happen at once: your tokens stop decaying, and they begin earning you a share of the protocol's ETH yield.",
+          "Stake your $PYRE at the Forge and two things happen at once: your tokens stop decaying, and they begin earning you a share of the protocol's $ETH yield.",
         ],
       },
       {
         heading: "Burning, and your Acolyte",
         paragraphs: [
-          "Burn $PYRE and you forge an Acolyte, a living NFT that is the mark of what you have given. The more you burn, the higher its tier, and the more your ETH yield is multiplied.",
+          "Burn $PYRE and you forge an Acolyte, a living NFT that is the mark of what you have given. The more you burn, the higher its tier, and the more your $ETH yield is multiplied.",
         ],
         bullets: [
           "Ember Acolyte, 10,000 burned, 1x yield",
@@ -111,7 +111,7 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "The Vault is your own ledger: your Acolyte and its tier, your balances, your staked $PYRE, and the ETH yield waiting to be claimed.",
+          "The Vault is your own ledger: your Acolyte and its tier, your balances, your staked $PYRE, and the $ETH yield waiting to be claimed.",
           "It is the quiet center of your game, with quick paths back to the Forge to stake or burn more.",
         ],
       },
@@ -125,7 +125,7 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "From the Observatory you read the state of the entire protocol: total supply, the rate of decay, total burned, and the ETH yield flowing to stakers.",
+          "From the Observatory you read the state of the entire protocol: total supply, the rate of decay, total burned, and the $ETH yield flowing to stakers.",
           "No wallet is needed to look. It is the honest window on the system, open to anyone deciding whether to step in.",
         ],
       },
@@ -134,12 +134,12 @@ export const CODEX: CodexChapter[] = [
   {
     id: "exchange",
     title: "The Grand Exchange",
-    tagline: "Trade $PYRE and ETH",
+    tagline: "Trade $PYRE and $ETH",
     building: "exchange",
     sections: [
       {
         paragraphs: [
-          "The Grand Exchange is where $PYRE and ETH are swapped, built directly on Uniswap v4. Every fee is shown before you confirm, nothing is hidden in the trade.",
+          "The Grand Exchange is where $PYRE and $ETH are swapped, built directly on Uniswap v4. Every fee is shown before you confirm, nothing is hidden in the trade.",
         ],
       },
       {
@@ -176,7 +176,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The reward",
         paragraphs: [
-          "The Immolated share a dedicated 25% pool of the protocol's ETH yield, split by burn weight. The more you have given to the Hall, the larger your share. It is the deepest commitment in the village, and it pays the most.",
+          "The Immolated share a dedicated 25% pool of the protocol's $ETH yield, split by burn weight. The more you have given to the Hall, the larger your share. It is the deepest commitment in the village, and it pays the most.",
         ],
       },
     ],
@@ -204,8 +204,8 @@ export const CODEX: CodexChapter[] = [
         heading: "The flow",
         bullets: [
           "Supply shrinks over time: decay and burns both remove $PYRE permanently.",
-          "Stakers earn ETH yield; Acolytes multiply that yield up to 3x.",
-          "The Immolated draw from a separate 25% ETH pool.",
+          "Stakers earn $ETH yield; Acolytes multiply that yield up to 3x.",
+          "The Immolated draw from a separate 25% $ETH pool.",
         ],
       },
       {
@@ -254,7 +254,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "Do I have to burn?",
         paragraphs: [
-          "No. You can stake and earn ETH yield without ever burning. Burning is how you multiply that yield by forging an Acolyte. Many do both.",
+          "No. You can stake and earn $ETH yield without ever burning. Burning is how you multiply that yield by forging an Acolyte. Many do both.",
         ],
       },
       {

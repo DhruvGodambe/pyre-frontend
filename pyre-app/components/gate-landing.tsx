@@ -28,7 +28,7 @@ const LORE = [
   {
     title: "Welcome to PYRE.",
     body:
-      "PYRE is built around one idea: $PYRE is a token made to be burned. Stake and burn it to earn ETH yield and level up your Acolyte NFT.",
+      "PYRE is built around one idea: $PYRE is a token made to be burned. Stake and burn it to earn $ETH yield and level up your Acolyte NFT.",
   },
   {
     title: "You’re early.",

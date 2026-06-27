@@ -25,11 +25,11 @@ export function formatToken(
   }).format(n);
 }
 
-/** ETH amount (18 decimals) → "0.318 ETH". */
+/** ETH amount (18 decimals) → "0.318 $ETH". (Brand style: ETH is shown as $ETH.) */
 export function formatEth(value: bigint, maxFrac = 4): string {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: maxFrac }).format(
     toNumber(value)
-  )} ETH`;
+  )} $ETH`;
 }
 
 /** 12.5 → "$12.50"; 1_284_500 → "$1.28M". Small values keep cents. */

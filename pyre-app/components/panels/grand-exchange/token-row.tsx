@@ -12,7 +12,7 @@ import { formatToken, formatEth, formatUsd } from "@/lib/format";
 export function fmtTokenAmount(token: TokenInfo, amount: bigint): string {
   if (amount === 0n) return "0";
   return token.isNative
-    ? formatEth(amount, 6).replace(" ETH", "")
+    ? formatEth(amount, 6).replace(" $ETH", "")
     : formatToken(amount, { maxFrac: 2, compact: false });
 }
 

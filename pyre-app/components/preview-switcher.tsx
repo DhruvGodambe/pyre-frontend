@@ -12,7 +12,7 @@ import type { Persona } from "@/lib/datasource";
 
 const OPTIONS: { id: Persona; label: string; hint: string }[] = [
   { id: "fresh", label: "Fresh wallet (testing)", hint: "Brand-new at launch: 0 $PYRE, all buildings locked until you buy" },
-  { id: "newcomer", label: "New wallet", hint: "Test wallet: 1M $PYRE + 100 ETH to burn up the tiers" },
+  { id: "newcomer", label: "New wallet", hint: "Test wallet: 1M $PYRE + 100 $ETH to burn up the tiers" },
   { id: "burner", label: "Burning", hint: "Mid-progression: FLAME, staked, climbing" },
   { id: "veteran", label: "Immolated", hint: "Everything unlocked: PYRE stage, Hall member" },
 ];

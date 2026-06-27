@@ -92,8 +92,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     },
     inside: [
       {
-        text: "Swap your ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
-        preText: "You'll swap your ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
+        text: "Swap your $ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
+        preText: "You'll swap your $ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
       },
     ],
   },
@@ -105,12 +105,12 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     },
     inside: [
       {
-        text: "First, stake your $PYRE here. That stops it decaying and starts earning you ETH.",
-        preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you ETH.",
+        text: "First, stake your $PYRE here. That stops it decaying and starts earning you $ETH.",
+        preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you $ETH.",
       },
       {
-        text: "Then burn $PYRE here to forge your Acolyte NFT, which multiplies that ETH yield up to 3×.",
-        preText: "Then you'll burn $PYRE here to forge your Acolyte NFT, which multiplies that ETH yield up to 3×.",
+        text: "Then burn $PYRE here to forge your Acolyte NFT, which multiplies that $ETH yield up to 3×.",
+        preText: "Then you'll burn $PYRE here to forge your Acolyte NFT, which multiplies that $ETH yield up to 3×.",
         art: "/world/acolytes/acolyte.png",
       },
       {
@@ -206,8 +206,8 @@ export interface TourBeat {
 /* The opening establishing shot: the camera stays wide on the whole kingdom while
    the Emberkeeper sets the scene, before the first zoom to the Bonfire. */
 const OVERVIEW_LINE: TourLine = {
-  text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn ETH yield and raise your Acolyte NFT. Come, let me show you around, building by building.",
-  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn your place before the gates open.",
+  text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Come, let me show you around, building by building.",
+  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn your place before the gates open.",
 };
 
 /* Build the whole walk for the current launch phase. Pre-launch beats speak in

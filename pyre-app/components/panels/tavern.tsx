@@ -525,7 +525,7 @@ const QUIZ: { q: string; options: string[]; answer: number }[] = [
   {
     q: "What happens to the $PYRE you stake?",
     options: [
-      "It earns ETH yield and is shielded from decay",
+      "It earns $ETH yield and is shielded from decay",
       "It is burned permanently",
       "Nothing, it just sits in your wallet",
     ],

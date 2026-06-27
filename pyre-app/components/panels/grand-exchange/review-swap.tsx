@@ -141,11 +141,11 @@ export function ReviewSwap({
               {boughtPyre ? (
                 <>
                   <p className="text-text-2 text-xs">
-                    Now stake your $PYRE to earn ETH yield, then burn to forge an Acolyte and
+                    Now stake your $PYRE to earn $ETH yield, then burn to forge an Acolyte and
                     multiply it.
                   </p>
                   <Button onClick={goStake} className="w-full">
-                    Stake it to start earning ETH
+                    Stake it to start earning $ETH
                   </Button>
                   <Button onClick={onClose} variant="ghost" className="w-full">
                     Done

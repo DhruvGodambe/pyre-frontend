@@ -4,7 +4,7 @@
    THE WARDING, the staking experience  (commit → protection)
    ----------------------------------------------------------------------------
    Staking is the opposite pole to burning: not destruction for power, but
-   giving your $PYRE to the fire's KEEPING, it stops decaying and earns ETH.
+   giving your $PYRE to the fire's KEEPING, it stops decaying and earns $ETH.
    So the act should feel like warding/committing, distinct from the burn
    cinematic. Two pieces:
 
@@ -57,7 +57,7 @@ export function StakeFlame({ intensity }: { intensity: number }) {
 
 /** THE HEARTH, a picture of your stake instead of a row of numbers. Shows the
     kept fire (grows with what's protected), a protection gauge (staked = warded
-    gold, unstaked = exposed + decaying), and pending ETH. As you type a stake
+    gold, unstaked = exposed + decaying), and pending $ETH. As you type a stake
     amount, the gauge previews the slice moving from exposed → warded and the fire
     grows with it. */
 export function StakeHearth({
@@ -127,11 +127,11 @@ export function StakeHearth({
         </span>
       </div>
 
-      {/* pending ETH, the reward filling up */}
+      {/* pending $ETH, the reward filling up */}
       <div className="mt-2.5 flex items-center justify-center gap-1.5 border-t border-surface-3/40 pt-2 text-xs">
         <span className="h-2 w-2 rounded-full bg-brand" style={{ animation: "hearth-pending 1.4s ease-in-out infinite" }} />
         <span className="text-text-3">Pending reward</span>
-        <span className="tabular text-brand">{formatEth(pendingEth)} ETH</span>
+        <span className="tabular text-brand">{formatEth(pendingEth)}</span>
       </div>
 
       <style>{`
@@ -236,7 +236,7 @@ export function StakeWarding({
         <div className="mt-1 font-display text-3xl text-brand tabular">
           {Math.round(val).toLocaleString()}
         </div>
-        <div className="text-text-3 text-[11px] uppercase tracking-widest">$PYRE warded · earning ETH</div>
+        <div className="text-text-3 text-[11px] uppercase tracking-widest">$PYRE warded · earning $ETH</div>
         <p className="mt-1.5 text-sm italic text-text-2">
           <span className="not-italic text-brand">Emberkeeper:</span> &ldquo;Your fire is kept.&rdquo;
         </p>

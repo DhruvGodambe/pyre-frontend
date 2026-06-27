@@ -11,7 +11,7 @@
 
      • BURN  : burn $PYRE → forge/level your Acolyte = a yield MULTIPLIER (1×→3×)
        on your STAKED $PYRE. A burn earns nothing on its own.
-     • STAKE : stake $PYRE → it stops decaying and earns ETH.
+     • STAKE : stake $PYRE → it stops decaying and earns $ETH.
 
    The Forge interior gets a WIDE overlay (buildings.tsx → wide) so the two boxes
    have room. Deep-links (Vault → "Burn to forge") scroll to + flash the box.
@@ -185,14 +185,14 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
         <div className="grid items-start gap-4 sm:grid-cols-2 lg:col-start-1 lg:row-start-2">
         {/* STAKE */}
         <Card id="forge-stake" highlight={flash === "stake"} className="space-y-3">
-          <BoxHeader glyph="◈" title="Stake" sub="Earn ETH · stop the decay" />
+          <BoxHeader glyph="◈" title="Stake" sub="Earn $ETH · stop the decay" />
           <Disclosure summary="What does staking do?">
             <p>
               Unstaked $PYRE slowly <span className="text-danger">decays</span>. Staking locks it
-              safe from decay and earns you <span className="text-text">ETH</span>.
+              safe from decay and earns you <span className="text-text">$ETH</span>.
             </p>
             <p>
-              Your ETH yield is multiplied by your Acolyte&rsquo;s stage, so staking is what your
+              Your $ETH yield is multiplied by your Acolyte&rsquo;s stage, so staking is what your
               burns actually pay off on. Unstaking returns your $PYRE slowly over 7 days.
             </p>
           </Disclosure>
@@ -213,7 +213,7 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
               burn on its own earns nothing. Stake first, then burn to multiply it.
             </p>
             <p>
-              <span className="text-text">Burn LP (+20%)</span> pairs your $PYRE with ETH, adds it
+              <span className="text-text">Burn LP (+20%)</span> pairs your $PYRE with $ETH, adds it
               to the pool and locks it there forever, a bigger sacrifice, so a bigger bonus.
             </p>
           </Disclosure>
@@ -374,7 +374,7 @@ function HowItWorks() {
   const steps = [
     {
       t: "Stake your $PYRE",
-      d: "Staking stops it from decaying and starts earning you ETH.",
+      d: "Staking stops it from decaying and starts earning you $ETH.",
     },
     {
       t: "Burn $PYRE to forge your Acolyte",
@@ -382,7 +382,7 @@ function HowItWorks() {
     },
     {
       t: "The multiplier only boosts STAKED $PYRE",
-      d: "A higher Acolyte multiplies the ETH yield on what you've staked. Burn with nothing staked and there's nothing to multiply, so stake first, then burn.",
+      d: "A higher Acolyte multiplies the $ETH yield on what you've staked. Burn with nothing staked and there's nothing to multiply, so stake first, then burn.",
     },
   ];
   return (
@@ -411,7 +411,7 @@ function HowItWorks() {
       </ol>
       <p className="border-t border-surface-3/50 px-4 py-2 text-[11px] text-text-3">
         Burning is permanent. <span className="text-text-2">Burn LP (+20%)</span> pairs your $PYRE
-        with ETH and locks it in the pool forever for a larger bonus.
+        with $ETH and locks it in the pool forever for a larger bonus.
       </p>
     </details>
   );
@@ -477,7 +477,7 @@ function compactPyre(n: number): string {
   return n >= 1000 ? `${n / 1000}K` : `${n}`;
 }
 
-/* The reward: claim the ETH your stake has earned. */
+/* The reward: claim the $ETH your stake has earned. */
 function ClaimRow({ pending }: { pending: bigint }) {
   const claim = useClaimStakingRewards();
   if (pending <= 0n) return null;
@@ -594,8 +594,8 @@ function BurnRitual({
   // $PYRE. With nothing staked, a burn (especially a permanent LP burn) earns
   // nothing, so we warn loudly and require an explicit acknowledgement.
   const noStake = p.stakedBalance <= 0n;
-  // An LP burn pairs $PYRE WITH ETH, both are required. Burning "LP" with zero
-  // ETH is just a plain burn and must be blocked.
+  // An LP burn pairs $PYRE WITH $ETH, both are required. Burning "LP" with zero
+  // $ETH is just a plain burn and must be blocked.
   const ethAmt = parseToken(eth);
   const lpMissingEth = lp && ethAmt <= 0n;
   const blocked = amt <= 0n || lpMissingEth || (noStake && !ack);
@@ -621,13 +621,13 @@ function BurnRitual({
         <AmountControls balance={p.liquidBalance} onPick={setAmount} />
         <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
       </div>
-      {lp && <Field label="Paired ETH" value={eth} onChange={setEth} suffix="ETH" />}
+      {lp && <Field label="Paired $ETH" value={eth} onChange={setEth} suffix="$ETH" />}
       {lp && lpMissingEth && amt > 0n && (
-        <p className="text-danger text-[11px]">An LP burn must pair ETH with your $PYRE. Enter an ETH amount.</p>
+        <p className="text-danger text-[11px]">An LP burn must pair $ETH with your $PYRE. Enter an $ETH amount.</p>
       )}
       {lp && (
         <p className="text-text-3 text-[11px]">
-          This adds your $PYRE + ETH to the pool and <span className="text-text-2">locks it there
+          This adds your $PYRE + $ETH to the pool and <span className="text-text-2">locks it there
           permanently</span>, you won&rsquo;t get it back.
         </p>
       )}
@@ -704,7 +704,7 @@ function StakeRitual({ p, decay }: { p: StakingPosition; decay?: string }) {
   if (p.drip) return <DripPanel drip={p.drip} />;
 
   if (p.liquidBalance <= 0n && p.stakedBalance <= 0n) {
-    return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn ETH and stop the decay." />;
+    return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn $ETH and stop the decay." />;
   }
 
   const onStake = () => {
@@ -716,7 +716,7 @@ function StakeRitual({ p, decay }: { p: StakingPosition; decay?: string }) {
   return (
     <div className="relative space-y-3">
       <p className="text-text-3 text-xs">
-        Staking locks your $PYRE: it stops decaying and earns ETH, multiplied by your Acolyte&rsquo;s
+        Staking locks your $PYRE: it stops decaying and earns $ETH, multiplied by your Acolyte&rsquo;s
         stage.
       </p>
       <StakeHearth
@@ -811,6 +811,6 @@ function floorLine(a: Acolyte, p: StakingPosition): string {
   if (!a.exists) return "Burn $PYRE to create your Acolyte NFT. 10,000 unlocks the first tier.";
   if (a.stage >= 4) return "You've reached Pyre, the top tier. Nicely done.";
   if (p.stakedBalance <= 0n)
-    return "Your Acolyte earns nothing while your $PYRE is unstaked. Stake it to start earning ETH.";
+    return "Your Acolyte earns nothing while your $PYRE is unstaked. Stake it to start earning $ETH.";
   return `You're at ${a.stageName}. Burn more to reach ${STAGES[Math.min(4, a.stage + 1) as Stage].name}. The top tier is Pyre (3× yield).`;
 }

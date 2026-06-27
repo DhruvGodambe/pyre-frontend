@@ -152,7 +152,7 @@ export const TOKENS: { pyre: TokenInfo; eth: TokenInfo } = {
     isNative: false,
   },
   eth: {
-    symbol: "ETH",
+    symbol: "$ETH", // brand style: ETH is shown as $ETH everywhere
     name: "Ether",
     address: null,
     decimals: 18,
