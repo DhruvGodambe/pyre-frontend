@@ -10,6 +10,7 @@ import { IdentityProvider } from "./identity";
 import { NavigationProvider } from "./navigation";
 import { PreviewProvider } from "./preview";
 import { TourProvider } from "./tour";
+import { CodexProvider } from "./codex";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -29,7 +30,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <IdentityProvider>
           <NavigationProvider>
             <PreviewProvider>
-              <TourProvider>{children}</TourProvider>
+              <TourProvider>
+                <CodexProvider>{children}</CodexProvider>
+              </TourProvider>
             </PreviewProvider>
           </NavigationProvider>
         </IdentityProvider>

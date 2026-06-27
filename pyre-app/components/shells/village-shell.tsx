@@ -17,6 +17,7 @@ import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildin
 import { WorldLedger } from "@/components/world-hud";
 import { ImageButton } from "@/components/ui/image-button";
 import { BuildingPanel } from "@/components/ui/sealed-preview";
+import { CodexButton, CodexRiteLink } from "@/components/codex";
 import { GateLanding } from "@/components/gate-landing";
 import { BuildingAudio } from "@/components/world-audio";
 import { TourNarration } from "@/components/tour-ui";
@@ -157,7 +158,12 @@ export function VillageShell() {
   useEffect(() => {
     if (!tour.active) return;
     if (tour.beat?.phase === "inside" && tour.beat.building) {
-      setView({ id: tour.beat.building, mode: "inside" });
+      const id = tour.beat.building;
+      // Stepping inside during the tour plays the same door SFX as a normal Enter
+      // (mixes over the dimmed ambience bed), so entering feels identical. Only
+      // buildings you actually walk into through a door (those with an exterior).
+      if (BUILDING_BY_ID[id].exterior) playDoor(id);
+      setView({ id, mode: "inside" });
     } else {
       setView((v) => (v?.mode === "inside" ? null : v));
     }
@@ -189,8 +195,9 @@ export function VillageShell() {
       </header>
 
       {/* Your standing, top-right: one box with identity, disconnect, and the
-          key personal numbers (rites, yield, Acolyte, staked, drip). */}
-      {awake && (
+          key personal numbers (rites, yield, Acolyte, staked, drip). Hidden during
+          the tour so it can't be used to divert off the guided walk. */}
+      {awake && !tour.active && (
         <div className="absolute right-4 top-4 z-30">
           <WorldLedger />
         </div>
@@ -254,10 +261,13 @@ export function VillageShell() {
               key={b.id}
               onClick={() => clickBuilding(b.id)}
               /* Base-anchored: the ground point (x/y) sits at the building's
-                 footing. Depth-sorted by y so nearer buildings draw in front. */
+                 footing. Depth-sorted by y so nearer buildings draw in front.
+                 During the tour the buildings go pointer-events-none, so no hover
+                 glow / nameplate / cursor can distract from the guided walk (the
+                 tour's own focus glow is an inline filter, so it still shows). */
               className={`absolute group focus:outline-none transition-opacity duration-base ${
                 tourDim ? "opacity-20" : "opacity-100"
-              }`}
+              } ${tour.active ? "pointer-events-none" : ""}`}
               style={{
                 left: `${lay.x}%`,
                 top: `${lay.y}%`,
@@ -300,10 +310,15 @@ export function VillageShell() {
               )}
 
               {/* Nameplate, above the building. Always shown for the dormant
-                  Gate and for placeholders; otherwise on hover. */}
+                  Gate and for placeholders; otherwise on hover. Hidden entirely
+                  during the tour so nothing competes with the narration. */}
               <span
                 className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1 whitespace-nowrap rounded-md bg-bg/80 px-2.5 py-1 backdrop-blur-sm transition-opacity duration-fast ${
-                  gatePrompt || !b.art ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  tour.active
+                    ? "opacity-0"
+                    : gatePrompt || !b.art
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100"
                 }`}
               >
                 <span className="block font-display text-brand text-base leading-none text-center">
@@ -391,6 +406,19 @@ export function VillageShell() {
           />
         )}
 
+      {/* TOUR, outside beat: show the building's full exterior SCENE (with its slow
+          arrival zoom) as the establishing shot under the narration, so the tour
+          shows off the exteriors before stepping inside. Keyed per building so the
+          zoom-in replays at each stop. Buildings with no exterior (Bonfire/Gate)
+          fall back to the map camera. */}
+      {tour.active &&
+        tour.beat?.phase === "outside" &&
+        !tour.beat.overview &&
+        tour.beat.building &&
+        BUILDING_BY_ID[tour.beat.building].exterior && (
+          <ExteriorScene key={tour.beat.building} id={tour.beat.building} tourMode />
+        )}
+
       {/* World + building music. The village world has its OWN theme that plays
           while you roam the map; opening a building switches to that building's
           track, and leaving it returns to the world theme. Skipped during the
@@ -441,6 +469,10 @@ export function VillageShell() {
           <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={150} />
         </div>
       )}
+
+      {/* The Ember Codex: always one click away (bottom-left), so the docs are
+          never buried in the tour or the gate. Hidden only during the tour. */}
+      {awake && !tour.active && <CodexButton className="fixed bottom-3 left-3 z-40" />}
     </main>
   );
 }
@@ -514,14 +546,19 @@ function DoorPreview({ id, onEnter }: { id: BuildingId; onEnter: () => void }) {
 /* STEP 1, the new "walk up to the building" view: the building's full exterior
    SCENE fills the screen with a slow zoom-in (you arrive), its name + an Enter
    button over it. Enter steps inside; Back returns to the map. */
-function ExteriorScene({
+export function ExteriorScene({
   id,
   onEnter,
   onBack,
+  tourMode = false,
 }: {
   id: BuildingId;
-  onEnter: () => void;
-  onBack: () => void;
+  onEnter?: () => void;
+  onBack?: () => void;
+  /** During the tour the scene is the establishing "you've arrived" shot under the
+      narration: keep the art + slow zoom-in, but hide its own Back/Enter/title,
+      the narration box names the building and drives "Step inside". */
+  tourMode?: boolean;
 }) {
   const b = BUILDING_BY_ID[id];
   // Settle from slightly zoomed-in + faded to resting, the "arrive at the door" beat.
@@ -534,7 +571,7 @@ function ExteriorScene({
   }, []);
   const back = () => {
     setLeaving(true);
-    setTimeout(onBack, 320);
+    setTimeout(() => onBack?.(), 320);
   };
 
   return (
@@ -573,38 +610,45 @@ function ExteriorScene({
         />
       </div>
 
-      {/* Bottom scrim so the title + buttons stay readable over the art. */}
+      {/* Bottom scrim so the title + buttons (or the tour narration) stay readable
+          over the art. */}
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/75 to-transparent pointer-events-none" />
 
-      <div className="absolute top-4 left-4 z-10">
-        <ImageButton name="return" label="Back to the map" width={252} onClick={back} />
-      </div>
+      {/* Normal (non-tour) flow: Back + title + Enter. During the tour these are
+          hidden, the narration box overlays this scene and drives the steps. */}
+      {!tourMode && (
+        <>
+          <div className="absolute top-4 left-4 z-10">
+            <ImageButton name="return" label="Back to the map" width={252} onClick={back} />
+          </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-6">
-        <div className="w-full max-w-lg text-center animate-entry">
-          <div className="flex items-center justify-center gap-3">
-            {b.icon && (
-              <Image
-                src={asset(b.icon)}
-                alt=""
-                width={48}
-                height={48}
-                className="h-12 w-12 object-contain drop-shadow"
-              />
-            )}
-            <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-              {b.name}
-            </h2>
+          <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-6">
+            <div className="w-full max-w-lg text-center animate-entry">
+              <div className="flex items-center justify-center gap-3">
+                {b.icon && (
+                  <Image
+                    src={asset(b.icon)}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 object-contain drop-shadow"
+                  />
+                )}
+                <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                  {b.name}
+                </h2>
+              </div>
+              <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{b.tagline}</p>
+              <p className="text-text-2 text-sm mt-3 max-w-md mx-auto leading-relaxed">
+                {b.description}
+              </p>
+              <div className="mt-5 flex justify-center">
+                <ImageButton name="enter" label={enterLabel(b.name)} width={240} onClick={onEnter} />
+              </div>
+            </div>
           </div>
-          <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{b.tagline}</p>
-          <p className="text-text-2 text-sm mt-3 max-w-md mx-auto leading-relaxed">
-            {b.description}
-          </p>
-          <div className="mt-5 flex justify-center">
-            <ImageButton name="enter" label={enterLabel(b.name)} width={240} onClick={onEnter} />
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -615,6 +659,12 @@ function ExteriorScene({
    Exported so the mobile village reuses it as the full-screen "step inside" sheet. */
 export function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
   const b = BUILDING_BY_ID[id];
+  // During the guided tour the interior is shown UNDER the narration as a backdrop:
+  // the visitor must not be able to divert (click a CTA, leave the room), the only
+  // way off the tour is "Skip tour". So we hide the Leave button and lock the
+  // panel's pointer events while the tour runs. The tour itself drives the door.
+  const tour = useTour();
+  const locked = tour.active;
   // Fade the room up over a solid base, so stepping inside reads as a smooth
   // reveal (and the map never flashes through during the swap).
   const [shown, setShown] = useState(false);
@@ -656,12 +706,28 @@ export function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => voi
         <div className={`absolute inset-0 ${b.interior ? "bg-bg/55" : "bg-bg/92"}`} />
       </div>
 
-      <div className="fixed top-4 left-4 z-10">
-        <ImageButton name="return" label={`Leave ${b.name.replace(/^The /, "the ")}`} width={252} onClick={leave} />
-      </div>
+      {!locked && (
+        <div className="fixed top-4 left-4 z-10">
+          <ImageButton name="return" label={`Leave ${b.name.replace(/^The /, "the ")}`} width={252} onClick={leave} />
+        </div>
+      )}
+
+      {/* Contextual docs: open the Codex straight to this building's chapter. */}
+      {!locked && (
+        <div className="fixed top-4 right-4 z-10">
+          <CodexRiteLink
+            building={id}
+            className="rounded-md bg-surface-2/90 border border-surface-3/60 px-3 py-2 backdrop-blur shadow-panel"
+          />
+        </div>
+      )}
 
       <FitToViewport wide={b.wide}>
-        <BuildingPanel id={id} />
+        {/* Locked during the tour: the panel is a backdrop to the narration, not
+            interactive, so its CTAs can't pull the visitor off the tour. */}
+        <div className={locked ? "pointer-events-none" : ""}>
+          <BuildingPanel id={id} />
+        </div>
       </FitToViewport>
     </div>
   );

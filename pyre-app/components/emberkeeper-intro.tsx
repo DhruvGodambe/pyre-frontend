@@ -38,8 +38,9 @@ import { useCompleteQuestTask, useReferral } from "@/lib/hooks";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { useTour } from "@/lib/tour";
+import { useCodex } from "@/lib/codex";
 import { shortAddress } from "@/lib/format";
-import { X_HANDLE, DOCS_URL, tweetIntent, referralLink } from "@/lib/social";
+import { X_HANDLE, tweetIntent, referralLink } from "@/lib/social";
 import { USE_MOCK, asset } from "@/lib/config";
 import { storageGet, storageSet, storageRemove } from "@/lib/safe-storage";
 
@@ -374,6 +375,20 @@ export function EmberkeeperIntro() {
 
 /* ---------------------------------------------------------------- scenes */
 
+/* The intro's docs link now opens the in-world Ember Codex instead of leaving
+   the site (the docs belong to the village). */
+function LoreDocsLink() {
+  const codex = useCodex();
+  return (
+    <button
+      onClick={() => codex.open()}
+      className="inline-block text-brand text-sm hover:text-brand-soft transition-colors"
+    >
+      Open the Ember Codex →
+    </button>
+  );
+}
+
 function LoreScene({
   title,
   body,
@@ -387,16 +402,7 @@ function LoreScene({
     <div className="space-y-3">
       <h2 className="font-display text-3xl text-brand">{title}</h2>
       <p className="text-text-2 text-base leading-relaxed">{body}</p>
-      {docs && (
-        <a
-          href={DOCS_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-block text-brand text-sm hover:text-brand-soft transition-colors"
-        >
-          Read the documentation →
-        </a>
-      )}
+      {docs && <LoreDocsLink />}
     </div>
   );
 }

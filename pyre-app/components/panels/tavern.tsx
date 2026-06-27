@@ -68,17 +68,17 @@ export function TavernPanel() {
           thirds; Invite + Leaderboard stack down the right. On mobile they fall
           into one column. No tabs, everything is visible at once. */}
       <div className="grid gap-5 items-start lg:grid-cols-3">
-        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2">
+        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2" frame>
           <QuestFunnel />
         </Panel>
         <div className="space-y-5">
           <div ref={summonRef}>
-            <Panel title="Invite friends" tagline="Earn Points for every friend">
+            <Panel title="Invite friends" tagline="Earn Points for every friend" frame>
               <SummonSection />
             </Panel>
           </div>
           <div ref={standingRef}>
-            <Panel title="Leaderboard" tagline="Top point earners">
+            <Panel title="Leaderboard" tagline="Top point earners" frame>
               <QuestLeaderboard />
             </Panel>
           </div>

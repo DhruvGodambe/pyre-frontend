@@ -13,6 +13,7 @@ import { DesignerIntro } from "@/components/designer-intro";
 import { EmberkeeperIntro } from "@/components/emberkeeper-intro";
 import { PyreIntro } from "@/components/pyre-intro";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { CodexReader } from "@/components/codex";
 import { captureReferral } from "@/lib/quests/client";
 
 export function AppShell() {
@@ -42,6 +43,10 @@ export function AppShell() {
           VillageShell), which delivers the lore + entry; this modal is the
           mobile take (no village to land in there). */}
       {!isDesktop && <EmberkeeperIntro />}
+      {/* The Ember Codex reader: a single global overlay, opened from anywhere
+          (the persistent Codex button in each shell, "Read the rite" inside a
+          building, or the gate/intro docs links). */}
+      <CodexReader />
       {/* The mock-only design-preview aid (different audience: the designer). */}
       <DesignerIntro />
     </>

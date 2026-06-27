@@ -16,7 +16,7 @@ import Image from "next/image";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { EntryFork } from "@/components/ui/entry-fork";
 import { useTour } from "@/lib/tour";
-import { DOCS_URL } from "@/lib/social";
+import { useCodex } from "@/lib/codex";
 import { asset } from "@/lib/config";
 import { storageGet, storageSet } from "@/lib/safe-storage";
 
@@ -52,6 +52,7 @@ export function GateLanding({
   onDone: () => void;
 }) {
   const tour = useTour();
+  const codex = useCodex();
   const gate = BUILDING_BY_ID.gate;
 
   // First true visit → play the lore beats; afterwards go straight to the fork.
@@ -137,14 +138,12 @@ export function GateLanding({
               {lore.body}
             </p>
             {lore.docs && (
-              <a
-                href={DOCS_URL}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                onClick={() => codex.open()}
                 className="inline-block mt-2 text-brand text-sm hover:text-brand-soft transition-colors"
               >
-                Read the documentation →
-              </a>
+                Open the Ember Codex →
+              </button>
             )}
             <div className="mt-6 flex items-center justify-center gap-4">
               {loreStep > 0 && (

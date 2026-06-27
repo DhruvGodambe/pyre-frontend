@@ -7,7 +7,75 @@
    Deliberately rough now: this is the skeleton, not the final paint.
    ========================================================================== */
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { asset } from "@/lib/config";
+
+/* Carved frame skins for the framed Panel. A thick textured border (wood grain
+   or hewn stone) with beveled, carved edges wraps a recessed translucent
+   interior, so a panel reads like a wooden plaque / stone tablet hung on the
+   tavern wall, the warm interior still glowing through. CSS-only (no asset), so
+   we can dial the look live; swap to a real designer texture later. */
+type FrameSkin = "wood" | "stone";
+/* Each skin fully defines the outer <section> style (it owns its own thickness,
+   via padding for a textured band or a border for a nine-sliced frame) plus the
+   corner radius the recessed interior should use. */
+const FRAME_SKINS: Record<FrameSkin, { outer: CSSProperties; innerRadius: number }> = {
+  wood: {
+    innerRadius: 7,
+    outer: {
+      // REAL timber: a tiled wood-plank texture (designer reference) carries the
+      // grain/plank detail a flat gradient never could. A warm multiply overlay
+      // sinks it into our palette (lighter at top, deeper at the bottom) and the
+      // bevel box-shadows carve the edges so it reads as a framed wooden plaque.
+      padding: 20,
+      borderRadius: 14,
+      background: [
+        "linear-gradient(180deg, rgba(46,26,10,0.18), rgba(18,9,3,0.5))", // depth overlay (multiply)
+        `url(${asset("/world/ui/wood_planks.png")})`, // plank texture (tiled)
+      ].join(", "),
+      backgroundSize: "auto, 160px",
+      backgroundRepeat: "no-repeat, repeat",
+      backgroundBlendMode: "multiply, normal",
+      boxShadow: [
+        "0 12px 30px rgba(0,0,0,0.5)", // drop
+        "inset 0 0 0 1.5px rgba(0,0,0,0.55)", // carved outer rim
+        "inset 0 2px 0 rgba(255,214,150,0.18)", // top highlight
+        "inset 0 -5px 8px rgba(0,0,0,0.4)", // bottom shade
+      ].join(", "),
+    },
+  },
+  stone: {
+    innerRadius: 6,
+    outer: {
+      // Plain hewn-stone band (no tiled blocks, the user found those ugly): a
+      // grey gradient with a faint chiselled texture + carved bevel edges.
+      padding: 18,
+      borderRadius: 12,
+      background: [
+        "radial-gradient(120% 120% at 30% 8%, rgba(255,255,255,0.06), transparent 42%)", // light catch
+        "repeating-linear-gradient(38deg, rgba(0,0,0,0.10) 0 2px, transparent 2px 8px)", // hewn texture
+        "linear-gradient(160deg, #595049 0%, #3e3833 60%, #2c2724 100%)", // base stone
+      ].join(", "),
+      boxShadow: [
+        "0 12px 30px rgba(0,0,0,0.5)",
+        "inset 0 0 0 1px rgba(0,0,0,0.5)",
+        "inset 0 2px 0 rgba(255,255,255,0.10)",
+        "inset 0 -5px 7px rgba(0,0,0,0.4)",
+      ].join(", "),
+    },
+  },
+};
+
+/* The recessed translucent interior, shared by both skins: warm fire-lit scrim
+   + soft bottom ember glow + backdrop blur, sunk into the frame with an inner
+   shadow so it reads carved-in, not stuck-on. */
+const FRAME_INTERIOR: CSSProperties = {
+  background:
+    "radial-gradient(120% 78% at 50% 100%, rgba(255,138,46,0.14), transparent 60%), linear-gradient(180deg, rgba(32,20,13,0.62), rgba(18,11,7,0.74))",
+  backdropFilter: "blur(3px) saturate(1.08)",
+  WebkitBackdropFilter: "blur(3px) saturate(1.08)",
+  boxShadow: "inset 0 2px 10px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,200,140,0.06)",
+};
 
 /* --- Panel: the card every feature lives in ----------------------------- */
 export function Panel({
@@ -16,13 +84,43 @@ export function Panel({
   action,
   children,
   className = "",
+  frame = false,
 }: {
   title?: string;
   tagline?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Carved frame around a translucent interior. `true` = wood (default skin),
+      or pick "wood" / "stone" explicitly. Opt-in, so only framed panels change. */
+  frame?: boolean | FrameSkin;
 }) {
+  if (frame) {
+    const skin = FRAME_SKINS[frame === true ? "wood" : frame];
+    return (
+      <section className={`relative ${className}`} style={skin.outer}>
+        <div
+          className="relative p-5 sm:p-6"
+          style={{ ...FRAME_INTERIOR, borderRadius: skin.innerRadius }}
+        >
+          {(title || action) && (
+            <header className="flex items-baseline justify-between mb-4">
+              <div>
+                {title && (
+                  <h2 className="font-display text-2xl text-text leading-none">{title}</h2>
+                )}
+                {tagline && (
+                  <p className="text-text-3 text-xs mt-1 uppercase tracking-widest">{tagline}</p>
+                )}
+              </div>
+              {action}
+            </header>
+          )}
+          {children}
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       className={`rounded-panel bg-surface shadow-panel border border-surface-3/60 p-5 ${className}`}

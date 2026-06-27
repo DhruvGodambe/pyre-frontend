@@ -12,6 +12,7 @@ import {
   useClaimImmolatedYield,
 } from "@/lib/hooks";
 import { Panel, Stat, Field, Badge } from "@/components/ui/primitives";
+import { GameIcon, rankTile } from "@/components/ui/game-icon";
 import { StateView, EmptyState } from "@/components/ui/state";
 import { TxButton } from "@/components/ui/tx-button";
 import { RequireWallet } from "@/components/ui/wallet-gate";
@@ -20,72 +21,63 @@ import { STAGES } from "@/lib/constants";
 
 type HallRow = { rank: number; address: `0x${string}`; weight: bigint };
 
-/* The Hall of Fame, a podium for the top 3 Immolated, then ranks 4–10. Replaces
-   the old text leaderboard with something that reads like a wall of champions. */
-function HallOfFame({ rows }: { rows: HallRow[] }) {
-  const top = rows.slice(0, 10);
+/* The Hall of Fame: the top 5 Immolated burners, each marked with the designer's
+   numbered rank tile (same icons as the Ashen Cup leaderboard). Like the Ashen
+   Cup, anyone ranked below 5th sees their own position pinned at the bottom. */
+function HallOfFame({ rows, you }: { rows: HallRow[]; you?: { rank: number; weight: bigint } }) {
+  const top = rows.slice(0, 5);
   if (top.length === 0)
     return <p className="text-text-3 text-sm">No one has reached the Hall yet. Be the first.</p>;
-  const podium = top.slice(0, 3);
-  const rest = top.slice(3);
-  const medal = ["🥇", "🥈", "🥉"];
-  // Visual podium order: 2nd (left), 1st (centre, raised), 3rd (right).
-  const order = ["order-1", "order-2 -mt-3", "order-3"];
+  const youInTop = you ? top.some((r) => r.rank === you.rank) : false;
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 items-end gap-2">
-        {podium.map((r, i) => (
-          <div
-            key={r.rank}
-            className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center ${order[i]} ${
-              i === 0 ? "border-brand/50 bg-brand/10" : "border-surface-3/60 bg-surface-2"
-            }`}
-          >
-            <div className="text-2xl leading-none" aria-hidden>
-              {medal[i]}
-            </div>
+    <div className="space-y-1">
+      <ol className="space-y-1">
+        {top.map((r) => {
+          const isYou = r.rank === you?.rank;
+          const tile = rankTile(r.rank, isYou);
+          return (
+            <li
+              key={r.rank}
+              className={`flex items-center gap-2.5 rounded-md px-3 py-2 ${
+                isYou ? "bg-brand/10 border border-brand/40" : "bg-surface-2"
+              }`}
+            >
+              {tile ? (
+                <GameIcon name={tile} size={30} alt={`Rank ${r.rank}`} className="shrink-0" />
+              ) : (
+                <span className="tabular w-7 text-center text-xs text-text-3 shrink-0">#{r.rank}</span>
+              )}
+              <span className="tabular flex-1 truncate text-sm text-text-2">
+                {shortAddress(r.address)}
+                {isYou && <span className="text-brand"> (you)</span>}
+              </span>
+              <span className="tabular text-xs text-text shrink-0">{formatToken(r.weight)}</span>
+            </li>
+          );
+        })}
+      </ol>
+      {you && !youInTop && (
+        <div className="space-y-1">
+          {/* Show the "jump" dots only when ranks are actually skipped (rank 7+). */}
+          {you.rank > top.length + 1 && (
             <div
-              className="grid h-11 w-11 place-items-center rounded-full text-bg text-sm font-medium"
-              style={{ background: avatarGradient(r.address) }}
+              className="flex justify-center text-text-3 leading-none tracking-[0.3em] select-none"
               aria-hidden
             >
-              {initial(r.address)}
+              ···
             </div>
-            <div className="tabular w-full truncate text-xs text-text">{shortAddress(r.address)}</div>
-            <div className="tabular text-[11px] text-brand">{formatToken(r.weight)}</div>
+          )}
+          <div className="flex items-center gap-2.5 rounded-md px-3 py-2 bg-brand/10 border border-brand/40">
+            <span className="tabular w-7 text-center text-sm text-brand font-medium shrink-0">
+              #{you.rank}
+            </span>
+            <span className="tabular flex-1 truncate text-sm text-text-2">You</span>
+            <span className="tabular text-xs text-text shrink-0">{formatToken(you.weight)}</span>
           </div>
-        ))}
-      </div>
-      {rest.length > 0 && (
-        <ul className="space-y-1">
-          {rest.map((r) => (
-            <li key={r.rank} className="flex items-center gap-2.5 rounded-md bg-surface-2 px-3 py-2">
-              <span className="tabular w-5 text-center text-xs text-text-3">{r.rank}</span>
-              <span
-                className="grid h-6 w-6 place-items-center rounded-full text-bg text-[10px] font-medium"
-                style={{ background: avatarGradient(r.address) }}
-                aria-hidden
-              >
-                {initial(r.address)}
-              </span>
-              <span className="tabular flex-1 truncate text-sm text-text-2">{shortAddress(r.address)}</span>
-              <span className="tabular text-xs text-text">{formatToken(r.weight)}</span>
-            </li>
-          ))}
-        </ul>
+        </div>
       )}
     </div>
   );
-}
-
-/* Deterministic avatar (placeholder until real PFP art), same address, same colours. */
-function avatarGradient(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
-  return `linear-gradient(135deg, hsl(${h} 68% 55%), hsl(${(h + 48) % 360} 70% 45%))`;
-}
-function initial(addr: string): string {
-  return addr.replace(/^0x/i, "").charAt(0).toUpperCase();
 }
 
 export function ImmolatedPanel() {
@@ -143,7 +135,14 @@ export function ImmolatedPanel() {
                 <div className="pt-3 border-t border-surface-3/60">
                   <h3 className="font-display text-lg text-brand">Hall of Fame</h3>
                   <p className="text-text-3 text-xs mb-3">Members who&rsquo;ve burned the most.</p>
-                  <StateView query={board}>{(rows) => <HallOfFame rows={rows} />}</StateView>
+                  <StateView query={board}>
+                    {(rows) => (
+                      <HallOfFame
+                        rows={rows}
+                        you={p.rank != null ? { rank: p.rank, weight: p.weight } : undefined}
+                      />
+                    )}
+                  </StateView>
                 </div>
               </div>
             )

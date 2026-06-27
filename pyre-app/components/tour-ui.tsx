@@ -25,12 +25,17 @@ export function TourNarration() {
   const tasks = useQuestTasks();
   const isDesktop = useIsDesktop();
   const [muted, setMuted] = useState(false);
+  // Skip is a confirmation, not an instant exit: clicking it asks first, so the
+  // visitor sees what finishing would earn them before bailing.
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   // Finishing the tour (clicking through the LAST beat, not skipping) instantly
   // grants the "Let the Emberkeeper guide you" quest, the first win that kicks
   // off quest momentum. Then tour.next() lands them in the Ashen Cup. Guard on
   // not-already-done so a replay (the tour is replayable) doesn't re-credit it.
-  const introDone = tasks.data?.find((t) => t.id === "intro")?.done ?? false;
+  const introTask = tasks.data?.find((t) => t.id === "intro");
+  const introDone = introTask?.done ?? false;
+  const introPoints = introTask?.points ?? 20;
   const onPrimary = () => {
     if (tour.isLastBeat && !introDone) complete.mutate("intro");
     tour.next();
@@ -80,8 +85,31 @@ export function TourNarration() {
       ? `Inside · ${b?.name}`
       : `${b?.name} · ${tour.beat.step} of ${tour.beat.total}`;
 
+  const art = tour.beat.art;
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[55] flex justify-center p-4 pointer-events-none">
+    <>
+    <div className="fixed inset-x-0 bottom-0 z-[55] flex flex-col items-center p-4 pointer-events-none">
+      {/* Beat art (e.g. the Acolyte NFT) rises from BEHIND the narration box: it
+          sits just above the card with a negative margin so its base tucks behind
+          the opaque card top, reading as a reveal of what you're about to earn. */}
+      {art && (
+        <div className="relative mb-[-1.75rem] animate-entry pointer-events-none" aria-hidden>
+          <div
+            className="absolute inset-0 -z-10 blur-2xl"
+            style={{ background: "radial-gradient(circle at 50% 45%, rgba(240,169,59,0.55), transparent 68%)" }}
+          />
+          <Image
+            src={asset(art)}
+            alt=""
+            width={1080}
+            height={1080}
+            priority
+            className="h-36 w-auto rounded-xl object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.7)] sm:h-44"
+            draggable={false}
+          />
+        </div>
+      )}
       <div className="pointer-events-auto w-full max-w-xl rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-4 animate-entry">
         <div className="flex gap-3.5">
           {/* TUTOR PORTRAIT, placeholder slot for the designer's guide character
@@ -123,7 +151,7 @@ export function TourNarration() {
                   />
                 </button>
                 <button
-                  onClick={tour.skip}
+                  onClick={() => setConfirmSkip(true)}
                   className="text-text-3 text-xs hover:text-text-2 transition-colors"
                 >
                   Skip tour
@@ -148,5 +176,51 @@ export function TourNarration() {
         </div>
       </div>
     </div>
+
+    {/* Skip confirmation: loss-aversion before bailing. Finishing the tour grants
+        the intro quest + its Points, so we surface that here rather than letting a
+        single tap quietly forfeit it. (Skipped if that quest is already done.) */}
+    {confirmSkip && (
+      <div
+        className="fixed inset-0 z-[58] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm"
+        onClick={() => setConfirmSkip(false)}
+      >
+        <div
+          className="w-full max-w-sm rounded-panel bg-surface border border-surface-3/60 shadow-panel p-5 text-center animate-entry"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="font-display text-2xl text-brand">Skip the tour?</h3>
+          <p className="text-text-2 text-sm mt-2 leading-relaxed">
+            {introDone ? (
+              "You can replay it any time from the village."
+            ) : (
+              <>
+                Finish the tour and you instantly complete a quest, earning{" "}
+                <span className="text-brand tabular">{introPoints} Points</span>. Skip now and
+                you&rsquo;ll miss it.
+              </>
+            )}
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <button
+              onClick={() => setConfirmSkip(false)}
+              className="rounded-md bg-brand text-bg px-4 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+            >
+              Keep watching
+            </button>
+            <button
+              onClick={() => {
+                setConfirmSkip(false);
+                tour.skip();
+              }}
+              className="text-text-3 text-sm hover:text-text-2 transition-colors px-3 py-2"
+            >
+              Skip anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

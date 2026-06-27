@@ -23,7 +23,8 @@ import { useTour } from "@/lib/tour";
 import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
 import { TourNarration } from "@/components/tour-ui";
 import { ImageButton } from "@/components/ui/image-button";
-import { InteriorView, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
+import { CodexButton } from "@/components/codex";
+import { InteriorView, ExteriorScene, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
 import { asset, USE_MOCK } from "@/lib/config";
 import { playDoor } from "@/lib/sfx";
 
@@ -46,7 +47,10 @@ export function MobileShell() {
   useEffect(() => {
     if (!tour.active) return;
     if (tour.beat?.phase === "inside" && tour.beat.building) {
-      setInside(tour.beat.building);
+      const id = tour.beat.building;
+      // Same door SFX as a normal entry, so stepping inside on the tour feels real.
+      if (BUILDING_BY_ID[id].exterior) playDoor(id);
+      setInside(id);
     } else {
       setInside(null);
     }
@@ -81,7 +85,9 @@ export function MobileShell() {
 
   return (
     <main className="min-h-dvh relative overflow-hidden bg-bg">
-      {/* Brand + connect + standing, floating over the top letterbox band. */}
+      {/* Brand + connect + standing, floating over the top letterbox band. Hidden
+          during the tour so connect / disconnect can't divert off the guided walk. */}
+      {!tour.active && (
       <header className="absolute top-0 inset-x-0 z-20 px-4 pt-4">
         <div className="flex items-center justify-between">
           <span className="font-display text-2xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
@@ -96,6 +102,7 @@ export function MobileShell() {
           </div>
         )}
       </header>
+      )}
 
       {/* THE VILLAGE, fit whole-to-screen. The map keeps its own ratio inside a
           centered box (so the entire kingdom is visible); the dark theme fills the
@@ -118,7 +125,9 @@ export function MobileShell() {
               <button
                 key={b.id}
                 onClick={() => tapBuilding(b.id)}
-                className="absolute group focus:outline-none active:scale-95 transition-transform"
+                className={`absolute group focus:outline-none active:scale-95 transition-transform ${
+                  tour.active ? "pointer-events-none" : ""
+                }`}
                 style={{
                   left: `${b.map.x}%`,
                   top: `${b.map.y}%`,
@@ -145,10 +154,11 @@ export function MobileShell() {
                 )}
 
                 {/* Compact always-on nameplate (no hover on touch), so the small
-                    fit-to-screen buildings are still legible + readable as taps. */}
+                    fit-to-screen buildings are still legible + readable as taps.
+                    Hidden during the tour so it doesn't compete with narration. */}
                 <span
-                  className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 whitespace-nowrap rounded bg-bg/80 px-1.5 py-0.5 backdrop-blur-sm ${
-                    gatePrompt ? "ring-1 ring-brand/50" : ""
+                  className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 whitespace-nowrap rounded bg-bg/80 px-1.5 py-0.5 backdrop-blur-sm transition-opacity ${
+                    tour.active ? "opacity-0" : gatePrompt ? "ring-1 ring-brand/50" : ""
                   }`}
                 >
                   <span className="block font-display text-brand text-[9px] leading-none text-center">
@@ -176,6 +186,17 @@ export function MobileShell() {
         />
       )}
 
+      {/* TOUR (mobile), outside beat: the building's full exterior scene as the
+          establishing shot under the narration (same as desktop), so the tour
+          shows off the exteriors before stepping inside. */}
+      {tour.active &&
+        tour.beat?.phase === "outside" &&
+        !tour.beat.overview &&
+        tour.beat.building &&
+        BUILDING_BY_ID[tour.beat.building].exterior && (
+          <ExteriorScene key={tour.beat.building} id={tour.beat.building} tourMode />
+        )}
+
       {/* Guided tour (mobile): same narration; opens each building's interior. */}
       {tour.active && tour.beat && <TourNarration />}
 
@@ -185,6 +206,10 @@ export function MobileShell() {
           <ImageButton name="question" label="Replay the guided tour" onClick={tour.start} width={44} />
         </div>
       )}
+
+      {/* The Ember Codex: always reachable (bottom-left), so the docs aren't buried
+          in the tour or the gate. Hidden during the tour and while inside a panel. */}
+      {isSet && !tour.active && !inside && <CodexButton className="fixed bottom-3 left-3 z-40" />}
 
       {/* Entry gate: whenever there's no identity, cover the village with the
           connect-or-guest fork (sits under the first-visit intro at z-50). */}

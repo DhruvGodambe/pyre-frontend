@@ -49,6 +49,9 @@ export interface TourLine {
   preText?: string;
   /** path (via asset()) to the Tutor's spoken clip for this beat; undefined = silent. */
   voice?: string;
+  /** Optional art (via asset()) shown rising from behind the narration box for
+      this beat, e.g. the Acolyte NFT on the "create your Acolyte" line. */
+  art?: string;
 }
 
 /* Before launch the world is a sealed preview, so the tour speaks in future
@@ -68,7 +71,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   bonfire: {
     outside: {
       text: "Let's start at the center: the Bonfire. Every $PYRE anyone burns shows up here.",
-      preText: "Let's start at the center: the Bonfire. At launch, every $PYRE anyone burns will show up here, live.",
+      preText: "Let's start at the center: the Bonfire. Every $PYRE anyone burns will show up here, live.",
     },
     inside: [
       {
@@ -85,11 +88,12 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "First, stake your $PYRE here. That stops decay and starts earning you ETH.",
-        preText: "At launch you'll stake your $PYRE here. That stops decay and starts earning you ETH.",
+        preText: "This is where you'll stake your $PYRE. That stops decay and starts earning you ETH.",
       },
       {
         text: "Then burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
         preText: "Then you'll burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
+        art: "/world/acolytes/acolyte.png",
       },
       {
         text: "Your Acolyte climbs four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
@@ -102,7 +106,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Everything that's yours lives here: your Acolyte, your balances and your yield, with quick ways back to the action.",
-        preText: "At launch, everything that's yours will live here: your Acolyte, your balances and your yield, with quick ways back to the action.",
+        preText: "Everything that's yours will live here: your Acolyte, your balances and your yield, with quick ways back to the action.",
       },
     ],
   },
@@ -111,7 +115,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "From here you read the whole protocol at a glance: supply, decay, burns and yield. No wallet needed to look.",
-        preText: "At launch you'll read the whole protocol here at a glance: supply, decay, burns and yield. No wallet needed to look.",
+        preText: "You'll read the whole protocol here at a glance: supply, decay, burns and yield. No wallet needed to look.",
       },
     ],
   },
@@ -123,7 +127,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Swap ETH and $PYRE here, with every fee shown upfront.",
-        preText: "At launch you'll swap ETH and $PYRE here, with every fee shown upfront.",
+        preText: "You'll swap ETH and $PYRE here, with every fee shown upfront.",
       },
     ],
   },
@@ -132,7 +136,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Browse and buy Acolytes that other people have created.",
-        preText: "At launch you'll browse and buy Acolytes that other people have created.",
+        preText: "You'll browse and buy Acolytes that other people have created.",
       },
     ],
   },
@@ -141,7 +145,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
-        preText: "At launch, reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
+        preText: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
       },
     ],
   },
@@ -169,6 +173,8 @@ export interface TourBeat {
   text: string;
   /** the Tutor's spoken clip for this beat, if delivered. */
   voice?: string;
+  /** art shown rising from behind the narration box for this beat (the Acolyte NFT). */
+  art?: string;
   /** position in the walk (1-based) and the total, for a progress read. */
   step: number;
   total: number;
@@ -177,8 +183,8 @@ export interface TourBeat {
 /* The opening establishing shot: the camera stays wide on the whole kingdom while
    the Emberkeeper sets the scene, before the first zoom to the Bonfire. */
 const OVERVIEW_LINE: TourLine = {
-  text: "Welcome to PYRE. The idea is simple: stake and burn $PYRE to earn ETH yield and level up your Acolyte NFT. Let me show you around, building by building.",
-  preText: "Welcome to PYRE. The idea is simple: stake and burn $PYRE to earn ETH yield and level up your Acolyte NFT. The village is built and almost ready, let me show you what's coming, and how to earn your place before the gates open.",
+  text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn ETH yield and raise your Acolyte NFT. Come, let me show you around, building by building.",
+  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn your place before the gates open.",
 };
 
 /* Build the whole walk for the current launch phase. Pre-launch beats speak in
@@ -201,6 +207,7 @@ function buildBeats(launched: boolean): TourBeat[] {
         phase: "inside",
         text: say(s, launched),
         voice: s.voice,
+        art: s.art,
       }));
       return [outside, ...inside];
     }),
