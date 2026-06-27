@@ -18,6 +18,8 @@ import { WorldLedger } from "@/components/world-hud";
 import { ImageButton } from "@/components/ui/image-button";
 import { BuildingPanel } from "@/components/ui/sealed-preview";
 import { CodexButton, CodexRiteLink } from "@/components/codex";
+import { GameIcon } from "@/components/ui/game-icon";
+import { useLocks, type LockState } from "@/lib/unlocks";
 import { GateLanding } from "@/components/gate-landing";
 import { BuildingAudio } from "@/components/world-audio";
 import { TourNarration } from "@/components/tour-ui";
@@ -64,6 +66,9 @@ export function VillageShell() {
   const { pending, clearPending, syncUrl } = useNavigation();
   const awake = status === "connected" || isSet;
   const tour = useTour();
+  const lockOf = useLocks();
+  // A locked building shows its dimmed exterior + "how to unlock" instead of opening.
+  const [lockedId, setLockedId] = useState<BuildingId | null>(null);
 
   // Once awake, close the Gate's connect overlay and reveal the woken village.
   useEffect(() => {
@@ -112,9 +117,16 @@ export function VillageShell() {
       clearPending();
       return;
     }
-    setView({ id: pending.building as BuildingId, mode: "inside" });
+    const target = pending.building as BuildingId;
+    // A CTA pointing at a locked building shows its locked door, not the panel.
+    if (lockOf(target).locked) {
+      setLockedId(target);
+      clearPending();
+      return;
+    }
+    setView({ id: target, mode: "inside" });
     if (!pending.tab) clearPending();
-  }, [pending, clearPending]);
+  }, [pending, clearPending, lockOf]);
 
   // Reflect the open building in the URL (no reload), so each has a shareable
   // link (/app/ashencup …). Skipped during the tour (it rips through buildings)
@@ -176,6 +188,12 @@ export function VillageShell() {
 
   const clickBuilding = (id: BuildingId) => {
     if (tour.active) return; // the tour drives navigation
+    const lock = lockOf(id);
+    if (lock.locked) {
+      playZoom();
+      setLockedId(id);
+      return;
+    }
     // A camera whoosh accompanies the fly-in; the building's loop music only
     // starts once the camera lands (gated on `arrived` in the audio block below).
     playZoom();
@@ -459,6 +477,11 @@ export function VillageShell() {
         />
       )}
 
+      {/* A locked building's door: dimmed exterior + how to unlock it. */}
+      {lockedId && (
+        <LockedExterior id={lockedId} lock={lockOf(lockedId)} onBack={() => setLockedId(null)} />
+      )}
+
       {/* GUIDED TOUR, the Emberkeeper's narration + controls. Drives the camera
           (outside beats) and steps inside the interiors (inside beats) above. */}
       {tour.active && tour.beat && <TourNarration />}
@@ -649,6 +672,115 @@ export function ExteriorScene({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* A LOCKED building: the same exterior scene, dimmed, with a lock, the reason
+   it's closed, and a CTA that walks you to whatever opens it. This is what a
+   building shows before launch ("Opens at launch") and, after launch, until you've
+   done the thing that unlocks it (see lib/unlocks.ts). Shared by both shells. */
+export function LockedExterior({
+  id,
+  lock,
+  onBack,
+}: {
+  id: BuildingId;
+  lock: LockState;
+  onBack: () => void;
+}) {
+  const b = BUILDING_BY_ID[id];
+  const { navigate } = useNavigation();
+  const [shown, setShown] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+  const back = () => {
+    setLeaving(true);
+    setTimeout(onBack, 320);
+  };
+  const goUnlock = () => {
+    if (!lock.cta) return back();
+    const to = lock.cta.to;
+    setLeaving(true);
+    setTimeout(() => {
+      onBack();
+      navigate({ building: to });
+    }, 220);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[45] overflow-hidden bg-bg transition-opacity duration-300"
+      style={{ opacity: leaving ? 0 : 1 }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: shown ? "scale(1)" : "scale(1.12)",
+          opacity: shown ? 1 : 0,
+          transition: "transform 1400ms cubic-bezier(0.16,1,0.3,1), opacity 600ms ease-out",
+        }}
+      >
+        {b.exterior ? (
+          <>
+            <Image
+              src={asset(b.exterior)}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              aria-hidden
+              className="object-cover scale-125 blur-2xl brightness-[0.45] select-none pointer-events-none"
+            />
+            {/* The exterior, darkened + desaturated so it reads as shut. */}
+            <Image
+              src={asset(b.exterior)}
+              alt={b.name}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover brightness-[0.55] saturate-[0.75] select-none pointer-events-none"
+            />
+          </>
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: "radial-gradient(circle at 50% 40%, #241a10, var(--color-bg) 75%)" }}
+          />
+        )}
+      </div>
+
+      {/* Legibility scrims over the dimmed art. */}
+      <div className="absolute inset-0 bg-bg/40 pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/70 to-transparent pointer-events-none" />
+
+      <div className="absolute top-4 left-4 z-10">
+        <ImageButton name="return" label="Back to the map" width={252} onClick={back} />
+      </div>
+
+      <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+        <div className="w-full max-w-md text-center animate-entry">
+          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full border border-brand/40 bg-surface-2/70 backdrop-blur">
+            <GameIcon name="lock" size={34} />
+          </div>
+          <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+            {b.name}
+          </h2>
+          <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{lock.label}</p>
+          <p className="text-text-2 text-sm mt-3 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
+          {lock.cta && (
+            <button
+              onClick={goUnlock}
+              className="mt-5 rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+            >
+              {lock.cta.label} →
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

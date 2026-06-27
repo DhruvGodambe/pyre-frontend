@@ -57,10 +57,13 @@ import {
 /* Preview personas, switchable at runtime via the on-screen Design Preview
    control (lib/preview.tsx + components/preview-switcher.tsx), so the designer
    can see EVERY state without meeting on-chain thresholds:
-   "newcomer" → empty / locked states (Pyre Acolyte, nothing staked, Hall sealed).
+   "fresh"    → a brand-new wallet at launch: 0 $PYRE, nothing staked, no Acolyte.
+                Use with the Phase set to "Launched" to test the unlock funnel
+                (everything locked until you buy $PYRE → Forge → the rest).
+   "newcomer" → test wallet loaded with 1M $PYRE + 100 ETH (burn up the tiers).
    "burner"   → mid-progression (FLAME, climbing, staked).
    "veteran"  → full: Pyre Acolyte, staked, PYRE stage, Immolated member unlocked. */
-export type Persona = "newcomer" | "burner" | "veteran";
+export type Persona = "fresh" | "newcomer" | "burner" | "veteran";
 const DEFAULT_PERSONA: Persona = "veteran";
 
 const LATENCY_MS = 280; // simulated read latency
@@ -239,6 +242,24 @@ const questBoost = (): StakingPosition["boost"] => ({
 
 function seedWorld(persona: Persona): World {
   switch (persona) {
+    case "fresh":
+      // A brand-new wallet at launch: holds nothing, just a little ETH to buy
+      // with, so the post-launch unlock funnel starts fully locked.
+      return {
+        liquid: 0n,
+        staked: 0n,
+        ethBalance: eth(0.5),
+        pendingRewardsEth: 0n,
+        cumulativeBurnWeight: 0n,
+        immolatedWeight: 0n,
+        immolatedPendingEth: 0n,
+        isLP: false,
+        drip: null,
+        boost: null,
+        totalBurned: pyre(2_400_000),
+        scalingFactor: 0.91,
+        pyrePermitPhase: 0,
+      };
     case "newcomer":
       return {
         liquid: pyre(1_000_000), // test wallet: 1M $PYRE to burn up the tiers + stake

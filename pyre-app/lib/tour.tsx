@@ -152,7 +152,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   tavern: {
     outside: {
       text: "And the Ashen Cup, where you earn rewards before launch.",
-      preText: "And the Ashen Cup, the one door already open. This is where you earn rewards before launch.",
+      preText: "And last, the Ashen Cup. When the tour ends, this is where you begin: complete quests to earn rewards before launch.",
     },
     inside: [
       {

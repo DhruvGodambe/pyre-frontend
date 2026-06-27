@@ -24,7 +24,8 @@ import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
 import { TourNarration } from "@/components/tour-ui";
 import { ImageButton } from "@/components/ui/image-button";
 import { CodexButton } from "@/components/codex";
-import { InteriorView, ExteriorScene, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
+import { InteriorView, ExteriorScene, LockedExterior, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
+import { useLocks } from "@/lib/unlocks";
 import { asset, USE_MOCK } from "@/lib/config";
 import { playDoor } from "@/lib/sfx";
 
@@ -39,8 +40,11 @@ export function MobileShell() {
   const { pending, clearPending } = useNavigation();
   const { isSet } = useIdentity();
   const tour = useTour();
+  const lockOf = useLocks();
   // The building you've stepped inside (full-screen interior sheet). null = on the map.
   const [inside, setInside] = useState<BuildingId | null>(null);
+  // A locked building shows its dimmed exterior + how to unlock it instead.
+  const [lockedId, setLockedId] = useState<BuildingId | null>(null);
 
   // The tour drives navigation while it runs: an "inside" beat opens that
   // building's interior; any other beat (outside / overview) returns to the map.
@@ -66,13 +70,24 @@ export function MobileShell() {
       clearPending();
       return;
     }
-    setInside(pending.building as BuildingId);
+    const target = pending.building as BuildingId;
+    // A CTA pointing at a locked building shows its locked door, not the panel.
+    if (lockOf(target).locked) {
+      setLockedId(target);
+      clearPending();
+      return;
+    }
+    setInside(target);
     if (!pending.tab) clearPending();
-  }, [pending, clearPending]);
+  }, [pending, clearPending, lockOf]);
 
   const tapBuilding = (id: BuildingId) => {
     if (tour.active) return; // the tour drives navigation
     if (id === "gate") return; // the Gate is the entry, handled by the gate overlay
+    if (lockOf(id).locked) {
+      setLockedId(id);
+      return;
+    }
     playDoor(id);
     setInside(id);
   };
@@ -184,6 +199,11 @@ export function MobileShell() {
             clearPending();
           }}
         />
+      )}
+
+      {/* A locked building's door: dimmed exterior + how to unlock it. */}
+      {lockedId && (
+        <LockedExterior id={lockedId} lock={lockOf(lockedId)} onBack={() => setLockedId(null)} />
       )}
 
       {/* TOUR (mobile), outside beat: the building's full exterior scene as the
