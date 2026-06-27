@@ -87,8 +87,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 2. The on-ramp: first you need $PYRE.
   exchange: {
     outside: {
-      text: "Before you can take part, you'll need some $PYRE of your own. Follow me, this way to the Grand Exchange.",
-      preText: "Before you can take part, you'll need some $PYRE of your own. Follow me, this way to the Grand Exchange.",
+      text: "Before you can take part, you'll need some $PYRE of your own. Here's where you get it: the Grand Exchange.",
+      preText: "Before you can take part, you'll need some $PYRE of your own. Here's where you get it: the Grand Exchange.",
     },
     inside: [
       {
@@ -100,8 +100,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 3. The core loop: stake to earn, burn to rise. Ends by handing off to the Hall.
   forge: {
     outside: {
-      text: "Now, with $PYRE in hand, come with me to the Forge. This is where the real work happens. Let's step inside.",
-      preText: "Now, with $PYRE in hand, this is the Forge, where the real work will happen. Let's step inside.",
+      text: "Now, with $PYRE in hand, this is where the real work happens: the Forge.",
+      preText: "Now, with $PYRE in hand, this is the Forge, where the real work will happen.",
     },
     inside: [
       {
@@ -135,8 +135,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 5. Where you track everything you've built.
   vault: {
     outside: {
-      text: "Everything you build, I keep safe in one place for you. This way, to your Amber Vault.",
-      preText: "Everything you build, I keep safe in one place for you. This way, to your Amber Vault.",
+      text: "Everything you build, I keep safe for you in one place: your Amber Vault.",
+      preText: "Everything you build, I keep safe for you in one place: your Amber Vault.",
     },
     inside: [
       {
@@ -148,8 +148,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 6. Trading the Acolytes others forged (flows from just discussing Acolytes).
   market: {
     outside: {
-      text: "Acolytes can change hands, too. Step over here with me, to the Black Market.",
-      preText: "Acolytes can change hands, too. Step over here with me, to the Black Market.",
+      text: "Acolytes can change hands, too. This is the Black Market.",
+      preText: "Acolytes can change hands, too. This is the Black Market.",
     },
     inside: [
       {
@@ -161,8 +161,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 7. The wide view, a calm beat before the call to action.
   observatory: {
     outside: {
-      text: "Before we finish, climb up here with me for the whole view: the Observatory.",
-      preText: "Before we finish, climb up here with me for the whole view: the Observatory.",
+      text: "Before we finish, the whole view from a single place: the Observatory.",
+      preText: "Before we finish, the whole view from a single place: the Observatory.",
     },
     inside: [
       {
@@ -174,8 +174,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
   // 8. The finale and the one live door today.
   tavern: {
     outside: {
-      text: "And last, the place that matters most today: the Ashen Cup. Let's step in.",
-      preText: "And last, the place that matters most right now: the Ashen Cup. When the tour ends, this is where you begin. Let's step in.",
+      text: "And last, the place that matters most today: the Ashen Cup.",
+      preText: "And last, the place that matters most right now: the Ashen Cup. When the tour ends, this is where you begin.",
     },
     inside: [
       {
