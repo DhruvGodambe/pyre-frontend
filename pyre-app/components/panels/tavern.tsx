@@ -29,7 +29,8 @@ import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { useTour } from "@/lib/tour";
 import { Panel, Badge, Button, Field, ProgressBar } from "@/components/ui/primitives";
-import { GameIcon } from "@/components/ui/game-icon";
+import { GameIcon, rankTile, type GameIconName } from "@/components/ui/game-icon";
+import { ImageButton, ImageArt, type ImageButtonName } from "@/components/ui/image-button";
 import { EmberCount } from "@/components/world-hud";
 import { Skeleton, EmptyState, StateView } from "@/components/ui/state";
 import { NEWLY_LIT_WINDOW } from "@/lib/quests/catalog";
@@ -309,19 +310,13 @@ function QuestStep({
         {!task.done && !locked && (
           <div className="mt-2">
             {task.id === "intro" ? (
-              <button onClick={onStartTour}>
-                <CtaPill spotlight={spotlight}>Take the tour →</CtaPill>
-              </button>
+              <CtaImageButton art="taketour" label="Take the tour" width={172} spotlight={spotlight} onClick={onStartTour} />
             ) : task.id === "quiz" ? (
-              <button onClick={onOpenQuiz}>
-                <CtaPill spotlight={spotlight}>Take the quiz →</CtaPill>
-              </button>
+              <CtaImageButton art="takequiz" label="Take the quiz" width={172} spotlight={spotlight} onClick={onOpenQuiz} />
             ) : task.id === "share" ? (
-              <ShareActions spotlight={spotlight} onBothDone={onComplete} />
+              <ShareActions onBothDone={onComplete} />
             ) : task.href ? (
-              <a href={task.href} target="_blank" rel="noreferrer" onClick={onComplete}>
-                <CtaPill spotlight={spotlight}>Go →</CtaPill>
-              </a>
+              <CtaImageLink art="go" label="Go" width={92} spotlight={spotlight} href={task.href} onClick={onComplete} />
             ) : (
               <button onClick={onComplete}>
                 <CtaPill spotlight={spotlight}>Start</CtaPill>
@@ -337,7 +332,7 @@ function QuestStep({
 /* The "Like + repost the manifesto" rite needs TWO X actions (no single intent
    does both), so it renders two buttons and only completes once both are done.
    Self-attested like every click rite. */
-function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDone: () => void }) {
+function ShareActions({ onBothDone }: { onBothDone: () => void }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -360,42 +355,33 @@ function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDon
   };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const pill = (done: boolean) =>
-    `inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-      done
-        ? "border border-success/40 bg-success/15 text-success"
-        : spotlight
-        ? "bg-brand text-bg hover:bg-brand-deep"
-        : "border border-brand/40 bg-brand/15 text-brand hover:bg-brand/25"
-    }`;
-
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <a
+        <ShareLink
+          art="like"
+          label="Like the manifesto"
+          width={112}
+          done={liked}
+          doneLabel="♥ Liked"
           href={likeIntent(MANIFESTO_TWEET_ID)}
-          target="_blank"
-          rel="noreferrer"
           onClick={() => {
             setLiked(true);
             beginVerify(true, reposted);
           }}
-          className={pill(liked)}
-        >
-          {liked ? "♥ Liked" : "♥ Like"}
-        </a>
-        <a
+        />
+        <ShareLink
+          art="repost"
+          label="Repost the manifesto"
+          width={132}
+          done={reposted}
+          doneLabel="↻ Reposted"
           href={repostIntent(MANIFESTO_TWEET_ID)}
-          target="_blank"
-          rel="noreferrer"
           onClick={() => {
             setReposted(true);
             beginVerify(liked, true);
           }}
-          className={pill(reposted)}
-        >
-          {reposted ? "↻ Reposted" : "↻ Repost"}
-        </a>
+        />
       </div>
       {verifying && (
         <div className="flex items-center gap-2 text-xs text-text-3">
@@ -404,6 +390,51 @@ function ShareActions({ spotlight, onBothDone }: { spotlight: boolean; onBothDon
         </div>
       )}
     </div>
+  );
+}
+
+/* One X action (like / repost) in the designer's button art. Self-attested: the
+   click opens X in a new tab and optimistically flips to a success chip (the art
+   has fixed text, so "done" is a separate confirmation chip, not a label swap). */
+function ShareLink({
+  art,
+  label,
+  width,
+  done,
+  doneLabel,
+  href,
+  onClick,
+}: {
+  art: ImageButtonName;
+  label: string;
+  width: number;
+  done: boolean;
+  doneLabel: string;
+  href: string;
+  onClick: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  if (done)
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md border border-success/40 bg-success/15 px-3 py-1.5 text-sm font-medium text-success">
+        {doneLabel}
+      </span>
+    );
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={onClick}
+      aria-label={label}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      className="inline-block transition-transform duration-fast hover:scale-[1.03] active:scale-[0.97]"
+    >
+      <ImageArt name={art} width={width} hover={hover} />
+    </a>
   );
 }
 
@@ -416,6 +447,72 @@ function CtaPill({ children, spotlight }: { children: React.ReactNode; spotlight
     <span className="inline-flex items-center rounded-sm border border-brand/40 bg-brand/15 px-2 py-0.5 text-xs text-brand transition-colors hover:bg-brand/25">
       {children}
     </span>
+  );
+}
+
+/* A quest's call to action. The spotlit "do this next" step wears the designer's
+   ornate button art; the dimmed waiting steps keep the compact text pill, so the
+   eye still lands on a single focus. Button form (tour, quiz) vs link form (Go,
+   opens the task's URL and self-attests). */
+function CtaImageButton({
+  art,
+  label,
+  width,
+  spotlight,
+  onClick,
+}: {
+  art: ImageButtonName;
+  label: string;
+  width: number;
+  spotlight: boolean;
+  onClick: () => void;
+}) {
+  if (!spotlight)
+    return (
+      <button onClick={onClick}>
+        <CtaPill spotlight={false}>{label} →</CtaPill>
+      </button>
+    );
+  return <ImageButton name={art} label={label} width={width} onClick={onClick} />;
+}
+
+function CtaImageLink({
+  art,
+  label,
+  width,
+  spotlight,
+  href,
+  onClick,
+}: {
+  art: ImageButtonName;
+  label: string;
+  width: number;
+  spotlight: boolean;
+  href: string;
+  onClick: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  if (!spotlight)
+    return (
+      <a href={href} target="_blank" rel="noreferrer" onClick={onClick}>
+        <CtaPill spotlight={false}>{label} →</CtaPill>
+      </a>
+    );
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={onClick}
+      aria-label={label}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      className="inline-block transition-transform duration-fast hover:scale-[1.03] active:scale-[0.97]"
+    >
+      <ImageArt name={art} width={width} hover={hover} />
+    </a>
   );
 }
 
@@ -674,13 +771,21 @@ function SubmissionArea({
         </div>
       )}
       <Field label="Your wallet address" value={wallet} onChange={setWallet} placeholder="0x…" />
-      <Button
-        onClick={onSubmit}
-        disabled={!gateOpen || wallet.trim().length < 10 || submitting}
-        className="w-full"
-      >
-        {submitting ? "Submitting…" : gateOpen ? "Submit wallet" : "Complete all quests first"}
-      </Button>
+      {gateOpen ? (
+        <Button
+          onClick={onSubmit}
+          disabled={wallet.trim().length < 10 || submitting}
+          className="w-full"
+        >
+          {submitting ? "Submitting…" : "Submit wallet"}
+        </Button>
+      ) : (
+        // Locked until every quest is done: the designer's engraved
+        // "COMPLETE ALL QUESTS FIRST" plate, shown as a non-interactive bar.
+        <div className="flex justify-center" aria-label="Complete all quests first" role="note">
+          <ImageArt name="completequest" width="100%" className="max-w-[420px] opacity-90" />
+        </div>
+      )}
       {submitError && <p className="text-danger text-xs">{submitError}</p>}
       {mode === null && gateOpen && (
         <button
@@ -721,17 +826,18 @@ function GateNote({
 /** Invite milestones: an escalating ladder so the count feels like progress,
     not a flat tally. Embers are concrete; what each milestone unlocks is
     revealed at launch (rewards-revealed-near-launch), which is itself the hook. */
-const INVITE_MILESTONES: { at: number; title: string }[] = [
-  { at: 1, title: "First" },
-  { at: 3, title: "Bronze" },
-  { at: 5, title: "Silver" },
-  { at: 10, title: "Gold" },
-  { at: 25, title: "Legend" },
+const INVITE_MILESTONES: { at: number; title: string; crest: GameIconName }[] = [
+  { at: 1, title: "First", crest: "first" },
+  { at: 3, title: "Bronze", crest: "bronze" },
+  { at: 5, title: "Silver", crest: "silver" },
+  { at: 10, title: "Gold", crest: "gold" },
+  { at: 25, title: "Legend", crest: "legend" },
 ];
 
 function SummonSection() {
   const referral = useReferral();
   const [copied, setCopied] = useState(false);
+  const [shareHover, setShareHover] = useState(false);
 
   // Resilient: invites depend on the quest_referrals table. If that query is
   // down, show a plain notice + retry here, never a broken skeleton.
@@ -811,15 +917,16 @@ function SummonSection() {
             return (
               <div key={m.at} className="flex flex-col items-center gap-1 text-center">
                 <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] ${
-                    hit
-                      ? "border-brand bg-brand/20 text-brand"
-                      : isNext
-                      ? "border-brand/50 text-brand"
-                      : "border-surface-3 text-text-3"
+                  className={`grid h-9 w-9 place-items-center rounded-full ${
+                    isNext && !hit ? "ring-2 ring-brand/50" : ""
                   }`}
                 >
-                  {hit ? <GameIcon name="fireToken" size={14} /> : m.at}
+                  <GameIcon
+                    name={m.crest}
+                    size={34}
+                    alt={m.title}
+                    className={hit ? "" : "opacity-30 grayscale"}
+                  />
                 </span>
                 <span className={`text-[10px] ${hit ? "text-text-2" : "text-text-3"}`}>{m.title}</span>
               </div>
@@ -859,9 +966,14 @@ function SummonSection() {
           href={tweet}
           target="_blank"
           rel="noreferrer"
-          className="block text-center rounded-md bg-brand text-bg py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+          aria-label="Share on X"
+          onMouseEnter={() => setShareHover(true)}
+          onMouseLeave={() => setShareHover(false)}
+          onFocus={() => setShareHover(true)}
+          onBlur={() => setShareHover(false)}
+          className="block transition-transform duration-fast hover:scale-[1.02] active:scale-[0.98]"
         >
-          Share on X
+          <ImageArt name="sharex" width="100%" hover={shareHover} className="mx-auto block max-w-[340px]" />
         </a>
       </div>
     </div>
@@ -870,13 +982,16 @@ function SummonSection() {
 
 /* =========================================================== LEADERBOARD == */
 
-/* Top-3 get podium medals (gold/silver/bronze); everyone else a plain number. */
-const MEDAL: Record<number, "gold" | "silver" | "bronze"> = { 1: "gold", 2: "silver", 3: "bronze" };
-
-function RankMark({ rank }: { rank: number }) {
-  const medal = MEDAL[rank];
-  if (medal) return <GameIcon name={medal} size={24} alt={`Rank ${rank}`} className="shrink-0" />;
-  return <span className="text-text-3 tabular w-6 text-center shrink-0">#{rank}</span>;
+/* Ranks 1-5 get the designer's numbered lava tiles (the viewer's own row lights
+   up with the "active" variant); everyone past 5th gets a plain number. */
+function RankMark({ rank, you = false }: { rank: number; you?: boolean }) {
+  const tile = rankTile(rank, you);
+  if (tile) return <GameIcon name={tile} size={30} alt={`Rank ${rank}`} className="shrink-0" />;
+  return (
+    <span className={`tabular w-7 text-center shrink-0 ${you ? "text-brand font-medium" : "text-text-3"}`}>
+      #{rank}
+    </span>
+  );
 }
 
 function QuestLeaderboard() {
@@ -899,7 +1014,7 @@ function QuestLeaderboard() {
                   }`}
                 >
                   <span className="flex items-center gap-2 text-text-2 tabular truncate">
-                    <RankMark rank={r.rank} />
+                    <RankMark rank={r.rank} you={r.you} />
                     <span className="truncate">{r.name}</span>
                     {r.you && <span className="text-brand"> (you)</span>}
                   </span>
@@ -910,14 +1025,27 @@ function QuestLeaderboard() {
               ))}
             </ol>
             {data.you && !data.top.some((t) => t.you) && (
-              <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm bg-brand/10 border border-brand/40">
-                <span className="flex items-center gap-2 text-text-2 tabular">
-                  <RankMark rank={data.you.rank} />
-                  <span>You</span>
-                </span>
-                <span className="flex items-center gap-1 tabular text-brand shrink-0">
-                  <GameIcon name="fireToken" size={16} /> {data.you.embers}
-                </span>
+              <div className="space-y-1">
+                {/* Show the "jump" dots only when ranks are actually skipped
+                    (rank 7+). If you're exactly #6, your row sits right under the
+                    top 5 with no misleading gap. */}
+                {data.you.rank > data.top.length + 1 && (
+                  <div
+                    className="flex justify-center text-text-3 leading-none tracking-[0.3em] select-none"
+                    aria-hidden
+                  >
+                    ···
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm bg-brand/10 border border-brand/40">
+                  <span className="flex items-center gap-2 text-text-2 tabular">
+                    <RankMark rank={data.you.rank} you />
+                    <span>You</span>
+                  </span>
+                  <span className="flex items-center gap-1 tabular text-brand shrink-0">
+                    <GameIcon name="fireToken" size={16} /> {data.you.embers}
+                  </span>
+                </div>
               </div>
             )}
           </div>

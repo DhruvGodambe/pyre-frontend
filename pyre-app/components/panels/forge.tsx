@@ -660,14 +660,13 @@ function BurnRitual({
       )}
 
       {lp ? (
-        <TxButton
+        <TxImageButton
           tx={burnLP}
+          name="burnlp"
+          label="Burn LP (+20%)"
           disabled={blocked}
           onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
-          pendingLabel="Burning…"
-        >
-          Burn LP
-        </TxButton>
+        />
       ) : (
         <TxImageButton tx={burn} name="burn" label="Burn $PYRE" disabled={blocked} onClick={() => burn.mutate(amt)} />
       )}
@@ -731,19 +730,21 @@ function StakeRitual({ p, decay }: { p: StakingPosition; decay?: string }) {
         <AmountControls balance={p.liquidBalance} onPick={setAmount} />
         <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <TxButton tx={stake} disabled={amt <= 0n} onClick={onStake} pendingLabel="Staking…">
-          Stake $PYRE
-        </TxButton>
-        <TxButton
+      <div className="grid grid-cols-2 items-start gap-3">
+        <TxImageButton
+          tx={stake}
+          name="stakepyre"
+          label="Stake $PYRE"
+          disabled={amt <= 0n}
+          onClick={onStake}
+        />
+        <TxImageButton
           tx={unstake}
-          variant="ghost"
+          name="unstake"
+          label="Unstake, returns over 7 days"
           disabled={amt <= 0n}
           onClick={() => unstake.mutate(amt)}
-          pendingLabel="Unstaking…"
-        >
-          Unstake · 7 days
-        </TxButton>
+        />
       </div>
 
       {warding && (

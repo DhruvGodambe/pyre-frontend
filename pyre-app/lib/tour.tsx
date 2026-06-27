@@ -58,15 +58,11 @@ export interface TourLine {
 const say = (l: TourLine, launched: boolean): string =>
   launched ? l.text : l.preText ?? l.text;
 
-/* An inside step ALSO points at the actual UI: `highlight` is the DOM id of the
-   section the line is about (e.g. the Forge's Stake box), which the tour glows /
-   spotlights so the visitor sees exactly where the action lives. One inside beat
-   can have several steps, "stake HERE, then burn HERE". Buildings with no single
-   actionable box (Bonfire, Observatory, Market) just describe, no highlight. */
-export interface TourInsideStep extends TourLine {
-  /** DOM id of the UI section this step is about. Must be set on that element. */
-  highlight?: string;
-}
+/* An inside beat just narrates what you do in this building while its real
+   interior is open behind the Emberkeeper. One inside beat can have several
+   steps (e.g. "stake, then burn"); the tour does NOT spotlight any UI section,
+   it only steps inside and talks. */
+export type TourInsideStep = TourLine;
 
 const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }> = {
   bonfire: {
@@ -90,17 +86,14 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
       {
         text: "First, stake your $PYRE here. That stops decay and starts earning you ETH.",
         preText: "At launch you'll stake your $PYRE here. That stops decay and starts earning you ETH.",
-        highlight: "forge-stake",
       },
       {
         text: "Then burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
         preText: "Then you'll burn $PYRE here to create your Acolyte, which multiplies that ETH yield up to 3×.",
-        highlight: "forge-burn",
       },
       {
         text: "Your Acolyte climbs four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
         preText: "Your Acolyte will climb four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). A fifth tier, the Immolated Acolyte, waits in the Hall above.",
-        highlight: "forge-ladder",
       },
     ],
   },
@@ -110,7 +103,6 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
       {
         text: "Everything that's yours lives here: your Acolyte, your balances and your yield, with quick ways back to the action.",
         preText: "At launch, everything that's yours will live here: your Acolyte, your balances and your yield, with quick ways back to the action.",
-        highlight: "vault-actions",
       },
     ],
   },
@@ -132,7 +124,6 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
       {
         text: "Swap ETH and $PYRE here, with every fee shown upfront.",
         preText: "At launch you'll swap ETH and $PYRE here, with every fee shown upfront.",
-        highlight: "exchange-swap",
       },
     ],
   },
@@ -151,7 +142,6 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
       {
         text: "Reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
         preText: "At launch, reach the top tier (Pyre), then burn again here to join the Immolated and earn an extra share of ETH yield.",
-        highlight: "immolated-action",
       },
     ],
   },
@@ -164,7 +154,6 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
       {
         text: "Here are the quests. Complete them to earn Points and climb the leaderboard. Let's do your first.",
         preText: "Here are the quests, open right now. Complete them to earn Points, climb the leaderboard and lock in your place before the gates open. Let's do your first.",
-        highlight: "tavern-rites",
       },
     ],
   },
@@ -180,8 +169,6 @@ export interface TourBeat {
   text: string;
   /** the Tutor's spoken clip for this beat, if delivered. */
   voice?: string;
-  /** DOM id of the UI section to glow/spotlight for this beat (inside beats). */
-  highlight?: string;
   /** position in the walk (1-based) and the total, for a progress read. */
   step: number;
   total: number;
@@ -214,7 +201,6 @@ function buildBeats(launched: boolean): TourBeat[] {
         phase: "inside",
         text: say(s, launched),
         voice: s.voice,
-        highlight: s.highlight,
       }));
       return [outside, ...inside];
     }),

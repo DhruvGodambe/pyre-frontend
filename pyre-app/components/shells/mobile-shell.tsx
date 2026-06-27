@@ -1,150 +1,195 @@
 "use client";
 
-/* MOBILE SHELL, the Dashboard. One scrolling page, panels stacked in priority
-   order (05-ui-screens.md → "Mobile Dashboard"). This is what most users get,
-   because most arrive on a phone. Mobile-first is a hard requirement.
-   Same panel components as the Village shell, only the frame differs.
+/* MOBILE SHELL, the village on a phone. Most users arrive here, so they get the
+   SAME world as desktop, not a stripped-down dashboard: the designer's world map,
+   fit whole-to-screen (letterboxed top/bottom on the dark theme), every building
+   a tappable hotspot. Tapping a building steps inside it as a full-screen sheet
+   (the shared InteriorView, reused from the Village shell), so the experience and
+   the art match the desktop village. Mobile-first is a hard requirement.
 
-   Navigation-aware: a conversion CTA (e.g. Vault → "Stake") scrolls the target
-   building into view. Tab selection is handled inside the target panel, so we
-   only clear `pending` here when there's no tab left for a panel to consume. */
+   No camera fly-over (too fiddly on touch): the map simply fits the viewport and
+   tapping opens the interior. The guided tour, the entry gate, and the audio all
+   work the same as desktop, driven from here. */
 
-import { useEffect, useRef, useState } from "react";
-import { BUILDINGS } from "@/components/buildings";
-import { BuildingPanel } from "@/components/ui/sealed-preview";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { ConnectButton } from "@/components/connect-button";
 import { EntryFork } from "@/components/ui/entry-fork";
+import { BuildingAudio } from "@/components/world-audio";
 import { useNavigation } from "@/lib/navigation";
 import { useIdentity } from "@/lib/identity";
-import { usePreview } from "@/lib/preview";
 import { useTour } from "@/lib/tour";
 import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
-import { TourNarration, TourHighlight } from "@/components/tour-ui";
+import { TourNarration } from "@/components/tour-ui";
+import { ImageButton } from "@/components/ui/image-button";
+import { InteriorView, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
+import { asset, USE_MOCK } from "@/lib/config";
+import { playDoor } from "@/lib/sfx";
+
+/* Icons for buildings whose art hasn't been delivered (matches the Village shell). */
+const PLACEHOLDER_ICON: Partial<Record<BuildingId, string>> = {
+  observatory: "🔭",
+  tavern: "🍺",
+  vault: "🔐",
+};
 
 export function MobileShell() {
   const { pending, clearPending } = useNavigation();
   const { isSet } = useIdentity();
   const tour = useTour();
+  // The building you've stepped inside (full-screen interior sheet). null = on the map.
+  const [inside, setInside] = useState<BuildingId | null>(null);
 
-  // The mobile guided tour: no map to fly over, so each beat scrolls the target
-  // into view and the spotlight rings it. Outside beat → the building's whole
-  // panel; inside beat → the specific section (forge-stake, etc.); overview →
-  // the top of the page.
-  const beat = tour.active ? tour.beat : null;
-  const tourTarget =
-    beat && !beat.overview
-      ? beat.phase === "inside" && beat.highlight
-        ? beat.highlight
-        : beat.building
-          ? `b-${beat.building}`
-          : null
-      : null;
+  // The tour drives navigation while it runs: an "inside" beat opens that
+  // building's interior; any other beat (outside / overview) returns to the map.
   useEffect(() => {
-    if (!tour.active || !tour.beat) return;
-    if (tour.beat.overview) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+    if (!tour.active) return;
+    if (tour.beat?.phase === "inside" && tour.beat.building) {
+      setInside(tour.beat.building);
+    } else {
+      setInside(null);
     }
-    if (tourTarget) {
-      requestAnimationFrame(() =>
-        document.getElementById(tourTarget)?.scrollIntoView({ behavior: "smooth", block: "center" })
-      );
-    }
-  }, [tour.active, tour.beat, tourTarget]);
-  const { launched } = usePreview();
-  const ordered = BUILDINGS.filter((b) => b.mobileOrder !== null).sort(
-    (a, b) => (a.mobileOrder ?? 0) - (b.mobileOrder ?? 0)
-  );
-  // Pre-launch the Ashen Cup is the ONLY live building, so float it to the top
-  // on mobile, the funnel must be above the fold, not buried under five sealed
-  // previews. At launch the normal priority order returns.
-  const stacked = launched
-    ? ordered
-    : [...ordered.filter((b) => b.id === "tavern"), ...ordered.filter((b) => b.id !== "tavern")];
+  }, [tour.active, tour.beat]);
 
+  // Honour a deep-link / conversion CTA (e.g. tour finale → Ashen Cup, Vault →
+  // "Stake" → Forge): step inside the target. A tab is left on `pending` for the
+  // panel to consume; otherwise we clear it here so it can't re-fire stale.
   useEffect(() => {
-    if (!pending) return;
+    if (!pending || pending.building === "gate") return;
     if (pending.building === "") {
-      // Browser Back to the map root → top of the dashboard.
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setInside(null);
       clearPending();
       return;
     }
-    document
-      .getElementById(`b-${pending.building}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setInside(pending.building as BuildingId);
     if (!pending.tab) clearPending();
   }, [pending, clearPending]);
 
+  const tapBuilding = (id: BuildingId) => {
+    if (tour.active) return; // the tour drives navigation
+    if (id === "gate") return; // the Gate is the entry, handled by the gate overlay
+    playDoor(id);
+    setInside(id);
+  };
+
+  // World + building ambiance, same model as desktop: the village theme plays on
+  // the map; stepping inside swaps to that building's track. During the tour the
+  // world theme stays on as a dimmed ambience bed under the narration / voice-over.
+  const buildingSound = inside ? BUILDING_BY_ID[inside].sound ?? null : null;
+  const sound = tour.active ? WORLD_THEME : buildingSound ?? (isSet ? WORLD_THEME : null);
+
   return (
-    <main className="min-h-dvh max-w-xl mx-auto px-4 pb-16">
-      <header className="sticky top-0 z-10 bg-bg/90 backdrop-blur">
-        <div className="flex items-center justify-between py-4">
-          <span className="font-display text-2xl text-brand tracking-wide">PYRE</span>
+    <main className="min-h-dvh relative overflow-hidden bg-bg">
+      {/* Brand + connect + standing, floating over the top letterbox band. */}
+      <header className="absolute top-0 inset-x-0 z-20 px-4 pt-4">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-2xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+            PYRE
+          </span>
           <ConnectButton />
         </div>
-        {/* Once awake: profile + rite progress, always visible (the mobile take on
-            the world's bottom-left / top-right HUD). */}
         {isSet && (
-          <div className="flex items-center justify-between gap-2 pb-3">
+          <div className="mt-3 flex items-center justify-between gap-2">
             <WorldProfile />
             <WorldRiteProgress />
           </div>
         )}
       </header>
 
-      <div className="space-y-4">
-        {stacked.map(({ id }) => (
-          <div key={id} id={`b-${id}`} className="scroll-mt-20">
-            <DeferUntilNear>
-              <BuildingPanel id={id} />
-            </DeferUntilNear>
-          </div>
-        ))}
+      {/* THE VILLAGE, fit whole-to-screen. The map keeps its own ratio inside a
+          centered box (so the entire kingdom is visible); the dark theme fills the
+          letterbox bands above/below. Buildings sit on top by %-coordinate, the
+          same placement data the desktop map uses. */}
+      <div className="absolute inset-0 grid place-items-center">
+        <div className="relative w-full" style={{ aspectRatio: String(MAP_RATIO) }}>
+          <Image
+            src={asset("/world/map.webp")}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover select-none pointer-events-none"
+          />
+
+          {BUILDINGS.filter((b) => b.id !== "gate" || !isSet).map((b) => {
+            const gatePrompt = b.id === "gate" && !isSet;
+            return (
+              <button
+                key={b.id}
+                onClick={() => tapBuilding(b.id)}
+                className="absolute group focus:outline-none active:scale-95 transition-transform"
+                style={{
+                  left: `${b.map.x}%`,
+                  top: `${b.map.y}%`,
+                  width: `${b.scale}%`,
+                  transform: "translate(-50%, -84%)",
+                  zIndex: Math.round(b.map.y),
+                }}
+                aria-label={`${b.name}, ${b.tagline}`}
+              >
+                {b.art ? (
+                  <Image
+                    src={asset(b.art)}
+                    alt={b.name}
+                    width={1484}
+                    height={1060}
+                    sizes="30vw"
+                    className="w-full h-auto select-none [filter:drop-shadow(0_6px_8px_rgba(0,0,0,0.55))]"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="mx-auto flex w-3/5 aspect-square items-center justify-center rounded-full bg-surface-2/80 border border-dashed border-brand/50 backdrop-blur-sm text-base shadow-[0_6px_10px_rgba(0,0,0,0.55)]">
+                    {PLACEHOLDER_ICON[b.id] ?? "🏛"}
+                  </span>
+                )}
+
+                {/* Compact always-on nameplate (no hover on touch), so the small
+                    fit-to-screen buildings are still legible + readable as taps. */}
+                <span
+                  className={`pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 whitespace-nowrap rounded bg-bg/80 px-1.5 py-0.5 backdrop-blur-sm ${
+                    gatePrompt ? "ring-1 ring-brand/50" : ""
+                  }`}
+                >
+                  <span className="block font-display text-brand text-[9px] leading-none text-center">
+                    {b.name}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Guided tour (mobile): same narration, scroll + spotlight instead of a camera. */}
-      {tour.active && tour.beat && <TourNarration />}
-      {tour.active && tourTarget && <TourHighlight targetId={tourTarget} />}
+      {/* World + building music (one persistent player, re-pointed; null fades out). */}
+      <BuildingAudio src={sound} volume={tour.active ? 0.2 : undefined} />
 
-      {/* Entry gate: desktop has the full-screen GateLanding; mobile had only the
-          first-visit intro, so a returning visitor with no identity hit a wall of
-          sealed previews with no guest path. Whenever there's no identity, cover
-          the dashboard with the connect-or-guest fork (sits under the first-visit
-          intro at z-50, and is revealed for returning/skipped visitors). */}
+      {/* STEP INSIDE: the building's interior fills the screen with the feature
+          panel on top (the shared desktop sheet). Back returns to the map. */}
+      {inside && (
+        <InteriorView
+          id={inside}
+          onBack={() => {
+            setInside(null);
+            clearPending();
+          }}
+        />
+      )}
+
+      {/* Guided tour (mobile): same narration; opens each building's interior. */}
+      {tour.active && tour.beat && <TourNarration />}
+
+      {/* Mock-only: a round "?" help affordance to replay the guided tour. */}
+      {USE_MOCK && isSet && !tour.active && !inside && (
+        <div className="fixed bottom-3 right-3 z-40">
+          <ImageButton name="question" label="Replay the guided tour" onClick={tour.start} width={44} />
+        </div>
+      )}
+
+      {/* Entry gate: whenever there's no identity, cover the village with the
+          connect-or-guest fork (sits under the first-visit intro at z-50). */}
       {!isSet && <MobileGate />}
     </main>
-  );
-}
-
-/* Defers mounting a stacked panel until it's near the viewport, so a phone's
-   first paint isn't blocked by every building mounting + firing its data queries
-   and polling timers at once (the Ashen Cup, first/in-view, mounts immediately).
-   Mounts once and stays mounted. The outer id (b-<building>) lives on the parent,
-   so deep-links and the tour can still scroll here before it mounts. */
-function DeferUntilNear({ children, minHeight = 320 }: { children: React.ReactNode; minHeight?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    if (shown) return;
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: "600px 0px" } // mount a little before it scrolls into view
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [shown]);
-  return (
-    <div ref={ref} style={shown ? undefined : { minHeight }}>
-      {shown ? children : null}
-    </div>
   );
 }
 

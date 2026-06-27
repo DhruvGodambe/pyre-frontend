@@ -4,62 +4,19 @@
    - TourNarration: the Emberkeeper's dialogue box (Tutor portrait + voice + the
      line + controls). Same on desktop and mobile; only the primary label adapts
      ("Step inside" makes sense only on the desktop map).
-   - TourHighlight: a moving spotlight that rings a UI element by id (the Forge's
-     Stake box, a mobile panel, etc.), dimming everything else.
 
-   The camera (desktop) and the scroll/open behaviour (each shell) live in the
-   shells; this is only the on-screen narration + spotlight. */
+   The tour steps INSIDE each building and narrates; it does not spotlight any
+   UI section. The camera (desktop) and the scroll/open behaviour (each shell)
+   live in the shells; this is only the on-screen narration. */
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { useTour } from "@/lib/tour";
 import { useCompleteQuestTask, useQuestTasks } from "@/lib/hooks";
 import { useIsDesktop } from "@/components/ui/use-media";
 import { asset } from "@/lib/config";
-
-/* A moving spotlight that rings the element the current line points at. Finds it
-   by id, scrolls it into view, and tracks its box each frame; a huge spread
-   shadow dims everything else. pointer-events stay through to the control. */
-export function TourHighlight({ targetId }: { targetId: string }) {
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  useEffect(() => {
-    let raf = 0;
-    let scrolled = false;
-    const loop = () => {
-      const el = document.getElementById(targetId);
-      if (el) {
-        if (!scrolled) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          scrolled = true;
-        }
-        setRect(el.getBoundingClientRect());
-      } else {
-        setRect(null);
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [targetId]);
-
-  if (!rect) return null;
-  const pad = 8;
-  return (
-    <div
-      className="fixed z-[54] pointer-events-none rounded-xl"
-      style={{
-        left: rect.left - pad,
-        top: rect.top - pad,
-        width: rect.width + pad * 2,
-        height: rect.height + pad * 2,
-        boxShadow:
-          "0 0 0 2px var(--color-brand), 0 0 0 9999px rgba(8,6,4,0.55), 0 0 32px rgba(240,169,59,0.65)",
-        transition: "left 220ms ease, top 220ms ease, width 220ms ease, height 220ms ease",
-      }}
-      aria-hidden
-    />
-  );
-}
+import { ImageButton, type ImageButtonName } from "@/components/ui/image-button";
 
 /* The Emberkeeper's narration box during the guided tour. */
 export function TourNarration() {
@@ -100,13 +57,23 @@ export function TourNarration() {
   const b = tour.beat.building ? BUILDING_BY_ID[tour.beat.building] : null;
   const inside = tour.beat.phase === "inside";
   // "Step inside" only means something on the desktop map; mobile is all inline.
+  // The visible text is baked into the designer's art; `primaryLabel` is the
+  // accessible label and `primaryArt` is which engraved button to show. There's
+  // no dedicated "Begin the quests" art yet, so the last beat reuses Continue
+  // (the SR label still says "Begin the quests"). Drop a `beginquests` row in
+  // image-button.tsx and add it here when the designer ships one.
   const primaryLabel = overview
-    ? "Begin the tour →"
+    ? "Begin the tour"
     : tour.isLastBeat
-      ? "Begin the quests →"
+      ? "Begin the quests"
       : !inside && isDesktop
-        ? "Step inside →"
-        : "Continue →";
+        ? "Step inside"
+        : "Continue";
+  const primaryArt: ImageButtonName = overview
+    ? "begintour"
+    : !tour.isLastBeat && !inside && isDesktop
+      ? "stepinside"
+      : "continue";
   const headerLabel = overview
     ? "The Pyre Kingdom"
     : inside
@@ -143,9 +110,17 @@ export function TourNarration() {
                 <button
                   onClick={() => setMuted((m) => !m)}
                   title={muted ? "Unmute the Emberkeeper" : "Mute"}
-                  className="text-text-3 text-xs hover:text-text-2 transition-colors"
+                  aria-label={muted ? "Unmute the Emberkeeper" : "Mute the Emberkeeper"}
+                  className="shrink-0 transition-transform duration-fast hover:scale-110 active:scale-95"
                 >
-                  {muted ? "🔇" : "🔊"}
+                  <Image
+                    src={asset(muted ? "/world/ui/audio_off.png" : "/world/ui/audio_on.png")}
+                    alt=""
+                    width={359}
+                    height={309}
+                    className="h-[22px] w-auto pointer-events-none"
+                    draggable={false}
+                  />
                 </button>
                 <button
                   onClick={tour.skip}
@@ -159,20 +134,15 @@ export function TourNarration() {
             <p className="text-text-2 text-sm leading-relaxed">{tour.beat.text}</p>
             <div className="mt-3 flex items-center gap-3">
               {tour.index > 0 && (
-                <button
-                  onClick={tour.back}
-                  className="text-text-3 text-sm hover:text-text-2 transition-colors px-2 py-2"
-                >
-                  ← Back
-                </button>
+                <ImageButton name="back" label="Back" onClick={tour.back} width={96} />
               )}
               <div className="flex-1" />
-              <button
+              <ImageButton
+                name={primaryArt}
+                label={primaryLabel}
                 onClick={onPrimary}
-                className="rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
-              >
-                {primaryLabel}
-              </button>
+                width={primaryArt === "begintour" ? 168 : 156}
+              />
             </div>
           </div>
         </div>

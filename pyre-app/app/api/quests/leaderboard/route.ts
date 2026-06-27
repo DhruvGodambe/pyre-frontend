@@ -7,11 +7,28 @@ import { NextResponse } from "next/server";
 import { getQuestStore } from "@/lib/db";
 import { getOrCreateSessionId } from "@/lib/quests/session";
 import { buildQuestTasks, REFERRAL_EMBERS } from "@/lib/quests/catalog";
+import { USE_MOCK } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TOP_N = 25;
+// Show a tight top 5 only; everyone else sees their own rank via `you` below.
+const TOP_N = 5;
+
+/* MOCK-ONLY demo board, so the leaderboard's look (top 5 + your own rank below)
+   can be reviewed locally without seeding a real backend. Returns a fixed top 5
+   plus `you` at rank 10, exercising the "···" jump + self row. Auto-disabled at
+   launch (USE_MOCK=false). Delete this block when the real board is the demo. */
+const MOCK_BOARD = {
+  top: [
+    { rank: 1, name: "Infernarch", embers: 980, you: false },
+    { rank: 2, name: "Cinderwake", embers: 845, you: false },
+    { rank: 3, name: "Emberveil", embers: 712, you: false },
+    { rank: 4, name: "Ashen Mára", embers: 640, you: false },
+    { rank: 5, name: "Pyrewright", embers: 588, you: false },
+  ],
+  you: { rank: 10, embers: 343 },
+};
 
 function questEmbers(taskIds: string[], submitted: boolean): number {
   return buildQuestTasks(new Set(taskIds), submitted)
@@ -26,6 +43,8 @@ function displayName(username: string | null, wallet: string | null): string {
 }
 
 export async function GET() {
+  if (USE_MOCK) return NextResponse.json(MOCK_BOARD);
+
   const sessionId = await getOrCreateSessionId();
   const rows = await getQuestStore().getLeaderboard();
 

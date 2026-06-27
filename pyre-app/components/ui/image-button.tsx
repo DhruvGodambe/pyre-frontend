@@ -27,9 +27,74 @@ const BUTTONS = {
   burn: ["/world/ui/burn_normal.png", "/world/ui/burn_hover.png", 1075, 203],
   burnmore: ["/world/ui/burnmore_normal.png", "/world/ui/burnmore_hover.png", 686, 177],
   stakemore: ["/world/ui/stakemore_normal.png", "/world/ui/stakemore_hover.png", 686, 177],
+  // THE FORGE, matched orange "lava stone" set (Stake/Unstake + Burn/Burn-LP).
+  stakepyre: ["/world/ui/stakepyre_normal.png", "/world/ui/stakepyre_hover.png", 420, 124],
+  unstake: ["/world/ui/unstake_normal.png", "/world/ui/unstake_hover.png", 420, 124],
+  burntokens: ["/world/ui/burntokens_normal.png", "/world/ui/burntokens_hover.png", 420, 124],
+  burnlp: ["/world/ui/burnlp_normal.png", "/world/ui/burnlp_hover.png", 420, 124],
+  // THE ASHEN CUP, quest CTAs (orange) + engraved gold-serif nav (dark stone).
+  go: ["/world/ui/go_normal.png", "/world/ui/go_hover.png", 164, 87],
+  like: ["/world/ui/like_normal.png", "/world/ui/like_hover.png", 197, 87],
+  repost: ["/world/ui/repost_normal.png", "/world/ui/repost_hover.png", 236, 87],
+  takequiz: ["/world/ui/takequiz_normal.png", "/world/ui/takequiz_hover.png", 332, 88],
+  taketour: ["/world/ui/taketour_normal.png", "/world/ui/taketour_hover.png", 332, 88],
+  sharex: ["/world/ui/sharex_normal.png", "/world/ui/sharex_hover.png", 665, 121],
+  viewleaderboard: ["/world/ui/viewleaderboard_normal.png", "/world/ui/viewleaderboard_hover.png", 665, 121],
+  completequest: ["/world/ui/completequest_normal.png", "/world/ui/completequest_hover.png", 665, 121],
+  // THE GUIDED TOUR, the Emberkeeper's narration-box controls + replay affordance.
+  begintour: ["/world/ui/begintour_normal.png", "/world/ui/begintour_hover.png", 450, 123],
+  stepinside: ["/world/ui/stepinside_normal.png", "/world/ui/stepinside_hover.png", 401, 123],
+  continue: ["/world/ui/continue_normal.png", "/world/ui/continue_hover.png", 545, 171],
+  back: ["/world/ui/back_normal.png", "/world/ui/back_hover.png", 239, 106],
+  replaytour: ["/world/ui/replaytour_normal.png", "/world/ui/replaytour_hover.png", 593, 166],
+  question: ["/world/ui/question_normal.png", "/world/ui/question_hover.png", 256, 232],
 } as const;
 
 export type ImageButtonName = keyof typeof BUTTONS;
+
+/* Presentational art only (no <button>): the normal/hover PNG pair with the
+   hover swap + pending overlay baked in. Render this directly inside an <a> (a
+   diegetic link CTA, e.g. Share on X) where a nested <button> would be invalid,
+   or let ImageButton wrap it in a real button for actions. The parent drives
+   `hover` so an anchor (group-hover) can light the art on its own. */
+export function ImageArt({
+  name,
+  width = 220,
+  hover = false,
+  inactive = false,
+  pending = false,
+  className = "",
+}: {
+  name: ImageButtonName;
+  width?: number | string;
+  hover?: boolean;
+  inactive?: boolean;
+  pending?: boolean;
+  className?: string;
+}) {
+  const [normal, hovered, w, h] = BUTTONS[name];
+  const src = hover && !inactive ? hovered : normal;
+  return (
+    <span style={{ width }} className={`relative inline-block select-none ${className}`}>
+      <Image
+        src={asset(src)}
+        alt=""
+        width={w}
+        height={h}
+        priority
+        className={`w-full h-auto drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none transition-opacity duration-fast ${
+          pending ? "opacity-40" : ""
+        }`}
+        draggable={false}
+      />
+      {pending && (
+        <span className="absolute inset-0 grid place-items-center" aria-hidden>
+          <span className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+        </span>
+      )}
+    </span>
+  );
+}
 
 export function ImageButton({
   name,
@@ -52,9 +117,7 @@ export function ImageButton({
   className?: string;
 }) {
   const [hover, setHover] = useState(false);
-  const [normal, hovered, w, h] = BUTTONS[name];
   const inactive = disabled || pending;
-  const src = hover && !inactive ? hovered : normal;
   return (
     <button
       type="button"
@@ -69,22 +132,7 @@ export function ImageButton({
       style={{ width }}
       className={`relative inline-block select-none transition-transform duration-fast active:scale-[0.97] hover:scale-[1.03] disabled:opacity-50 disabled:pointer-events-none focus:outline-none ${className}`}
     >
-      <Image
-        src={asset(src)}
-        alt=""
-        width={w}
-        height={h}
-        priority
-        className={`w-full h-auto drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none transition-opacity duration-fast ${
-          pending ? "opacity-40" : ""
-        }`}
-        draggable={false}
-      />
-      {pending && (
-        <span className="absolute inset-0 grid place-items-center" aria-hidden>
-          <span className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-        </span>
-      )}
+      <ImageArt name={name} width="100%" hover={hover} inactive={inactive} pending={pending} />
     </button>
   );
 }

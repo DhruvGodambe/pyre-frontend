@@ -19,7 +19,7 @@ import { ImageButton } from "@/components/ui/image-button";
 import { BuildingPanel } from "@/components/ui/sealed-preview";
 import { GateLanding } from "@/components/gate-landing";
 import { BuildingAudio } from "@/components/world-audio";
-import { TourNarration, TourHighlight } from "@/components/tour-ui";
+import { TourNarration } from "@/components/tour-ui";
 import { useTour } from "@/lib/tour";
 import { GatePanel } from "@/components/panels/gate";
 import { useWallet } from "@/lib/wallet";
@@ -34,12 +34,12 @@ const enterLabel = (name: string) => `Enter ${name.replace(/^The /, "the ")}`;
 
 /* The village world's own background theme, played while roaming the map (no
    building open). Each building swaps in its own track on entry. */
-const WORLD_THEME = "/world/audio/world.mp3";
+export const WORLD_THEME = "/world/audio/world.mp3";
 
 /* The world map's aspect ratio, the full, original Pyre_World_Clean.png
    (6688×3764). The stage COVERS the viewport at this ratio so building
    %-coords track the artwork however the window is shaped. */
-const MAP_RATIO = 6688 / 3764; // ≈ 1.777
+export const MAP_RATIO = 6688 / 3764; // ≈ 1.777
 
 /* Icons for buildings whose art hasn't been delivered / been pulled (shown on a
    placeholder marker instead of building art). */
@@ -411,8 +411,10 @@ export function VillageShell() {
         // No building open + awake → the village world theme. One persistent
         // player, re-pointed (null = fade out). NOT keyed/remounted per track,
         // that churn is what made playback flaky. See components/world-audio.tsx.
-        const sound = tour.active ? null : buildingSound ?? (awake ? WORLD_THEME : null);
-        return <BuildingAudio src={sound} />;
+        // During the tour the world theme keeps playing as an ambience bed, but
+        // dimmed, so the Emberkeeper's narration / voice-over sits clearly on top.
+        const sound = tour.active ? WORLD_THEME : buildingSound ?? (awake ? WORLD_THEME : null);
+        return <BuildingAudio src={sound} volume={tour.active ? 0.2 : undefined} />;
       })()}
 
       {/* STEP 2, inside: the interior SCENE fills the whole screen and the feature
@@ -430,30 +432,21 @@ export function VillageShell() {
       )}
 
       {/* GUIDED TOUR, the Emberkeeper's narration + controls. Drives the camera
-          (outside beats) and the interiors (inside beats) above. */}
+          (outside beats) and steps inside the interiors (inside beats) above. */}
       {tour.active && tour.beat && <TourNarration />}
-
-      {/* Coachmark: glow/spotlight the exact UI section the current line is about
-          (e.g. the Forge's Stake box), so "you stake here" points somewhere real. */}
-      {tour.active && tour.beat?.phase === "inside" && tour.beat.highlight && (
-        <TourHighlight targetId={tour.beat.highlight} />
-      )}
 
       {/* Mock-only: replay the guided tour without re-running the whole intro. */}
       {USE_MOCK && awake && !tour.active && (
-        <button
-          onClick={tour.start}
-          className="fixed bottom-3 right-14 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
-        >
-          ▶ Replay tour
-        </button>
+        <div className="fixed bottom-3 right-14 z-40">
+          <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={150} />
+        </div>
       )}
     </main>
   );
 }
 
-/* TourNarration + TourHighlight now live in components/tour-ui.tsx (shared by
-   both shells). The camera + interior driving stay here in VillageShell. */
+/* TourNarration now lives in components/tour-ui.tsx (shared by both shells).
+   The camera + interior driving stay here in VillageShell. */
 
 /* Shared dim backdrop + entry animation container. */
 function Overlay({
@@ -618,8 +611,9 @@ function ExteriorScene({
 
 /* Inside the building: the interior SCENE fills the whole screen (the room you're
    standing in) and the feature panel floats on top. The scene is a backdrop, so
-   object-cover (which fills and lightly crops the edges) is the right fit here. */
-function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
+   object-cover (which fills and lightly crops the edges) is the right fit here.
+   Exported so the mobile village reuses it as the full-screen "step inside" sheet. */
+export function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => void }) {
   const b = BUILDING_BY_ID[id];
   // Fade the room up over a solid base, so stepping inside reads as a smooth
   // reveal (and the map never flashes through during the swap).
