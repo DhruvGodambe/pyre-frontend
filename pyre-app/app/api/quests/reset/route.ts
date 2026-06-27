@@ -15,12 +15,16 @@ import { USE_MOCK } from "@/lib/config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET() {
   if (!USE_MOCK) {
     return NextResponse.json({ ok: false, error: "disabled in production" }, { status: 403 });
   }
   const sessionId = await getOrCreateSessionId();
   await getQuestStore().unmarkComplete(sessionId, "intro");
-  // Bounce back into the app so it reloads with a fresh tour state.
-  return NextResponse.redirect(new URL("/app", req.url));
+  // Bounce back into the app with a RELATIVE link (meta-refresh), so it stays on
+  // whatever domain you're using and never leaks the internal deployment origin.
+  return new NextResponse(
+    `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/app"></head><body style="background:#0b0a08;color:#f0a93b;font-family:Georgia,serif;padding:2rem">Tour reset. <a href="/app" style="color:#f0a93b">Return to PYRE &rarr;</a></body></html>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
 }
