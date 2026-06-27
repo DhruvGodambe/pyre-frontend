@@ -23,16 +23,19 @@ import { useNavigation } from "@/lib/navigation";
 
 export type TourPhase = "outside" | "inside";
 
-/* The walk: a ring around the fire, ending at the Tavern (the funnel). The Gate
-   is excluded, it's the entry, already used to wake the village. */
+/* The walk, ordered to follow the real user journey and to flow building to
+   building (each stop hands off to the next): the heart of the fire, then how you
+   get $PYRE, then what you do with it, its pinnacle, where you track it, trading,
+   the wide view, and finally the one live door, the Ashen Cup. The Gate is
+   excluded, it's the entry, already used to wake the village. */
 const ORDER: BuildingId[] = [
   "bonfire",
-  "forge",
-  "vault",
-  "observatory",
   "exchange",
-  "market",
+  "forge",
   "immolated",
+  "vault",
+  "market",
+  "observatory",
   "tavern",
 ];
 
@@ -68,91 +71,111 @@ const say = (l: TourLine, launched: boolean): string =>
 export type TourInsideStep = TourLine;
 
 const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }> = {
+  // 1. The heart of the fire, the theme of the whole place.
   bonfire: {
     outside: {
-      text: "Let's start at the center: the Bonfire. Every $PYRE anyone burns shows up here.",
-      preText: "Let's start at the center: the Bonfire. Every $PYRE anyone burns will show up here, live.",
+      text: "Let's begin at the heart of it all: the Bonfire, burning at the center of the village. Every $PYRE anyone sends to the fire shows up here.",
+      preText: "Let's begin at the heart of it all: the Bonfire, burning at the center of the village. Every $PYRE anyone sends to the fire will show up here, live.",
     },
     inside: [
       {
-        text: "This is the total $PYRE burned across everyone, updating live.",
-        preText: "This will be the total $PYRE burned across everyone, updating live once the fire is lit.",
+        text: "This is the total $PYRE burned across everyone, climbing in real time. The whole village turns around this fire.",
+        preText: "This will be the total $PYRE burned across everyone, climbing in real time once the fire is lit. The whole village turns around this fire.",
       },
     ],
   },
-  forge: {
+  // 2. The on-ramp: first you need $PYRE.
+  exchange: {
     outside: {
-      text: "The Forge is where you stake $PYRE to earn ETH (and stop decay), and burn $PYRE to create your Acolyte NFT. Let's go in.",
-      preText: "The Forge is where you'll stake $PYRE to earn ETH (and stop decay), and burn $PYRE to create your Acolyte NFT. Take a look inside.",
+      text: "Before you can take part, you'll need some $PYRE of your own. Follow me, this way to the Grand Exchange.",
+      preText: "Before you can take part, you'll need some $PYRE of your own. Follow me, this way to the Grand Exchange.",
     },
     inside: [
       {
-        text: "First, stake your $PYRE here. That stops decay and starts earning you ETH.",
-        preText: "This is where you'll stake your $PYRE. That stops decay and starts earning you ETH.",
+        text: "Swap your ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
+        preText: "You'll swap your ETH for $PYRE right here, with every fee shown upfront. This is your way in.",
+      },
+    ],
+  },
+  // 3. The core loop: stake to earn, burn to rise. Ends by handing off to the Hall.
+  forge: {
+    outside: {
+      text: "Now, with $PYRE in hand, come with me to the Forge. This is where the real work happens. Let's step inside.",
+      preText: "Now, with $PYRE in hand, this is the Forge, where the real work will happen. Let's step inside.",
+    },
+    inside: [
+      {
+        text: "First, stake your $PYRE here. That stops it decaying and starts earning you ETH.",
+        preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you ETH.",
       },
       {
-        text: "Then burn $PYRE here to create your Acolyte NFT, which multiplies that ETH yield up to 3×.",
-        preText: "Then you'll burn $PYRE here to create your Acolyte NFT, which multiplies that ETH yield up to 3×.",
+        text: "Then burn $PYRE here to forge your Acolyte NFT, which multiplies that ETH yield up to 3×.",
+        preText: "Then you'll burn $PYRE here to forge your Acolyte NFT, which multiplies that ETH yield up to 3×.",
         art: "/world/acolytes/acolyte.png",
       },
       {
-        text: "Your Acolyte climbs four tiers as you burn more, all right here at the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Keep burning beyond Pyre and you ascend to the rarest form of all, the Immolated Acolyte, the highest rank in the village. Its Hall sits above.",
-        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Keep burning beyond Pyre and you'll ascend to the rarest form of all, the Immolated Acolyte, the highest rank in the village. Its Hall sits above.",
+        text: "Your Acolyte climbs four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). And burn past Pyre, and you ascend to the rarest form of all, the Immolated. Come, let me take you to their Hall.",
+        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). And burn past Pyre, and you'll ascend to the rarest form of all, the Immolated. Come, let me take you to their Hall.",
       },
     ],
   },
-  vault: {
-    outside: { text: "Your personal dashboard: the Amber Vault." },
-    inside: [
-      {
-        text: "Everything that's yours lives here: your Acolyte, your balances and your yield, with quick ways back to the action.",
-        preText: "Everything that's yours will live here: your Acolyte, your balances and your yield, with quick ways back to the action.",
-      },
-    ],
-  },
-  observatory: {
-    outside: { text: "Live project stats: the Observatory." },
-    inside: [
-      {
-        text: "From here you read the whole protocol at a glance: supply, decay, burns and yield. No wallet needed to look.",
-        preText: "You'll read the whole protocol here at a glance: supply, decay, burns and yield. No wallet needed to look.",
-      },
-    ],
-  },
-  exchange: {
+  // 4. The pinnacle, straight off the Forge's tier ladder.
+  immolated: {
     outside: {
-      text: "Where you trade: the Grand Exchange.",
-      preText: "Where you'll trade: the Grand Exchange.",
+      text: "Here it is: the Hall of the Immolated, home to the rarest Acolytes in the village.",
+      preText: "Here it is: the Hall of the Immolated, home to the rarest Acolytes in the village.",
     },
     inside: [
       {
-        text: "Swap ETH and $PYRE here, with every fee shown upfront.",
-        preText: "You'll swap ETH and $PYRE here, with every fee shown upfront.",
+        text: "Burn past Pyre at the Forge and you ascend here, to the Immolated: the highest rank of all, with the strongest pull on the yield.",
+        preText: "Burn past Pyre at the Forge and you'll ascend here, to the Immolated: the highest rank of all, with the strongest pull on the yield.",
       },
     ],
   },
+  // 5. Where you track everything you've built.
+  vault: {
+    outside: {
+      text: "Everything you build, I keep safe in one place for you. This way, to your Amber Vault.",
+      preText: "Everything you build, I keep safe in one place for you. This way, to your Amber Vault.",
+    },
+    inside: [
+      {
+        text: "Your Acolyte, your balances, your yield: it all lives here, with quick ways back to the action.",
+        preText: "Your Acolyte, your balances and your yield will all live here, with quick ways back to the action.",
+      },
+    ],
+  },
+  // 6. Trading the Acolytes others forged (flows from just discussing Acolytes).
   market: {
-    outside: { text: "Buy and sell NFTs: the Black Market." },
+    outside: {
+      text: "Acolytes can change hands, too. Step over here with me, to the Black Market.",
+      preText: "Acolytes can change hands, too. Step over here with me, to the Black Market.",
+    },
     inside: [
       {
-        text: "Browse and buy Acolytes that other people have created.",
-        preText: "You'll browse and buy Acolytes that other people have created.",
+        text: "Browse and buy the Acolytes other people have forged, or sell your own.",
+        preText: "You'll browse and buy the Acolytes other people have forged, or sell your own.",
       },
     ],
   },
-  immolated: {
-    outside: { text: "For top holders: the Hall of the Immolated." },
+  // 7. The wide view, a calm beat before the call to action.
+  observatory: {
+    outside: {
+      text: "Before we finish, climb up here with me for the whole view: the Observatory.",
+      preText: "Before we finish, climb up here with me for the whole view: the Observatory.",
+    },
     inside: [
       {
-        text: "When your burning at the Forge lifts you past Pyre into the Immolated, this Hall opens to you: ascend here to take the highest rank in the village, with the strongest pull on the yield.",
-        preText: "When your burning at the Forge lifts you past Pyre into the Immolated, this Hall opens to you: ascend here to take the highest rank in the village, with the strongest pull on the yield.",
+        text: "From here you read the entire protocol at a glance: supply, decay, burns and yield. No wallet needed to look.",
+        preText: "You'll read the entire protocol here at a glance: supply, decay, burns and yield. No wallet needed to look.",
       },
     ],
   },
+  // 8. The finale and the one live door today.
   tavern: {
     outside: {
-      text: "And the Ashen Cup, where you earn rewards before launch.",
-      preText: "And last, the Ashen Cup. When the tour ends, this is where you begin: complete quests to earn rewards before launch.",
+      text: "And last, the place that matters most today: the Ashen Cup. Let's step in.",
+      preText: "And last, the place that matters most right now: the Ashen Cup. When the tour ends, this is where you begin. Let's step in.",
     },
     inside: [
       {
