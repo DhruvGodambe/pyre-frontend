@@ -42,6 +42,9 @@ export interface QuestStore {
   getCompletions(sessionId: string): Promise<string[]>;
   /** Idempotently mark a task complete for this session. */
   markComplete(sessionId: string, taskId: string): Promise<void>;
+  /** Remove a task completion for this session (used by the mock reset; the tour
+      grants "intro" on finish, so clearing it lets the funnel be re-tested). */
+  unmarkComplete(sessionId: string, taskId: string): Promise<void>;
   /** The wallet this session submitted, if any. */
   getSubmission(sessionId: string): Promise<WalletSubmission | null>;
   /** Record (or replace) the wallet this session submitted. */

@@ -55,6 +55,15 @@ export class SupabaseStore implements QuestStore {
     if (error) throw new Error(error.message);
   }
 
+  async unmarkComplete(sessionId: string, taskId: string): Promise<void> {
+    const { error } = await this.db
+      .from(COMPLETIONS)
+      .delete()
+      .eq("session_id", sessionId)
+      .eq("task_id", taskId);
+    if (error) throw new Error(error.message);
+  }
+
   async getSubmission(sessionId: string): Promise<WalletSubmission | null> {
     const { data, error } = await this.db
       .from(SUBMISSIONS)

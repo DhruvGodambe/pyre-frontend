@@ -64,6 +64,16 @@ export class FileStore implements QuestStore {
     });
   }
 
+  unmarkComplete(sessionId: string, taskId: string): Promise<void> {
+    return this.run(async () => {
+      const data = await this.read();
+      const list = (data.completions[sessionId] ?? []).filter((t) => t !== taskId);
+      if (list.length) data.completions[sessionId] = list;
+      else delete data.completions[sessionId];
+      await this.write(data);
+    });
+  }
+
   getSubmission(sessionId: string): Promise<WalletSubmission | null> {
     return this.run(async () => {
       const data = await this.read();

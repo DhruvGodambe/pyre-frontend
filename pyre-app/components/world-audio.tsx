@@ -61,7 +61,6 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
     }
     const el = elRef.current;
     let cancelled = false;
-    let onGesture: (() => void) | null = null;
 
     // Nothing open: fade out and pause, but KEEP the element.
     if (!src) {
@@ -81,22 +80,35 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
     const rampUp = () => {
       if (!cancelled) fadeTo(volRef.current, 800);
     };
+
+    // Autoplay is usually blocked on first load (no user gesture yet), which left
+    // the ambience silent until the next interaction happened to retrigger it.
+    // So if the immediate play() is rejected, listen for the FIRST interaction of
+    // ANY kind and keep trying until it actually starts, then stop listening.
+    const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
+    function disarm() {
+      GESTURES.forEach((e) => document.removeEventListener(e, onGesture));
+    }
+    function onGesture() {
+      if (cancelled) return disarm();
+      el.play()
+        .then(() => {
+          disarm();
+          rampUp();
+        })
+        .catch(() => {
+          /* still blocked: stay armed for the next interaction */
+        });
+    }
+
     el.play()
       .then(rampUp)
-      .catch(() => {
-        // Autoplay blocked: start on the next click anywhere, ONCE, and tear the
-        // listener down if we unmount / switch building before it fires.
-        onGesture = () => {
-          onGesture = null;
-          if (!cancelled) el.play().then(rampUp).catch(() => {});
-        };
-        document.addEventListener("pointerdown", onGesture, { once: true });
-      });
+      .catch(() => GESTURES.forEach((e) => document.addEventListener(e, onGesture)));
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafRef.current);
-      if (onGesture) document.removeEventListener("pointerdown", onGesture);
+      disarm();
     };
   }, [src]);
 
