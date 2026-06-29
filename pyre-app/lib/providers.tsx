@@ -1,10 +1,15 @@
 "use client";
 
-/* App-wide providers: react-query (data caching) + wallet context.
-   When wagmi is added, its WagmiProvider wraps these too. */
+/* App-wide providers: react-query (data caching) + wallet context. When the
+   real wallet is active (REAL_WALLET), wagmi's WagmiProvider wraps the tree
+   (it must sit ABOVE QueryClientProvider). In pure mock mode it's omitted, so
+   the demo carries no wagmi/runtime weight. */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { WagmiProvider } from "wagmi";
+import { wagmiConfig } from "./wagmi";
+import { REAL_WALLET } from "./config";
 import { WalletProvider } from "./wallet";
 import { IdentityProvider } from "./identity";
 import { NavigationProvider } from "./navigation";
@@ -22,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
-  return (
+  const tree = (
     <QueryClientProvider client={client}>
       <WalletProvider>
         {/* Identity derives from the wallet (composes useWallet); navigation is
@@ -39,4 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       </WalletProvider>
     </QueryClientProvider>
   );
+
+  // wagmi requires QueryClientProvider nested INSIDE WagmiProvider.
+  return REAL_WALLET ? <WagmiProvider config={wagmiConfig}>{tree}</WagmiProvider> : tree;
 }

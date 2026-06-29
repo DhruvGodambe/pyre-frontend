@@ -14,6 +14,14 @@ import type { Address, TokenInfo } from "./types";
 export const USE_MOCK =
   process.env.NEXT_PUBLIC_USE_MOCK !== "false"; // default: mock on
 
+/* The real wallet (wagmi) is used whenever we're live (USE_MOCK=false). It can
+   ALSO be force-enabled on top of mock data with NEXT_PUBLIC_REAL_WALLET=true,
+   to test the actual connect flow before the chain data source is wired (mock
+   data still serves the app, so nothing crashes; the connected address just
+   reads mock positions). Default while mocking: off (pretend-connect). */
+export const REAL_WALLET =
+  !USE_MOCK || process.env.NEXT_PUBLIC_REAL_WALLET === "true";
+
 /* ----------------------------------------------------------------------------
    LAUNCHED = the launch switch. Pre-launch (false, the default) the whole world
    is a sealed PREVIEW: every building can be entered and admired, but only the
@@ -38,17 +46,38 @@ export const asset = (path: string) => `${BASE_PATH}${path}`;
    V4_DEPLOYMENTS below. */
 export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 11155111); // Sepolia
 
-/** Filled in at contract handoff. Empty until then. */
+/* Deployed Sepolia (11155111) addresses from the contracts repo
+   (github.com/DhruvGodambe/pyre-protocol, broadcast/DeployAll.s.sol). Used as a
+   fallback when the NEXT_PUBLIC_* env vars aren't set, so chain mode works on
+   the testnet out of the box. Mainnet addresses must be supplied via env. */
+const SEPOLIA_CONTRACTS = {
+  token: "0xabd9bf9008090f091729290c4e898cb206edd785",
+  nft: "0xc0f652201e9382224d0619d26436664a157b0d50",
+  staking: "0xf690b15b4ddab1f3927737d52088d7a0a75f3e42",
+  immolated: "0x121c764b9209aab55b46d204ed4af1599d6fb892",
+  hook: "0xce9cd7eff1156d566cfebada4c025597cf51bff8",
+} as const satisfies Record<string, Address>;
+
+const onSepolia = CHAIN_ID === 11155111;
+
+/** Resolved from env, with Sepolia deploy addresses as the testnet fallback. */
 export const CONTRACTS: Record<
   "token" | "nft" | "staking" | "immolated" | "hook",
   Address | null
 > = {
-  token: (process.env.NEXT_PUBLIC_PYRE_TOKEN as Address) ?? null,
-  nft: (process.env.NEXT_PUBLIC_PYRE_NFT as Address) ?? null,
-  staking: (process.env.NEXT_PUBLIC_PYRE_STAKING as Address) ?? null,
-  immolated: (process.env.NEXT_PUBLIC_PYRE_IMMOLATED as Address) ?? null,
-  hook: (process.env.NEXT_PUBLIC_PYRE_HOOK as Address) ?? null,
+  token: (process.env.NEXT_PUBLIC_PYRE_TOKEN as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.token : null),
+  nft: (process.env.NEXT_PUBLIC_PYRE_NFT as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.nft : null),
+  staking: (process.env.NEXT_PUBLIC_PYRE_STAKING as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.staking : null),
+  immolated: (process.env.NEXT_PUBLIC_PYRE_IMMOLATED as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.immolated : null),
+  hook: (process.env.NEXT_PUBLIC_PYRE_HOOK as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.hook : null),
 };
+
+/* The protocol trades through a custom V4 router (IUniswapV4Router04), NOT the
+   canonical Universal Router. Sepolia deploy uses the vanity router below; set
+   NEXT_PUBLIC_SWAP_ROUTER for other chains. */
+export const SWAP_ROUTER: Address | null =
+  (process.env.NEXT_PUBLIC_SWAP_ROUTER as Address) ??
+  (onSepolia ? "0x00000000000044a361Ae3cAc094c9D1b14Eece97" : null);
 
 /* ============================================================================
    UNISWAP V4, Grand Exchange swap wiring
@@ -126,7 +155,12 @@ export const DYNAMIC_FEE_FLAG = 0x800000;
     ETH is address(0), so it sorts first → currency0 = ETH, currency1 = PYRE.
     fee/tickSpacing/hooks are confirmed at deploy time. */
 export const POOL = {
-  feeTier: 100, // pool LP fee in bps (1%), see POOL_FEE_BPS in constants.ts
+  // Uniswap v4 fee param of the deployed PYRE↔ETH pool (3000 = 0.30%), matching
+  // the contracts repo deploy default (PYRE_POOL_FEE=3000). NOTE: the app's
+  // display constants (POOL_FEE_BPS/HOOK_FEE_BPS) still describe the OLD 1%+4%
+  // model and the real hook schedule is buy 10%→5% / sell 23%→5% over 12h —
+  // reconcile fee display when wiring getSwapQuote.
+  feeTier: 3000,
   tickSpacing: 60,
   isDynamicFee: false,
   /** address(0) sentinel for native ETH as currency0. */

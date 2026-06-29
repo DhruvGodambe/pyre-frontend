@@ -105,8 +105,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     },
     inside: [
       {
-        text: "First, stake your $PYRE here. That stops it decaying and starts earning you $ETH.",
-        preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you $ETH.",
+        text: "First, stake your $PYRE here. That stops it decaying and starts earning you $ETH yield.",
+        preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you $ETH yield.",
       },
       {
         text: "Then burn $PYRE here to forge your Acolyte NFT, which multiplies that $ETH yield up to 3×.",
@@ -114,8 +114,13 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
         art: "/world/acolytes/acolyte.png",
       },
       {
-        text: "Your Acolyte climbs four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). And burn past Pyre, and you ascend to the rarest form of all, the Immolated. Come, let me take you to their Hall.",
-        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). And burn past Pyre, and you'll ascend to the rarest form of all, the Immolated. Come, let me take you to their Hall.",
+        text: "Your Acolyte climbs four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Burn past the Pyre tier, and you ascend to the rarest form of all, the Immolated.",
+        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Burn past the Pyre tier, and you'll ascend to the rarest form of all, the Immolated.",
+      },
+      {
+        text: "There's a deeper way to burn, too: Burn LP. Pair your $PYRE with $ETH and commit both to the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, earning +20% more $ETH yield than a plain-burn one of the same tier. It climbs the very same tiers, all the way to the Immolated, so a Pyre Acolyte Immolated (LP) is the highest form of all. Come, let me take you to their Hall.",
+        preText: "There's a deeper way to burn, too: Burn LP. You'll pair your $PYRE with $ETH and commit both to the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, earning +20% more $ETH yield than a plain-burn one of the same tier. It climbs the very same tiers, all the way to the Immolated, so a Pyre Acolyte Immolated (LP) is the highest form of all. Come, let me take you to their Hall.",
+        art: "/world/acolytes/acolyte.png",
       },
     ],
   },
@@ -180,7 +185,7 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     inside: [
       {
         text: "Here are the quests. Complete them to earn Points and climb the leaderboard. Let's do your first.",
-        preText: "Here are the quests, open right now. Complete them to earn Points, climb the leaderboard and lock in your place before the gates open. Let's do your first.",
+        preText: "Here are the quests, open right now. Complete them to earn Points and climb the leaderboard before the gates open. Let's do your first.",
       },
     ],
   },
@@ -207,7 +212,7 @@ export interface TourBeat {
    the Emberkeeper sets the scene, before the first zoom to the Bonfire. */
 const OVERVIEW_LINE: TourLine = {
   text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Come, let me show you around, building by building.",
-  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn your place before the gates open.",
+  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn Points toward a reward before the gates open.",
 };
 
 /* Build the whole walk for the current launch phase. Pre-launch beats speak in

@@ -708,7 +708,12 @@ export function LockedExterior({
   onBack: () => void;
 }) {
   const b = BUILDING_BY_ID[id];
+  // Background scene: the exterior if it has one, else its interior (the Bonfire
+  // has no exterior), so a locked door always shows the real place behind it.
+  const bg = b.exterior ?? b.interior;
   const { navigate } = useNavigation();
+  const { status, connect } = useWallet();
+  const connecting = status === "connecting";
   const [shown, setShown] = useState(false);
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
@@ -721,7 +726,15 @@ export function LockedExterior({
   };
   const goUnlock = () => {
     if (!lock.cta) return back();
+    // A "connect" CTA prompts the wallet in place and keeps this door open: once
+    // connected the lock recomputes and the door advances to the next real step
+    // (e.g. "Buy $PYRE at the Grand Exchange"). Walking-to-a-building CTAs leave.
+    if (lock.cta.connect) {
+      connect();
+      return;
+    }
     const to = lock.cta.to;
+    if (!to) return;
     setLeaving(true);
     setTimeout(() => {
       onBack();
@@ -742,25 +755,27 @@ export function LockedExterior({
           transition: "transform 1400ms cubic-bezier(0.16,1,0.3,1), opacity 600ms ease-out",
         }}
       >
-        {b.exterior ? (
+        {bg ? (
           <>
+            {/* The building's own scene (its exterior, or the interior for ones
+                with no exterior like the Bonfire), gently dimmed so it reads as
+                shut while the art is still clearly visible. */}
             <Image
-              src={asset(b.exterior)}
+              src={asset(bg)}
               alt=""
               fill
               priority
               sizes="100vw"
               aria-hidden
-              className="object-cover scale-125 blur-2xl brightness-[0.45] select-none pointer-events-none"
+              className="object-cover scale-125 blur-2xl brightness-[0.8] select-none pointer-events-none"
             />
-            {/* The exterior, darkened + desaturated so it reads as shut. */}
             <Image
-              src={asset(b.exterior)}
+              src={asset(bg)}
               alt={b.name}
               fill
               priority
               sizes="100vw"
-              className="object-cover brightness-[0.55] saturate-[0.75] select-none pointer-events-none"
+              className="object-cover brightness-[0.78] saturate-[0.9] select-none pointer-events-none"
             />
           </>
         ) : (
@@ -771,30 +786,44 @@ export function LockedExterior({
         )}
       </div>
 
-      {/* Legibility scrims over the dimmed art. */}
-      <div className="absolute inset-0 bg-bg/40 pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/70 to-transparent pointer-events-none" />
+      {/* Bottom scrim only, same as the open exterior, so the title + buttons stay
+          readable without dimming the whole scene. */}
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-bg via-bg/75 to-transparent pointer-events-none" />
 
       <div className="absolute top-4 left-4 z-10">
         <ImageButton name="return" label="Back to the map" width={252} onClick={back} />
       </div>
 
-      <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-        <div className="w-full max-w-md text-center animate-entry">
-          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full border border-brand/40 bg-surface-2/70 backdrop-blur">
-            <GameIcon name="lock" size={34} />
+      {/* Centered lock crest + building name + label, a lock crest marks the door
+          as sealed. */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
+        <div className="pointer-events-auto w-full max-w-lg text-center animate-entry">
+          <GameIcon name="lock" size={104} className="mx-auto mb-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.8)]" />
+          <div className="flex items-center justify-center gap-3">
+            {b.icon && (
+              <Image
+                src={asset(b.icon)}
+                alt=""
+                width={48}
+                height={48}
+                className="h-12 w-12 object-contain drop-shadow"
+              />
+            )}
+            <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
+              {b.name}
+            </h2>
           </div>
-          <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
-            {b.name}
-          </h2>
           <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{lock.label}</p>
-          <p className="text-text-2 text-sm mt-3 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
+          {lock.hint && (
+            <p className="text-text-2 text-sm mt-3 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
+          )}
           {lock.cta && (
             <button
               onClick={goUnlock}
-              className="mt-5 rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors"
+              disabled={connecting}
+              className="mt-5 rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors disabled:opacity-60"
             >
-              {lock.cta.label} →
+              {lock.cta.connect && connecting ? "Connecting…" : `${lock.cta.label} →`}
             </button>
           )}
         </div>

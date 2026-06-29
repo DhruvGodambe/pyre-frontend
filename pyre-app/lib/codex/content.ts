@@ -191,12 +191,12 @@ export const CODEX: CodexChapter[] = [
   {
     id: "ashen-cup",
     title: "The Ashen Cup",
-    tagline: "Earn your place before launch",
+    tagline: "Earn Points toward launch rewards",
     building: "tavern",
     sections: [
       {
         paragraphs: [
-          "Before the gates open, the Ashen Cup is the one door already ajar. Complete quests to earn Points, climb the leaderboard, and lock in your standing early.",
+          "Before the gates open, the Ashen Cup is the one door already ajar. Complete quests to earn Points and climb the leaderboard.",
           "Invite others and you earn for every real arrival. What Points unlock is revealed closer to launch, but the order of the board is being written now.",
         ],
       },
