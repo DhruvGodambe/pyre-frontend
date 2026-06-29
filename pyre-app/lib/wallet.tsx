@@ -24,6 +24,10 @@ import { REAL_WALLET } from "./config";
 interface WalletContextValue extends WalletState {
   connect: () => void;
   disconnect: () => void;
+  /** True only while a previously-connected wallet is being silently restored on
+      page load (wagmi reconnect). Lets the UI wait it out so a returning visitor
+      lands straight in the world instead of flashing the connect gate. */
+  initializing: boolean;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -49,7 +53,7 @@ function MockWalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, address, connect, disconnect }),
+    () => ({ status, address, connect, disconnect, initializing: false }),
     [status, address, connect, disconnect]
   );
 
@@ -82,9 +86,20 @@ function RealWalletProvider({ children }: { children: React.ReactNode }) {
 
   const disconnect = useCallback(() => wagmiDisconnect(), [wagmiDisconnect]);
 
+  // Restoring a saved session (wagmi auto-reconnect on mount). We treat this as a
+  // distinct phase from a user-initiated "connecting", so the gate can hold off
+  // and a returning visitor never sees a connect prompt.
+  const initializing = accountStatus === "reconnecting";
+
   const value = useMemo<WalletContextValue>(
-    () => ({ status, address: (address ?? null) as Address | null, connect, disconnect }),
-    [status, address, connect, disconnect]
+    () => ({
+      status,
+      address: (address ?? null) as Address | null,
+      connect,
+      disconnect,
+      initializing,
+    }),
+    [status, address, connect, disconnect, initializing]
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
@@ -107,7 +122,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
    the real wallet is untouched; connect/disconnect are no-ops (it's inert). */
 export function PreviewWalletProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<WalletContextValue>(
-    () => ({ status: "connected", address: MOCK_ADDRESS, connect: () => {}, disconnect: () => {} }),
+    () => ({ status: "connected", address: MOCK_ADDRESS, connect: () => {}, disconnect: () => {}, initializing: false }),
     []
   );
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

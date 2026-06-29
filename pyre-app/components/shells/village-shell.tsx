@@ -61,7 +61,7 @@ export function VillageShell() {
   // we reveal its exterior scene, so the zoom-in is actually seen (was hidden
   // behind the scene popping in at the same instant).
   const [arrived, setArrived] = useState(false);
-  const { status } = useWallet();
+  const { status, initializing } = useWallet();
   const { isSet } = useIdentity();
   const { pending, clearPending, syncUrl } = useNavigation();
   const awake = status === "connected" || isSet;
@@ -73,7 +73,14 @@ export function VillageShell() {
   // Manual WORLD ZOOM (a tuning control): Ctrl/⌘+Scroll over the open map zooms
   // the village camera itself instead of the browser (which otherwise scales the
   // whole page, panels included). Lets us dial in the right resting framing.
+  // Min is 1.0 (full cover): below that the map can't fill the viewport and the
+  // black behind it would show.
   const [worldZoom, setWorldZoom] = useState(1);
+  // True only WHILE actively wheel-zooming, so we can make that one gesture snappy
+  // without desyncing the scale and pan when flying back from a building (which
+  // briefly exposed the black map backdrop on the panned side).
+  const [zooming, setZooming] = useState(false);
+  const zoomStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Once awake, close the Gate's connect overlay and reveal the woken village.
   useEffect(() => {
@@ -85,8 +92,10 @@ export function VillageShell() {
   // into the lit village) before unmounting.
   const [gateLandingUp, setGateLandingUp] = useState(false);
   useEffect(() => {
-    if (!awake) setGateLandingUp(true);
-  }, [awake]);
+    // Hold the gate back while a saved wallet is being restored: a returning
+    // visitor should wake straight into the village, never flash the connect gate.
+    if (!awake && !initializing) setGateLandingUp(true);
+  }, [awake, initializing]);
 
   // Let the camera zoom (~1.2s, cut a little so the scene cross-fades in over the
   // tail of the motion) land before the destination scene fades in over it. Used
@@ -170,6 +179,13 @@ export function VillageShell() {
     };
   })();
 
+  // One transition shared by the camera's scale AND pan, so they never desync.
+  // Snappy only mid-gesture on the open map; cinematic everywhere else.
+  const camTransition =
+    zooming && !focusBuilding
+      ? "transform 140ms ease-out"
+      : "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)";
+
   // The tour drives the interior: an "inside" beat opens the building; an
   // "outside" beat closes whatever the tour opened.
   useEffect(() => {
@@ -205,13 +221,21 @@ export function VillageShell() {
       // turn it into camera zoom while the open map is up.
       e.preventDefault();
       if (!canZoomRef.current) return;
+      setZooming(true);
+      if (zoomStopTimer.current) clearTimeout(zoomStopTimer.current);
+      // Settle back to the smooth (in-sync) transition shortly after the gesture
+      // ends, so a later building fly-out is never snappy/desynced.
+      zoomStopTimer.current = setTimeout(() => setZooming(false), 220);
       setWorldZoom((z) => {
         const next = z * (e.deltaY < 0 ? 1.08 : 1 / 1.08);
-        return Math.min(2.5, Math.max(0.7, Math.round(next * 100) / 100));
+        return Math.min(2.5, Math.max(1, Math.round(next * 100) / 100));
       });
     };
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      if (zoomStopTimer.current) clearTimeout(zoomStopTimer.current);
+    };
   }, []);
 
   const clickBuilding = (id: BuildingId) => {
@@ -275,18 +299,18 @@ export function VillageShell() {
           style={{
             transform: `scale(${cam.z})`,
             transformOrigin: "center center",
-            // Snappy while manually zooming the open map (no building focused), so
-            // Ctrl+Scroll feels live; cinematic 1200ms fly-in when focusing a building.
-            transition: focusBuilding
-              ? "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)"
-              : "transform 140ms ease-out",
+            // Snappy ONLY during an active Ctrl+Scroll gesture; otherwise the
+            // cinematic 1200ms, kept identical to the pan below so the scale and
+            // pan stay in lockstep flying back from a building (a desync briefly
+            // exposed the black map backdrop on the panned side).
+            transition: camTransition,
           }}
         >
           <div
             className="absolute inset-0"
             style={{
               transform: `translate(${cam.tx}px, ${cam.ty}px)`,
-              transition: "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+              transition: camTransition,
             }}
           >
             <div
@@ -427,6 +451,22 @@ export function VillageShell() {
           (then it fades into the woken village). Replaces the old "Open the Gate"
           hint, the gate IS the entry now. */}
       {gateLandingUp && <GateLanding onDone={() => setGateLandingUp(false)} />}
+
+      {/* Restoring a saved wallet: a brief branded splash so the connect gate never
+          flashes before the silent reconnect resolves (returning visitors only). */}
+      {initializing && !awake && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-bg">
+          <div className="flex flex-col items-center gap-4">
+            <span className="font-display text-4xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+              PYRE
+            </span>
+            <span
+              className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand/40 border-t-brand"
+              aria-hidden
+            />
+          </div>
+        </div>
+      )}
 
       {/* Layout is locked in (hand-placed), so the in-app editor is retired. */}
 
