@@ -90,10 +90,15 @@ import {
   STATE_VIEW_ABI,
   V4_QUOTER_ABI,
   V4_ROUTER_ABI,
+  IMMOLATED_GATE_ABI,
+  ACOLYTE_ABI,
+  PYRE_TOKEN_ABI,
+  PYRE_STAKING_ABI,
   getPoolKey,
   getPoolId,
   type PoolKey,
 } from "./abis";
+import { WAD, IMMOLATED_YIELD_BOOST, STAGES, stageFromWeight } from "../constants";
 
 /* ---- Grand Exchange helpers ------------------------------------------------ */
 
@@ -169,9 +174,116 @@ const NOT_WIRED = () =>
 
 export class ChainDataSource implements DataSource {
   getProtocolStats(): Promise<ProtocolStats> { return NOT_WIRED(); }
-  getAcolyte(_a: Address): Promise<Acolyte> { return NOT_WIRED(); }
-  getStakingPosition(_a: Address): Promise<StakingPosition> { return NOT_WIRED(); }
-  getImmolatedPosition(_a: Address): Promise<ImmolatedPosition> { return NOT_WIRED(); }
+
+  // The Forge's Acolyte: the burn NFT. tokenId 0 = none yet, in which case the
+  // burn accrued toward the 10k EMBER mint lives in pendingBurn (so the panel can
+  // show a "progress to your first Acolyte" bar). Tier + next threshold come from
+  // the cumulative burn via the SAME thresholds the contract uses.
+  async getAcolyte(address: Address): Promise<Acolyte> {
+    const nft = CONTRACTS.nft;
+    if (!nft) throw new Error("Acolyte (NFT) address not configured.");
+    const [tokenId, isLP, isImmolated] = await Promise.all([
+      readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "walletToTokenId", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "lpBurners", args: [address] }),
+      CONTRACTS.immolated
+        ? readContract(wagmiConfig, { chainId: CHAIN, address: CONTRACTS.immolated, abi: IMMOLATED_GATE_ABI, functionName: "isImmolated", args: [address] })
+        : Promise.resolve(false),
+    ]);
+    const exists = tokenId !== 0n;
+    const cumulative = exists
+      ? await readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "acolyteCumulativeBurn", args: [tokenId] })
+      : await readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "pendingBurn", args: [address] });
+    const { stage, nextThreshold } = stageFromWeight(cumulative);
+    return {
+      exists,
+      tokenId: exists ? Number(tokenId) : null,
+      stage,
+      stageName: STAGES[stage].name,
+      multiplier: STAGES[stage].multiplier,
+      cumulativeBurnWeight: cumulative,
+      nextStageThreshold: nextThreshold,
+      isLP,
+      isImmolated,
+      seed: null,
+      svg: null,
+    };
+  }
+
+  // The Vault's staking position. Stake earns the ETH yield; burning (the Forge)
+  // raises the multiplier baked into effectiveWeight. Unstaking opens a 7-day
+  // drip on the token, claimed via claimDrip; the schedule's start isn't exposed
+  // on-chain, so the countdown is a 7-day approximation while the amounts are exact.
+  async getStakingPosition(address: Address): Promise<StakingPosition> {
+    const token = CONTRACTS.token;
+    const staking = CONTRACTS.staking;
+    if (!token || !staking) throw new Error("Token / staking address not configured.");
+    const [liquid, staked, pendingRewardsEth, effectiveWeight, lockedDrip] = await Promise.all([
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "liquidBalanceOf", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: staking, abi: PYRE_STAKING_ABI, functionName: "stakedBalanceOf", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: staking, abi: PYRE_STAKING_ABI, functionName: "earned", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: staking, abi: PYRE_STAKING_ABI, functionName: "weightOf", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "dripBalanceOf", args: [address] }),
+    ]);
+    // No view returns the vested-but-unclaimed drip, so preview claimDrip off-chain.
+    let claimableDrip = 0n;
+    try {
+      const sim = await simulateContract(wagmiConfig, { chainId: CHAIN, account: address, address: token, abi: PYRE_TOKEN_ABI, functionName: "claimDrip", args: [] });
+      claimableDrip = sim.result;
+    } catch {
+      /* nothing vesting */
+    }
+    const dripTotal = lockedDrip + claimableDrip;
+    const drip =
+      dripTotal > 0n
+        ? {
+            total: dripTotal,
+            claimable: claimableDrip,
+            claimed: 0n,
+            decayLoss: 0n,
+            startedAt: Date.now(),
+            completeAt: Date.now() + 7 * 24 * 3600 * 1000, // schedule start not on-chain; 7-day cap
+          }
+        : null;
+    return { liquidBalance: liquid, stakedBalance: staked, pendingRewardsEth, effectiveWeight, drip, boost: null };
+  }
+  // The Hall of the Immolated: membership + "burned past Pyre" eligibility, so the
+  // panel can pick its state (not-eligible / eligible→Ascend / member). isMember is
+  // the ImmolatedGate flag; eligibility is derived from the Acolyte's cumulative
+  // burn. The yield itself arrives via PyreStaking (one shared pool), so there's no
+  // separate Immolated pending/pool to read here.
+  async getImmolatedPosition(address: Address): Promise<ImmolatedPosition> {
+    const gate = CONTRACTS.immolated;
+    const nft = CONTRACTS.nft;
+    if (!gate || !nft) throw new Error("Pool not configured: missing Immolated gate / Acolyte address.");
+
+    const [isMember, tokenId, pyreThreshold, lpBonus] = await Promise.all([
+      readContract(wagmiConfig, { chainId: CHAIN, address: gate, abi: IMMOLATED_GATE_ABI, functionName: "isImmolated", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "walletToTokenId", args: [address] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "PYRE_THRESHOLD", args: [] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "lpBurnBonus", args: [address] }),
+    ]);
+
+    const weight = tokenId > 0n
+      ? await readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "acolyteCumulativeBurn", args: [tokenId] })
+      : 0n;
+
+    // Eligible = own an Acolyte burned STRICTLY past Pyre (token + LP burns both
+    // accumulate here). This gates the UI; immolate() enforces the real rule on
+    // chain. Once dev/IMMOLATED_CONTRACT_CHANGES.md lands, the two agree.
+    const eligible = tokenId > 0n && weight > pyreThreshold;
+
+    return {
+      isMember,
+      eligible,
+      weight,
+      yieldBoost: IMMOLATED_YIELD_BOOST,
+      boostedWeight: (weight * 12n) / 10n, // +20% Immolated yield
+      pendingYieldEth: 0n, // one shared pool: Immolated yield is paid through staking rewards
+      rank: null, // the gate doesn't rank members; the Hall of Fame uses the leaderboard source
+      poolTotalWeight: 0n, // not tracked on-chain by the gate
+      isLP: lpBonus > WAD,
+    };
+  }
   getUserHistory(_a: Address): Promise<ActivityEvent[]> { return NOT_WIRED(); }
   getLeaderboard(): Promise<LeaderboardEntry[]> { return NOT_WIRED(); }
   getTopBurners(): Promise<LeaderboardEntry[]> { return NOT_WIRED(); }
@@ -345,13 +457,77 @@ export class ChainDataSource implements DataSource {
   }
   // Quests are off-chain + permanent, already live, even before contracts ship.
   getQuestTasks(_a: Address | null): Promise<QuestTask[]> { return fetchQuestTasks(); }
-  stake(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
-  unstake(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
-  claimDrip(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
-  burnTokens(_a: Address, _amt: bigint): Promise<TxResult> { return NOT_WIRED(); }
+  // --- Forge / Vault writes. Stake, unstake and burn are INTERNAL balance moves
+  // in PyreToken, so NONE need an ERC-20 approval. ---
+  async stake(address: Address, amount: bigint): Promise<TxResult> {
+    return this.send(address, CONTRACTS.staking, PYRE_STAKING_ABI, "stake", [amount]);
+  }
+  async unstake(address: Address, amount: bigint): Promise<TxResult> {
+    // Begins the 7-day drip; tokens return to liquid via claimDrip.
+    return this.send(address, CONTRACTS.staking, PYRE_STAKING_ABI, "unstake", [amount]);
+  }
+  async claimDrip(address: Address): Promise<TxResult> {
+    return this.send(address, CONTRACTS.token, PYRE_TOKEN_ABI, "claimDrip", []);
+  }
+  async burnTokens(address: Address, amount: bigint): Promise<TxResult> {
+    // One call: burns liquid $PYRE and (via the Acolyte callback) mints at 10k /
+    // levels the tier. No separate mint or level-up step.
+    return this.send(address, CONTRACTS.token, PYRE_TOKEN_ABI, "burn", [amount]);
+  }
+  // LP burn is held: the deployed LpBurnFacet.burnLpPosition(tokenId) takes a V4
+  // position NFT id, not the (eth, pyre) pair this method passes, and the locker
+  // mechanic is still in flux. Wire once the dev's LP-burn design lands.
   burnLP(_a: Address, _e: bigint, _p: bigint): Promise<TxResult> { return NOT_WIRED(); }
-  claimStakingRewards(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
-  ascendImmolated(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
+  async claimStakingRewards(address: Address): Promise<TxResult> {
+    return this.send(address, CONTRACTS.staking, PYRE_STAKING_ABI, "claimReward", []);
+  }
+
+  /** Send a write tx through the connected wallet and await the receipt. */
+  private async send(
+    account: Address,
+    address: Address | null,
+    abi: typeof PYRE_STAKING_ABI | typeof PYRE_TOKEN_ABI,
+    functionName: string,
+    args: readonly bigint[]
+  ): Promise<TxResult> {
+    if (!address) return { ok: false, error: "Contract address not configured." };
+    try {
+      const hash = await writeContract(wagmiConfig, {
+        chainId: CHAIN,
+        account,
+        address,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        abi: abi as any,
+        functionName: functionName as never,
+        args: args as never,
+      });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+      return { ok: receipt.status === "success", hash };
+    } catch (e) {
+      return { ok: false, error: errMsg(e) };
+    }
+  }
+  // The Ascend rite: ImmolatedGate.immolate(). One-time claim once you've burned
+  // past Pyre (no args, no extra value). useAscendImmolated() calls this; the panel
+  // refetches the position keys on success and flips to the member state.
+  async ascendImmolated(address: Address): Promise<TxResult> {
+    const gate = CONTRACTS.immolated;
+    if (!gate) return { ok: false, error: "Pool not configured: missing Immolated gate address." };
+    try {
+      const hash = await writeContract(wagmiConfig, {
+        chainId: CHAIN,
+        account: address,
+        address: gate,
+        abi: IMMOLATED_GATE_ABI,
+        functionName: "immolate",
+        args: [],
+      });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+      return { ok: receipt.status === "success", hash };
+    } catch (e) {
+      return { ok: false, error: errMsg(e) };
+    }
+  }
   claimImmolatedYield(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
   async approveToken(address: Address): Promise<TxResult> {
     const token = CONTRACTS.token;

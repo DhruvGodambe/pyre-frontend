@@ -23,6 +23,64 @@ export const ERC20_ABI = [
   { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
 ] as const;
 
+/* --- PyreToken (CONTRACTS.token): buckets + the Forge burn + unstake drip ----
+   Stake/unstake/burn are INTERNAL balance moves (liquid↔staked↔drip), NOT ERC20
+   transfers, so NONE of them need an approval. `burn` destroys your own liquid
+   and fires the Acolyte mint/level callback. `claimDrip` sweeps vested unstaked
+   tokens back to liquid. balanceOf is overridden (= liquid+staked+lockedDrip);
+   use the per-bucket views for the real split. */
+export const PYRE_TOKEN_ABI = [
+  { type: "function", name: "liquidBalanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "stakedBalanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "dripBalanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "totalSupply", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "globalDecayIndex", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "currentEpoch", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "decayRateBps", stateMutability: "pure", inputs: [{ name: "epoch", type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "protocolStartTime", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "burn", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { type: "function", name: "claimDrip", stateMutability: "nonpayable", inputs: [], outputs: [{ name: "claimed", type: "uint256" }] },
+] as const;
+
+/* --- PyreStaking (CONTRACTS.staking): stake/unstake/claim + position reads ----
+   stake/unstake call the token's gated stakeFor/unstakeFor (no approval). unstake
+   begins a 7-day drip on the TOKEN (claim via PyreToken.claimDrip). claimReward
+   pays accrued ETH. earned = claimable ETH (wei); weightOf = effective weight. */
+export const PYRE_STAKING_ABI = [
+  { type: "function", name: "stake", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { type: "function", name: "unstake", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { type: "function", name: "claimReward", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { type: "function", name: "earned", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "stakedBalanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "weightOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "totalWeight", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
+
+/* --- ImmolatedGate (CONTRACTS.immolated): the Ascend rite + membership read -
+   immolate() is the one-time claim once you've burned past Pyre; isImmolated is
+   the membership flag. (Eligibility itself is derived from the Acolyte's
+   cumulative burn — see ACOLYTE_ABI.) */
+export const IMMOLATED_GATE_ABI = [
+  { type: "function", name: "immolate", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { type: "function", name: "isImmolated", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "bool" }] },
+] as const;
+
+/* --- Acolyte (CONTRACTS.nft): the reads needed to gate the Ascend rite -------
+   walletToTokenId(0 = none) + acolyteCumulativeBurn(tokenId) give "burned past
+   Pyre" eligibility; lpBurnBonus reports the LP yield flag (1e18 or 1.2e18). */
+export const ACOLYTE_ABI = [
+  { type: "function", name: "walletToTokenId", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "acolyteCumulativeBurn", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "PYRE_THRESHOLD", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "lpBurnBonus", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  // Stage enum (0=EMBER..3=PYRE) by tokenId; safe multiplier-by-wallet (1e18 if none);
+  // LP flag; and burn accrued toward the 10k first-mint for a wallet with no NFT yet.
+  { type: "function", name: "acolyteStage", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint8" }] },
+  { type: "function", name: "nftStageMultiplier", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "lpBurners", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: "pendingBurn", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+] as const;
+
 /* --- StateView (gas-free pool reads: spot price + active liquidity) -------- */
 export const STATE_VIEW_ABI = [
   { type: "function", name: "getSlot0", stateMutability: "view", inputs: [{ name: "poolId", type: "bytes32" }], outputs: [{ name: "sqrtPriceX96", type: "uint160" }, { name: "tick", type: "int24" }, { name: "protocolFee", type: "uint24" }, { name: "lpFee", type: "uint24" }] },
