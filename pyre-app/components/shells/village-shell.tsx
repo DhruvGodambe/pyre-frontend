@@ -70,6 +70,11 @@ export function VillageShell() {
   // A locked building shows its dimmed exterior + "how to unlock" instead of opening.
   const [lockedId, setLockedId] = useState<BuildingId | null>(null);
 
+  // Manual WORLD ZOOM (a tuning control): Ctrl/⌘+Scroll over the open map zooms
+  // the village camera itself instead of the browser (which otherwise scales the
+  // whole page, panels included). Lets us dial in the right resting framing.
+  const [worldZoom, setWorldZoom] = useState(1);
+
   // Once awake, close the Gate's connect overlay and reveal the woken village.
   useEffect(() => {
     if (awake) setView((v) => (v?.id === "gate" ? null : v));
@@ -153,7 +158,7 @@ export function VillageShell() {
     (!tour.active && focusId !== null);
   const cam = (() => {
     if (!focusBuilding || typeof window === "undefined") {
-      return { z: 1, tx: 0, ty: 0 };
+      return { z: worldZoom, tx: 0, ty: 0 };
     }
     const { map } = BUILDING_BY_ID[focusBuilding];
     const W = Math.max(window.innerWidth, MAP_RATIO * window.innerHeight);
@@ -185,6 +190,29 @@ export function VillageShell() {
   useEffect(() => {
     if (tour.active) setFocusId(null);
   }, [tour.active]);
+
+  // The open map is showing (not the tour, no building focused / locked / open):
+  // only then does Ctrl+Scroll drive the world zoom. Kept in a ref so the
+  // attach-once wheel listener reads the latest value without re-binding.
+  const onOpenMap = awake && !tour.active && !focusId && !lockedId && !view;
+  const canZoomRef = useRef(false);
+  canZoomRef.current = onOpenMap;
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return; // normal scroll / trackpad pan untouched
+      // Ctrl/⌘+wheel is the browser zoom gesture; inside this fixed game layout it
+      // only ever scales the panels and breaks things, so we always swallow it and
+      // turn it into camera zoom while the open map is up.
+      e.preventDefault();
+      if (!canZoomRef.current) return;
+      setWorldZoom((z) => {
+        const next = z * (e.deltaY < 0 ? 1.08 : 1 / 1.08);
+        return Math.min(2.5, Math.max(0.7, Math.round(next * 100) / 100));
+      });
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, []);
 
   const clickBuilding = (id: BuildingId) => {
     if (tour.active) return; // the tour drives navigation
@@ -221,6 +249,23 @@ export function VillageShell() {
         </div>
       )}
 
+      {/* World-zoom readout (tuning aid): shows the live camera zoom while the open
+          map is up, with a reset. Ctrl/⌘+Scroll over the map adjusts it. */}
+      {onOpenMap && (
+        <div className="absolute bottom-4 left-4 z-30 flex items-center gap-2 rounded-lg border border-surface-3 bg-surface-2/85 px-3 py-2 text-xs text-text-2 backdrop-blur">
+          <span className="text-text-3">Ctrl+Scroll to zoom</span>
+          <span className="font-mono text-text">{worldZoom.toFixed(2)}×</span>
+          {worldZoom !== 1 && (
+            <button
+              onClick={() => setWorldZoom(1)}
+              className="rounded bg-surface-3/80 px-2 py-0.5 text-text-3 hover:text-text transition-colors"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      )}
+
       {/* The world. A camera (zoom + pan) wraps a stage that covers the viewport
           at the map's ratio; the map fills it and buildings sit on top by %-
           coordinate. During the guided tour the camera focuses each building. */}
@@ -230,7 +275,11 @@ export function VillageShell() {
           style={{
             transform: `scale(${cam.z})`,
             transformOrigin: "center center",
-            transition: "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+            // Snappy while manually zooming the open map (no building focused), so
+            // Ctrl+Scroll feels live; cinematic 1200ms fly-in when focusing a building.
+            transition: focusBuilding
+              ? "transform 1200ms cubic-bezier(0.4, 0, 0.2, 1)"
+              : "transform 140ms ease-out",
           }}
         >
           <div
@@ -297,10 +346,12 @@ export function VillageShell() {
             >
               {b.art ? (
                 <span
-                  /* Resting drop-shadow always; on hover a warm ember glow blooms
-                     around the building and it lifts slightly. The tour's focus
-                     glow (inline filter below) overrides this when active. */
-                  className="block relative transition-[filter] duration-base [filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.55))] group-hover:[filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.55))_drop-shadow(0_0_34px_rgba(240,169,59,0.75))]"
+                  /* Resting drop-shadow always. On hover, a LAYERED ember glow: a
+                     tight warm rim hugging the silhouette + a faint wider bloom (both
+                     low-opacity, not one flat halo), plus a slight brighten, so it
+                     reads as lit from the fire rather than outlined in orange. The
+                     tour's focus glow (inline filter below) overrides this when active. */
+                  className="block relative transition-[filter] duration-base ease-out [filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.55))] group-hover:[filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.55))_drop-shadow(0_0_7px_rgba(255,193,115,0.5))_drop-shadow(0_0_22px_rgba(245,150,55,0.26))_brightness(1.06)]"
                   style={
                     tourFocus
                       ? {
@@ -375,9 +426,7 @@ export function VillageShell() {
       {/* Dormant: the Gate landing covers the screen until an identity is chosen
           (then it fades into the woken village). Replaces the old "Open the Gate"
           hint, the gate IS the entry now. */}
-      {gateLandingUp && (
-        <GateLanding leaving={awake} onDone={() => setGateLandingUp(false)} />
-      )}
+      {gateLandingUp && <GateLanding onDone={() => setGateLandingUp(false)} />}
 
       {/* Layout is locked in (hand-placed), so the in-app editor is retired. */}
 

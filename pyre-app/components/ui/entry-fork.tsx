@@ -40,6 +40,17 @@ function FlameMark({ className = "" }: { className?: string }) {
   );
 }
 
+/* A spinning ring (no asset), tinted to whatever text color it sits in. Shown in
+   the Connect button while the wallet popup is open, so the wait reads as active. */
+function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`inline-block animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
+      aria-hidden
+    />
+  );
+}
+
 function ChoiceRow({
   onClick,
   disabled,
@@ -137,7 +148,7 @@ export function EntryFork({
               primary
               onClick={connectWallet}
               disabled={connecting}
-              icon={<GameIcon name="wallet" size={30} />}
+              icon={connecting ? <Spinner className="h-5 w-5" /> : <GameIcon name="wallet" size={30} />}
               title={connecting ? "Connecting…" : "Connect wallet"}
               sub="Your address is your account, nothing else to submit."
             />

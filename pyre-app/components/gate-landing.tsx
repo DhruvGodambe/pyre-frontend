@@ -3,8 +3,17 @@
 /* THE GATE LANDING, the first thing a visitor sees (desktop), once the brand
    film is done. You arrive at the Gate exterior, the Emberkeeper sets the scene
    (the lore, as narration over the gate, not a separate modal), then you choose
-   how to enter, right here on the gate. Choosing wakes the village; the landing
-   cross-fades away and, on a first visit, the guided tour takes over.
+   how to enter, right here on the gate.
+
+   Entry is a deliberate THREE-beat flow, so stepping into the world feels like
+   an arrival, not a flicker:
+     1. lore  → (first visit only) the Emberkeeper's opening.
+     2. fork  → connect a wallet or continue as a guest.
+     3. ENTER → once an identity is set, the fork gives way to a "you're in"
+                confirmation (the connected address / guest name) with a single
+                Enter button. Pressing it plays the gate's door and pushes the
+                camera THROUGH the gate, bright bloom and all, revealing the
+                woken village behind it.
 
    Shows whenever there is NO identity yet (awake === false). A returning visitor
    whose name/wallet persisted skips it entirely and lands in the village. The
@@ -15,9 +24,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { EntryFork } from "@/components/ui/entry-fork";
+import { GameIcon } from "@/components/ui/game-icon";
 import { useTour } from "@/lib/tour";
 import { useCodex } from "@/lib/codex";
+import { useIdentity } from "@/lib/identity";
 import { asset } from "@/lib/config";
+import { shortAddress } from "@/lib/format";
+import { playDoor } from "@/lib/sfx";
 import { storageGet, storageSet } from "@/lib/safe-storage";
 
 const SEEN_KEY = "pyre_intro_seen";
@@ -43,16 +56,10 @@ const LORE = [
   },
 ];
 
-export function GateLanding({
-  leaving,
-  onDone,
-}: {
-  /** the village has woken (identity chosen): fade out, then unmount. */
-  leaving: boolean;
-  onDone: () => void;
-}) {
+export function GateLanding({ onDone }: { onDone: () => void }) {
   const tour = useTour();
   const codex = useCodex();
+  const identity = useIdentity();
   const gate = BUILDING_BY_ID.gate;
 
   // First true visit → play the lore beats; afterwards go straight to the fork.
@@ -60,6 +67,8 @@ export function GateLanding({
   const [loreStep, setLoreStep] = useState(0);
   const [loreDone, setLoreDone] = useState(true);
   const [shown, setShown] = useState(false);
+  // The user pressed Enter: run the push-through transition, then unmount.
+  const [departing, setDeparting] = useState(false);
 
   useEffect(() => {
     const fresh = !storageGet(SEEN_KEY);
@@ -69,33 +78,48 @@ export function GateLanding({
     return () => cancelAnimationFrame(r);
   }, []);
 
-  // Once the village wakes, fade the gate out, then hand control back (which
-  // starts the tour for first-timers) and unmount.
-  useEffect(() => {
-    if (!leaving) return;
-    const t = setTimeout(() => {
-      // The "intro" rite is the guided TOUR now, credited when it's FINISHED
-      // (see tour-ui.tsx), so we only start the tour here, not grant it.
+  // An identity exists (wallet connected or guest name set): we're at the Enter
+  // beat. Until the user presses Enter we DON'T leave, the confirmation lingers
+  // so the arrival is a chosen step, not an automatic flicker.
+  const ready = identity.isSet;
+
+  // Press Enter → door sound, then the push-through transition plays for ~1.05s
+  // before we start the tour (first-timers) and unmount.
+  const enter = () => {
+    if (departing) return;
+    playDoor("gate"); // same random door bank as every building
+    setDeparting(true);
+    setTimeout(() => {
       if (firstTime) tour.start();
       storageSet(SEEN_KEY, "1");
       onDone();
-    }, 650);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leaving, firstTime]);
+    }, 1050);
+  };
 
   const lore = LORE[loreStep];
   const lastLore = loreStep >= LORE.length - 1;
 
+  const enterLabel = identity.username
+    ? `Welcome, ${identity.username}`
+    : "Wallet connected";
+  const enterSub = identity.address
+    ? shortAddress(identity.address)
+    : "Your guest pass is ready.";
+
   return (
     <div
-      className="fixed inset-0 z-40 overflow-hidden bg-bg transition-opacity duration-[650ms]"
-      style={{ opacity: leaving ? 0 : 1 }}
+      className="fixed inset-0 z-40 overflow-hidden bg-bg transition-opacity duration-[1000ms] ease-out"
+      style={{ opacity: departing ? 0 : 1 }}
     >
-      {/* The gate, full-screen, with a slow settle as you arrive. */}
+      {/* The gate, full-screen, with a slow settle as you arrive, then a push
+          THROUGH it (scale up) as you step into the world. */}
       <div
-        className="absolute inset-0 transition-[transform,opacity] duration-[1200ms] ease-out"
-        style={{ transform: shown ? "scale(1)" : "scale(1.08)", opacity: shown ? 1 : 0 }}
+        className="absolute inset-0 transition-[transform,opacity] ease-out"
+        style={{
+          transform: departing ? "scale(1.6)" : shown ? "scale(1)" : "scale(1.08)",
+          opacity: shown ? 1 : 0,
+          transitionDuration: departing ? "1050ms" : "1200ms",
+        }}
       >
         {gate.interior && (
           <Image
@@ -112,6 +136,13 @@ export function GateLanding({
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_30%,rgba(11,10,9,0.72)_100%)] pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg via-bg/60 to-transparent pointer-events-none" />
 
+      {/* Warm ember bloom: blooms from the centre as you cross the threshold, so
+          stepping through the gate flares with firelight before it clears. */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_45%,rgba(240,169,59,0.55),transparent_60%)] transition-opacity duration-[900ms] ease-out"
+        style={{ opacity: departing ? 1 : 0 }}
+      />
+
       {/* Wordmark */}
       <div className="absolute top-5 left-6 z-10">
         <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
@@ -119,8 +150,12 @@ export function GateLanding({
         </span>
       </div>
 
-      {/* Content: the Emberkeeper's lore first (first visit), then the fork. */}
-      <div className="absolute inset-0 z-10 flex items-end sm:items-center justify-center p-4 sm:p-8">
+      {/* Content: lore (first visit) → entry fork → Enter confirmation. Hidden
+          once we're departing so nothing rides over the transition. */}
+      <div
+        className="absolute inset-0 z-10 flex items-end sm:items-center justify-center p-4 sm:p-8 transition-opacity duration-300"
+        style={{ opacity: departing ? 0 : 1 }}
+      >
         {!loreDone ? (
           <div key={loreStep} className="animate-entry w-full max-w-xl text-center">
             <div className="inline-flex items-center gap-2 mb-3">
@@ -162,10 +197,29 @@ export function GateLanding({
               </button>
             </div>
           </div>
-        ) : (
+        ) : !ready ? (
           <div className="animate-entry w-full max-w-md rounded-2xl bg-surface/80 border border-brand/20 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl ring-1 ring-inset ring-white/5 py-9 px-7">
             <div className="h-px -mt-3 mb-6 bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
             <EntryFork />
+          </div>
+        ) : (
+          /* ENTER beat: identity confirmed, one door left to open. */
+          <div className="animate-entry w-full max-w-md rounded-2xl bg-surface/80 border border-brand/20 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl ring-1 ring-inset ring-white/5 py-9 px-7 text-center">
+            <div className="h-px -mt-3 mb-6 bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/12 ring-1 ring-brand/30 shadow-[0_0_28px_-6px_rgba(240,169,59,0.6)]">
+              <GameIcon name={identity.username ? "guest" : "wallet"} size={30} />
+            </span>
+            <h2 className="font-display text-3xl text-brand leading-none mt-4">{enterLabel}</h2>
+            <p className="mt-2 text-text-3 text-sm">{enterSub}</p>
+            <p className="mt-4 text-text-2 text-sm leading-relaxed max-w-xs mx-auto">
+              The fire is lit and the village is awake. Step through the gate.
+            </p>
+            <button
+              onClick={enter}
+              className="mt-6 w-full rounded-lg bg-gradient-to-b from-brand to-brand-deep text-bg px-7 py-3.5 text-base font-medium shadow-[0_6px_20px_-8px_rgba(240,169,59,0.7)] hover:brightness-110 transition-all"
+            >
+              Enter Pyre Kingdom →
+            </button>
           </div>
         )}
       </div>
