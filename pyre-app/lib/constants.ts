@@ -111,8 +111,9 @@ export const IMMOLATED_ASCEND_COST = pyre(100_000); // the Ascend rite burns 100
 export const IMMOLATED_YIELD_BOOST = 1.2; // +20% yield for Immolated members
 export const IMMOLATED_TIER_NAME = "Immolated Acolyte";
 /** Effective top-tier yield multiplier: Pyre 3× plus the Immolated +20% = 3.6×
-    (before LP). With LP too: 3 × 2 × 1.2 = 7.2×. */
-export const IMMOLATED_MULTIPLIER = STAGES[4].multiplier * IMMOLATED_YIELD_BOOST;
+    (before LP). With LP too: 3 × 2 × 1.2 = 7.2×. Rounded to 2 decimals so the raw
+    float (3 × 1.2 = 3.5999999999999996) never reaches the UI. */
+export const IMMOLATED_MULTIPLIER = Math.round(STAGES[4].multiplier * IMMOLATED_YIELD_BOOST * 100) / 100;
 
 /* --- Bonfire visual states (by total all-time burned) -------------------- */
 export type BonfireState = "kindling" | "burning" | "raging" | "inferno";
