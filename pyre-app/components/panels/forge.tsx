@@ -376,7 +376,8 @@ function BurnRitual({
   // level up by the Burn step, which stays locked until you've staked.)
   const ethAmt = parseToken(eth);
   const lpMissingEth = lp && ethAmt <= 0n;
-  const blocked = amt <= 0n || lpMissingEth;
+  const overBalance = amt > p.liquidBalance;
+  const blocked = amt <= 0n || lpMissingEth || overBalance;
 
   return (
     <div className="space-y-3">
@@ -388,6 +389,9 @@ function BurnRitual({
             <AmountControls balance={p.liquidBalance} onPick={setAmount} />
             <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
           </div>
+          {overBalance && (
+            <p className="text-danger text-[11px]">More than your wallet balance.</p>
+          )}
           {lp && <Field label="Paired $ETH" value={eth} onChange={setEth} suffix="$ETH" />}
           {lp && lpMissingEth && amt > 0n && (
             <p className="text-danger text-[11px]">An LP burn must pair $ETH with your $PYRE. Enter an $ETH amount.</p>
@@ -686,16 +690,22 @@ function AcolyteBanner({ a }: { a: Acolyte }) {
   );
 }
 
-/* Stake / unstake (and the slow unstaking return). */
+/* Stake / unstake (and the slow unstaking return). Stake and Unstake are the two
+   directions of ONE control: a mode toggle keeps the amount + Max bound to the
+   right balance (wallet for stake, staked for unstake), and Unstake is only shown
+   when there's actually something staked to pull from. */
 function StakeRitual({ p }: { p: StakingPosition }) {
   const [amount, setAmount] = useState("");
+  const [mode, setMode] = useState<"stake" | "unstake">("stake");
   const stake = useStake();
   const unstake = useUnstake();
   const amt = parseToken(amount);
+  const hasStaked = p.stakedBalance > 0n;
+  const unstaking = mode === "unstake" && hasStaked;
 
-  // THE WARDING (staking experience). The fire grows with the amount; a fast
-  // in-panel flourish plays on a successful stake. We capture the totals at click
-  // time so the count-up is correct regardless of refetch timing.
+  // THE WARDING (staking experience): a fast in-panel flourish on a successful
+  // stake. We capture the totals at click time so the count-up is correct
+  // regardless of refetch timing.
   const [warding, setWarding] = useState<{ from: number; to: number } | null>(null);
   const pending = useRef<{ from: number; to: number } | null>(null);
   const wardedFired = useRef(false);
@@ -715,6 +725,14 @@ function StakeRitual({ p }: { p: StakingPosition }) {
     return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn $ETH and stop the decay." />;
   }
 
+  const balance = unstaking ? p.stakedBalance : p.liquidBalance;
+  const overBalance = amt > balance;
+  const blocked = amt <= 0n || overBalance;
+
+  const pick = (m: "stake" | "unstake") => {
+    setMode(m);
+    setAmount(""); // don't carry an amount across two different balances
+  };
   const onStake = () => {
     const from = toNumber(p.stakedBalance);
     pending.current = { from, to: from + toNumber(amt) };
@@ -723,30 +741,55 @@ function StakeRitual({ p }: { p: StakingPosition }) {
 
   return (
     <div className="relative space-y-3">
+      {/* Stake / Unstake toggle, only when there's a stake to pull from. */}
+      {hasStaked && (
+        <div className="flex gap-1 rounded-md bg-surface-2 p-1 text-sm">
+          <button
+            onClick={() => pick("stake")}
+            className={`flex-1 rounded-sm py-1.5 ${!unstaking ? "bg-brand text-bg" : "text-text-2"}`}
+          >
+            Stake
+          </button>
+          <button
+            onClick={() => pick("unstake")}
+            className={`flex-1 rounded-sm py-1.5 ${unstaking ? "bg-brand text-bg" : "text-text-2"}`}
+          >
+            Unstake
+          </button>
+        </div>
+      )}
+
       <p className="text-text-3 text-xs">
-        Staking locks your $PYRE: it stops decaying and earns $ETH, multiplied by your Acolyte&rsquo;s
-        stage. Your balances and yield live in the Amber Vault.
+        {unstaking
+          ? "Unstaking returns your $PYRE over 7 days, and it keeps decaying until it lands."
+          : "Staking locks your $PYRE: it stops decaying and earns $ETH, multiplied by your Acolyte's stage."}{" "}
+        Your balances and yield live in the Amber Vault.
       </p>
+
       <div className="space-y-1.5">
-        <AmountControls balance={p.liquidBalance} onPick={setAmount} />
-        <Field label="$PYRE to stake" value={amount} onChange={setAmount} suffix="$PYRE" />
-      </div>
-      <div className="grid grid-cols-2 items-start gap-3">
-        <TxImageButton
-          tx={stake}
-          name="stakepyre"
-          label="Stake $PYRE"
-          disabled={amt <= 0n}
-          onClick={onStake}
+        <AmountControls balance={balance} onPick={setAmount} label={unstaking ? "Staked" : "Wallet"} />
+        <Field
+          label={unstaking ? "$PYRE to unstake" : "$PYRE to stake"}
+          value={amount}
+          onChange={setAmount}
+          suffix="$PYRE"
         />
+      </div>
+      {overBalance && (
+        <p className="text-danger text-[11px]">More than your {unstaking ? "staked" : "wallet"} balance.</p>
+      )}
+
+      {unstaking ? (
         <TxImageButton
           tx={unstake}
           name="unstake"
-          label="Unstake, returns over 7 days"
-          disabled={amt <= 0n}
+          label="Unstake · returns over 7 days"
+          disabled={blocked}
           onClick={() => unstake.mutate(amt)}
         />
-      </div>
+      ) : (
+        <TxImageButton tx={stake} name="stakepyre" label="Stake $PYRE" disabled={blocked} onClick={onStake} />
+      )}
 
       {warding && (
         <StakeWarding fromTokens={warding.from} toTokens={warding.to} onDone={() => setWarding(null)} />

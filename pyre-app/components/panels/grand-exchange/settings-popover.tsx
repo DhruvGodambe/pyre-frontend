@@ -54,7 +54,12 @@ export function SettingsPopover({
               inputMode="decimal"
               value={settings.slippageMode === "custom" ? customPct : "0.5"}
               disabled={settings.slippageMode === "auto"}
-              onChange={(e) => setCustomSlippageBps(Math.round(Number(e.target.value || 0) * 100))}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                // Ignore non-numeric input so slippage never becomes NaN (which would
+                // silently poison minReceived/maxSold and leave Review enabled).
+                if (Number.isFinite(n) && n >= 0) setCustomSlippageBps(Math.round(n * 100));
+              }}
               className="tabular w-full bg-transparent text-right outline-none text-text disabled:text-text-3"
             />
             <span className="text-text-3 text-sm">%</span>
@@ -75,7 +80,10 @@ export function SettingsPopover({
           <input
             inputMode="numeric"
             value={settings.deadlineMinutes.toString()}
-            onChange={(e) => setDeadlineMinutes(Math.max(1, Math.round(Number(e.target.value || 0))))}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              if (Number.isFinite(n)) setDeadlineMinutes(Math.max(1, Math.round(n)));
+            }}
             className="tabular w-full bg-transparent outline-none text-text"
           />
           <span className="text-text-3 text-sm shrink-0">minutes</span>

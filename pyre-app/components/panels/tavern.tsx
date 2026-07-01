@@ -770,15 +770,17 @@ function SubmissionArea({
           your reward.
         </div>
       )}
-      <Field label="Your wallet address" value={wallet} onChange={setWallet} placeholder="0x…" />
       {gateOpen ? (
-        <Button
-          onClick={onSubmit}
-          disabled={wallet.trim().length < 10 || submitting}
-          className="w-full"
-        >
-          {submitting ? "Submitting…" : "Submit wallet"}
-        </Button>
+        <>
+          <Field label="Your wallet address" value={wallet} onChange={setWallet} placeholder="0x…" />
+          <Button
+            onClick={onSubmit}
+            disabled={wallet.trim().length < 10 || submitting}
+            className="w-full"
+          >
+            {submitting ? "Submitting…" : "Submit wallet"}
+          </Button>
+        </>
       ) : (
         // Locked until every quest is done: the designer's engraved
         // "COMPLETE ALL QUESTS FIRST" plate, shown as a non-interactive bar.

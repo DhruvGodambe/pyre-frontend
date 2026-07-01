@@ -13,6 +13,7 @@ import {
   useImmolatedPosition,
   useLeaderboard,
   useAscendImmolated,
+  useStakingPosition,
 } from "@/lib/hooks";
 import { Panel, Stat } from "@/components/ui/primitives";
 import { GameIcon, rankTile } from "@/components/ui/game-icon";
@@ -98,7 +99,12 @@ function HallFame({ you }: { you?: { rank: number; weight: bigint } }) {
 
 export function ImmolatedPanel() {
   const pos = useImmolatedPosition();
+  const stakePos = useStakingPosition();
   const ascend = useAscendImmolated();
+  // The Ascend rite BURNS 100K $PYRE, so eligibility (reached Pyre by past burns)
+  // isn't enough: the wallet must still hold that much to spend now.
+  const liquid = stakePos.data?.liquidBalance ?? 0n;
+  const canAffordAscend = liquid >= IMMOLATED_ASCEND_COST;
 
   return (
     <Panel title="Hall of the Immolated" tagline="The highest prestige in the village">
@@ -151,10 +157,21 @@ export function ImmolatedPanel() {
                     village, and claim a permanent
                     <span className="text-brand"> +20% boost</span> to your share of the yield pool.
                   </p>
-                  <div className="mt-4 flex justify-center">
-                    <TxButton tx={ascend} onClick={() => ascend.mutate()} pendingLabel="Ascending…">
+                  <div className="mt-4 flex flex-col items-center gap-1.5">
+                    <TxButton
+                      tx={ascend}
+                      onClick={() => ascend.mutate()}
+                      pendingLabel="Ascending…"
+                      disabled={!canAffordAscend}
+                    >
                       Take the Ascend rite
                     </TxButton>
+                    {!canAffordAscend && (
+                      <p className="text-danger text-[11px]">
+                        Need {formatToken(IMMOLATED_ASCEND_COST)} $PYRE to ascend, you hold{" "}
+                        {formatToken(liquid)}.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <HallFame />
