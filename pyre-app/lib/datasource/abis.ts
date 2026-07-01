@@ -67,7 +67,9 @@ export const IMMOLATED_GATE_ABI = [
 
 /* --- Acolyte (CONTRACTS.nft): the reads needed to gate the Ascend rite -------
    walletToTokenId(0 = none) + acolyteCumulativeBurn(tokenId) give "burned past
-   Pyre" eligibility; lpBurnBonus reports the LP yield flag (1e18 or 1.2e18). */
+   Pyre" eligibility; lpBurnBonus reports the LP yield flag (1e18 = none; LP burners
+   target 2e18 = 2×. NOTE: the currently deployed contract still returns 1.2e18;
+   the UI models the 2× target, pending the contract update). */
 export const ACOLYTE_ABI = [
   { type: "function", name: "walletToTokenId", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "acolyteCumulativeBurn", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },

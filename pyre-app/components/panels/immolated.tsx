@@ -1,12 +1,13 @@
 "use client";
 
-/* HALL OF THE IMMOLATED, the inner order. The Immolated is the rarest Acolyte,
-   the rank PAST Pyre: you reach it by burning at the Forge (all burning is at the
-   Forge, there is no second burn here). Once past Pyre you ASCEND in this Hall,
-   the one rite that lives here. The Hall is the prestige room: the Ascension + the
-   Hall of Fame. (One yield pool today, so no separate pool to claim; the Immolated
-   simply pull hardest on it, collected as normal staking yield.)
-   States: not-connected, not-eligible (keep burning), eligible (ascend), member. */
+/* HALL OF THE IMMOLATED, the inner order. The Immolated is the highest PRESTIGE,
+   not a tier: once you REACH Pyre (the top Acolyte tier) you become eligible, and
+   the honor is earned HERE via the Ascend rite, which burns 100K $PYRE (the LP path
+   also pairs the equivalent $ETH), granting Immolate or LP Immolate to match your
+   path. The Hall is the prestige room: the Ascend rite + the Hall of Fame. Members
+   keep a permanent +20% yield. (One yield pool today, so no separate pool to claim;
+   the Immolated simply pull hardest on it, collected as normal staking yield.)
+   States: not-connected, not-eligible (reach Pyre), eligible (ascend), member. */
 
 import {
   useImmolatedPosition,
@@ -20,6 +21,7 @@ import { TxButton } from "@/components/ui/tx-button";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
 import { formatToken, shortAddress } from "@/lib/format";
+import { IMMOLATED_ASCEND_COST } from "@/lib/constants";
 
 type HallRow = { rank: number; address: `0x${string}`; weight: bigint };
 
@@ -99,7 +101,7 @@ export function ImmolatedPanel() {
   const ascend = useAscendImmolated();
 
   return (
-    <Panel title="Hall of the Immolated" tagline="The highest rank in the village">
+    <Panel title="Hall of the Immolated" tagline="The highest prestige in the village">
       <RequireWallet message="Connect to see if you've reached the Immolated.">
         <StateView query={pos}>
           {(p) =>
@@ -108,44 +110,62 @@ export function ImmolatedPanel() {
               <div className="space-y-5">
                 <div className="rounded-panel border border-brand/40 bg-brand/10 px-4 py-4 text-center">
                   <p className="text-text-3 text-[11px] uppercase tracking-widest">You are</p>
-                  <p className="font-display text-3xl text-brand leading-tight">Immolated</p>
+                  <p className="font-display text-3xl text-brand leading-tight">
+                    {p.isLP ? "LP Immolated" : "Immolated"}
+                  </p>
                   <p className="text-text-2 text-xs mt-1">
                     The rarest Acolyte, the strongest pull on the yield.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Stat label="Your burn weight" value={formatToken(p.weight)} accent />
+                  <Stat
+                    label="Yield boost"
+                    value={`+${Math.round((p.yieldBoost - 1) * 100)}%`}
+                    accent
+                  />
                   <Stat label="Your rank" value={p.rank != null ? `#${p.rank}` : "—"} />
+                  <Stat label="Your burn weight" value={formatToken(p.weight)} />
+                  <Stat label="Effective pool weight" value={formatToken(p.boostedWeight)} />
                 </div>
+                <p className="text-text-3 text-[11px] leading-relaxed">
+                  Your +20% boost lifts your share of the yield pool: you pull on it with your
+                  effective weight, not your raw burn weight.
+                </p>
                 <HallFame you={p.rank != null ? { rank: p.rank, weight: p.weight } : undefined} />
               </div>
             ) : p.eligible ? (
-              /* ELIGIBLE: burned past Pyre at the Forge, ready for the rite. */
+              /* ELIGIBLE: reached Pyre (top tier), ready for the Ascend rite here. */
               <div className="space-y-5">
                 <div
                   id="immolated-action"
                   className="rounded-panel border border-brand/40 bg-gradient-to-b from-brand/15 to-surface/40 px-5 py-6 text-center scroll-mt-24"
                 >
-                  <h3 className="font-display text-2xl text-brand">You&rsquo;ve reached the peak</h3>
+                  <h3 className="font-display text-2xl text-brand">You&rsquo;ve reached Pyre</h3>
                   <p className="text-text-2 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
-                    Your burning at the Forge has carried you past Pyre. Take the final rite and
-                    ascend to the Immolated, the highest rank in the village.
+                    You&rsquo;re at the top tier. Take the Ascend rite here in the Hall, which burns{" "}
+                    <span className="text-brand">
+                      {formatToken(IMMOLATED_ASCEND_COST)} $PYRE
+                      {p.isLP ? " plus the equivalent $ETH" : ""}
+                    </span>
+                    , to become {p.isLP ? "LP Immolated" : "Immolated"}, the highest prestige in the
+                    village, and claim a permanent
+                    <span className="text-brand"> +20% boost</span> to your share of the yield pool.
                   </p>
                   <div className="mt-4 flex justify-center">
                     <TxButton tx={ascend} onClick={() => ascend.mutate()} pendingLabel="Ascending…">
-                      Ascend to the Immolated
+                      Take the Ascend rite
                     </TxButton>
                   </div>
                 </div>
                 <HallFame />
               </div>
             ) : (
-              /* NOT ELIGIBLE: keep burning at the Forge to reach past Pyre. */
+              /* NOT ELIGIBLE: reach Pyre (the top tier) at the Forge first. */
               <div className="space-y-5">
                 <EmptyState
                   icon="⌖"
                   title="Not yet"
-                  message="The Immolated is the rank past Pyre. Keep burning $PYRE at the Forge to ascend."
+                  message="The Immolated is the village's highest prestige, not a tier. Reach Pyre, the top Acolyte tier, by burning at the Forge (normal or LP), then return here to take the Ascend rite: burn 100K $PYRE to ascend and claim a permanent +20% boost to your yield share."
                 />
                 <div className="flex justify-center">
                   <NavCta to="forge">Burn at the Forge →</NavCta>

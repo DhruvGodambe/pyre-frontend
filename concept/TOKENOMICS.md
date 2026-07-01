@@ -1,6 +1,6 @@
 # PYRE — Tokenomics
 
-> All parameters locked. DEV_BRIEF.md is the authoritative developer spec.
+> All parameters locked. Reference: the deployed smart contract (github DhruvGodambe/pyre-protocol).
 
 ---
 
@@ -84,25 +84,31 @@ The Pyre Acolyte ERC-721 is earned by permanently burning $PYRE. Burns accumulat
 
 **No hard cap.** Any wallet that reaches the threshold receives a Pyre Acolyte, forever.
 
-**Stage thresholds (cumulative burn weight — both paths unified):**
+**Stage thresholds (cumulative burn weight — same 4 thresholds on both tracks):**
 
-| Stage | Name | Cumulative Weight | Yield Multiplier |
-|---|---|---|---|
-| 1 | EMBER | 10,000 | 1× |
-| 2 | FLAME | 75,000 | 1.5× |
-| 3 | FORGE | 150,000 | 2× |
-| 4 | PYRE | 300,000 | 3× |
+| Stage | Name | Cumulative Weight | Normal Yield Multiplier | LP Yield Multiplier |
+|---|---|---|---|---|
+| 1 | EMBER | 10,000 | 1× | 2× |
+| 2 | FLAME | 75,000 | 1.5× | 3× |
+| 3 | FORGE | 150,000 | 2× | 4× |
+| 4 | PYRE | 300,000 | 3× | 6× |
 
-**Burn paths:**
+**PYRE is the top tier — there is no 5th tier.** The tier multiplier is a **yield multiplier on STAKED $PYRE** (Model B): your pool share = `staked × tierMult`, and `staked == 0` earns nothing. Burning alone earns nothing.
 
-| Path | Weight | Stages | Visual |
-|---|---|---|---|
-| Token burn | Underlying units at burn time | EMBER → FLAME → FORGE → PYRE | Standard Pyre Acolyte SVG |
-| LP burn | Underlying units × 120% (+20% bonus) | EMBER → FLAME → FORGE → PYRE | Gradient overlay at every stage |
+**Two burn paths, tracked as separate tracks:**
 
-Both paths share one collection and one set of thresholds. LP burns accumulate weight 20% faster — reaching each stage sooner than an equivalent token burn. Weight is denominated in underlying units (pre-scaling factor). Early burners receive more weight per token because the scaling factor is higher at launch.
+| Path | What is burned | Stages | Reward | Visual |
+|---|---|---|---|---|
+| Normal burn | $PYRE only | EMBER → FLAME → FORGE → PYRE | tier multiplier 1× / 1.5× / 2× / 3× | Standard Pyre Acolyte SVG |
+| LP burn | $PYRE paired with $ETH, both locked in the pool permanently | EMBER → FLAME → FORGE → PYRE | tier multiplier 2× / 3× / 4× / 6× (2× a normal Acolyte of the same tier) | Gradient overlay at every stage |
 
-**Generative trait system — ⚠️ NOT LOCKED (one candidate; static-per-stage is the other — see DEV_BRIEF §3):**
+The two tracks share one collection and the same four thresholds, but progress **independently** — Normal-burn weight and LP-burn weight are counted on separate tracks. A user picks a path and can switch between them. LP yields **2× a normal Acolyte of the same tier** (Ember 2×, Flame 3×, Forge 4×, Pyre 6×). Weight is denominated in underlying units (pre-scaling factor). Early burners receive more weight per token because the scaling factor is higher at launch.
+
+**Immolate — a prestige, not a tier:** reaching PYRE unlocks the **Hall of the Immolated**. In the Hall, the **Ascend Rite** burns **another 100,000 $PYRE** (400,000 cumulative total) and grants the **Immolate glyph**: a prestige and visual distinction on the Acolyte NFT with **no yield bonus** (cosmetic only). The permanent maximum yield is therefore **LP Pyre = 6×**. (A temporary whitelist/quest +20% (1.2×), 7-day, can stack briefly on top for ~7.2×.)
+
+> ⚠️ **v2 is the new target.** The currently **deployed** contracts still implement the old model (LP = +20% yield flag via `Acolyte.LP_BURN_BONUS`; Immolated as a 5th rank +20% via `ImmolatedGate.immolate()`; unified single-track weight in `PyreStaking._calculateWeight`). Moving to the v2 model above (separate LP track, LP = 2× tier, cosmetic Immolate) requires contract changes.
+
+**Generative trait system — ⚠️ NOT LOCKED (one candidate; static-per-stage is the other):**
 - A seed is generated at EMBER mint from tokenId + block data and stored permanently. All trait reveals at every stage use this same seed — the final PYRE form is determined at first mint.
 - EMBER: no generative traits — hardcoded silhouette, generative fire coloration only (from seed)
 - FLAME: 1 trait unlocks
@@ -125,8 +131,7 @@ orphaned fees, unlike YUGEN") rests on two errors:
 
 The intended "permanent liquidity + fee capture into the yield pool" outcome is still
 achievable, but only via the locker pattern. The path (locker vs. a simpler
-exit-and-burn-proceeds with no ongoing fees) is **not yet locked** — see
-`dev/LP_BURN_AND_REBASE_V4.md`.
+exit-and-burn-proceeds with no ongoing fees) is **not yet locked**.
 
 ---
 
@@ -192,7 +197,7 @@ All burns are permanent. Tokens removed from supply are never re-minted.
 | **Liquid decay** | Epoch rate on all unstaked + LP tokens — continuous |
 | **Drip decay** | Epoch rate during 7-day exit window |
 | **Pyre Acolyte token burn** | Minimum 10,000 $PYRE cumulative to mint EMBER — permanent |
-| **Pyre Acolyte LP burn** | ⚠️ No LP shares exist in V4 — implemented via NFT-locker or exit-and-burn (path open; see `dev/LP_BURN_AND_REBASE_V4.md`) |
+| **Pyre Acolyte LP burn** | ⚠️ No LP shares exist in V4 — implemented via NFT-locker or exit-and-burn (path open) |
 
 Liquid decay is the dominant sink. It is continuous, cannot be paused, and affects every uncommitted token in existence — including LP positions.
 
@@ -227,7 +232,7 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - Zero $PYRE team allocation used
 - Liquidity permanently locked — ⚠️ in V4 this means the **position NFT** is locked
   (held by a locker / sent to a dead address), not "LP tokens burned to address(0)"
-  (no LP tokens exist in V4). See `dev/LP_BURN_AND_REBASE_V4.md`.
+  (no LP tokens exist in V4).
 - External LPs may add liquidity organically
 - Seed LP creates the permanent trading floor — the pool cannot be drained
 
@@ -247,7 +252,9 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - [x] FLAME threshold: **75,000 $PYRE burned**
 - [x] FORGE threshold: **150,000 $PYRE burned**
 - [x] PYRE threshold: **300,000 $PYRE burned**
-- [x] Stage multipliers: **1× / 1.5× / 2× / 3×**
+- [x] Normal-burn stage multipliers: **1× / 1.5× / 2× / 3×**
+- [x] LP-burn stage multipliers: **2× / 3× / 4× / 6×** (2× a normal Acolyte of the same tier)
+- [x] PYRE is the top tier: **no 5th tier**
 - [x] Pyre Acolyte hard cap: **None**
 - [x] Hook fee: **4% (buy and sell)**
 - [x] Pool swap fee: **1%**
@@ -256,9 +263,12 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - [x] Team cut: **20% of ETH fee revenue**
 - [x] Sell-side fee: **100% burned**
 - [x] Yield split: **fully proportional by weight, no fixed %**
-- [x] LP burn bonus: **+20% weight**
-- [x] NFT: **single type (Pyre Acolyte), tradeable ERC-721** · [ ] rendering approach **OPEN** (static-per-stage vs on-chain generative SVG — see DEV_BRIEF §3)
+- [x] LP burn reward: **2× the tier multiplier on a separate LP track** (Ember 2× / Flame 3× / Forge 4× / Pyre 6×)
+- [x] Immolate: **prestige, not a tier** — Ascend Rite burns another 100,000 $PYRE (400,000 cumulative) for the Immolate glyph, **cosmetic, no yield bonus**
+- [x] Permanent max yield: **LP Pyre = 6×** (temporary 1.2× whitelist boost can stack to ~7.2×)
+- [x] v2 model: **target — deployed contracts still implement the old LP +20% / 5th-rank Immolated model; requires contract changes**
+- [x] NFT: **single type (Pyre Acolyte), tradeable ERC-721** · [ ] rendering approach **OPEN** (static-per-stage vs on-chain generative SVG)
 - [x] Staker visual identity: **None — staking is financial only**
 - [x] Team allocation: **0%**
-- [x] Seed LP: **permanently locked** (V4: position NFT locked, not "LP tokens to address(0)" — see `dev/LP_BURN_AND_REBASE_V4.md`)
+- [x] Seed LP: **permanently locked** (V4: position NFT locked, not "LP tokens to address(0)")
 - [x] Chain: **Ethereum mainnet**

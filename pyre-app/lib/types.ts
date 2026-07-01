@@ -90,8 +90,10 @@ export interface MultiplierBoost {
 /* --- Hall of the Immolated ---------------------------------------------- */
 export interface ImmolatedPosition {
   isMember: boolean; // has ascended (joined the Immolated)
-  eligible: boolean; // reached the peak by burning at the Forge, can ascend now
-  weight: bigint; // your immolated burn weight (your share of the pool)
+  eligible: boolean; // reached Pyre (top tier); can now take the Ascend rite in the Hall
+  weight: bigint; // your immolated burn weight (your raw share of the pool)
+  yieldBoost: number; // +20% Immolated yield boost, e.g. 1.2 (factor, not %)
+  boostedWeight: bigint; // weight × yieldBoost: your effective pool share as a member
   pendingYieldEth: bigint;
   rank: number | null; // your rank among all Immolated
   poolTotalWeight: bigint;

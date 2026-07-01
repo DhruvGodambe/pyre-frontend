@@ -5,8 +5,8 @@
    once here; the MobileShell stacks them, the VillageShell places them behind
    buildings. Add/rename/reorder a feature in ONE place and both shells follow.
 
-   Names + taglines match designer-briefing/content/04-village-world.md.
-   Mobile stacking order matches 05-ui-screens.md → "Mobile Dashboard".
+   This is the single registry of the village buildings (names, taglines, art,
+   map positions, mobile stacking order).
    ========================================================================== */
 
 import type { FC } from "react";
@@ -75,7 +75,7 @@ export const BUILDINGS: Building[] = [
      Immolated (N, grand), Observatory (NE). MID row at the fire, Tavern (W),
      Vault (E). FRONT row at the entrance, Black Market (SW), Gate (S),
      Grand Exchange (SE). Plaza centre ≈ (49.5, 54), ring radius ≈ 15%. */
-  { id: "immolated", name: "Hall of the Immolated", tagline: "Top-tier rewards pool", description: "For top holders only. Burn past the Pyre tier at the Forge to ascend to the Immolated, the rarest Acolyte and the highest rank in the village.", Panel: ImmolatedPanel, mobileOrder: 5, kind: "panel", map: { x: 49.7, y: 41.9 }, scale: 20, art: "/world/buildings/immolated.webp", interior: "/world/interiors/immolated.webp", exterior: "/world/exteriors/immolated.webp", icon: "/world/icons/immolated.webp", sound: "/world/audio/immolated.mp3" },
+  { id: "immolated", name: "Hall of the Immolated", tagline: "The highest prestige", description: "For top holders only. Reach the Pyre tier, then take the Ascend rite here, burning 100K $PYRE (or 100K $PYRE with the equivalent $ETH on the LP path), to become Immolated: the rarest Acolyte and the highest prestige in the village.", Panel: ImmolatedPanel, mobileOrder: 5, kind: "panel", map: { x: 49.7, y: 41.9 }, scale: 20, art: "/world/buildings/immolated.webp", interior: "/world/interiors/immolated.webp", exterior: "/world/exteriors/immolated.webp", icon: "/world/icons/immolated.webp", sound: "/world/audio/immolated.mp3" },
   { id: "forge", name: "The Forge", tagline: "Stake & burn", description: "Where commitment is made. Stake your $PYRE to earn $ETH yield and shield it from decay, then burn $PYRE to forge your Pyre Acolyte and multiply that yield up to 3×.", Panel: ForgePanel, mobileOrder: 3, kind: "panel", map: { x: 39.2, y: 46.1 }, scale: 15, art: "/world/buildings/forge.webp", interior: "/world/interiors/forge.webp", exterior: "/world/exteriors/forge.webp", icon: "/world/icons/forge.webp", sound: "/world/audio/forge.mp3", wide: true },
   { id: "observatory", name: "The Observatory", tagline: "Live protocol stats", description: "The watchtower. Live readings of the whole protocol: supply, decay, burns, staking and yield. No wallet needed.", Panel: ObservatoryPanel, mobileOrder: 4, kind: "panel", map: { x: 60.1, y: 46.9 }, scale: 15, art: "/world/buildings/observatory.webp", interior: "/world/interiors/observatory.webp", exterior: "/world/exteriors/observatory.webp", icon: "/world/icons/observatory.webp", sound: "/world/audio/observatory.mp3" },
   { id: "tavern", name: "The Ashen Cup", tagline: "Quests, invites & leaderboard", description: "Complete quests and invite friends to earn Points toward a reward revealed closer to launch, then see where you rank on the leaderboard.", Panel: TavernPanel, mobileOrder: 6, kind: "panel", map: { x: 34.8, y: 58.4 }, scale: 13, art: "/world/buildings/tavern.webp", interior: "/world/interiors/tavern.webp", exterior: "/world/exteriors/tavern.webp", icon: "/world/icons/tavern.webp", sound: "/world/audio/tavern.mp3", wide: true },

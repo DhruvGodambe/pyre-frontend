@@ -94,8 +94,10 @@ export interface DataSource {
   burnTokens(address: Address, amount: bigint): Promise<TxResult>;
   burnLP(address: Address, ethAmount: bigint, pyreAmount: bigint): Promise<TxResult>;
   claimStakingRewards(address: Address): Promise<TxResult>;
-  /** Ascend to the Immolated once eligible (reached the peak by burning at the
-      Forge). No separate burn, all burning happens at the Forge. */
+  /** Ascend to the Immolated once eligible (reached Pyre, the top tier). The rite
+      itself burns 100K $PYRE in the Hall (the LP path also pairs the equivalent
+      $ETH). NOTE: the deployed contract still gates on "burned past Pyre"; the
+      mock models the target (reach Pyre + Ascend rite). */
   ascendImmolated(address: Address): Promise<TxResult>;
   claimImmolatedYield(address: Address): Promise<TxResult>;
   /** Approve PYRE to Permit2 (sell side). No-op/native on the buy side. */

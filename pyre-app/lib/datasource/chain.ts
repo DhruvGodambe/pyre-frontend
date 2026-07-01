@@ -246,10 +246,13 @@ export class ChainDataSource implements DataSource {
         : null;
     return { liquidBalance: liquid, stakedBalance: staked, pendingRewardsEth, effectiveWeight, drip, boost: null };
   }
-  // The Hall of the Immolated: membership + "burned past Pyre" eligibility, so the
-  // panel can pick its state (not-eligible / eligible→Ascend / member). isMember is
-  // the ImmolatedGate flag; eligibility is derived from the Acolyte's cumulative
-  // burn. The yield itself arrives via PyreStaking (one shared pool), so there's no
+  // The Hall of the Immolated: membership + eligibility, so the panel can pick its
+  // state (not-eligible / eligible→Ascend / member). isMember is the ImmolatedGate
+  // flag; eligibility is derived from the Acolyte's cumulative burn.
+  // TODO(contract): the DEPLOYED gate uses "burned past Pyre" and no Ascend-burn cost.
+  // TARGET (see mock + concept/CORE.md): eligible on REACHING Pyre, then the Ascend
+  // rite burns 100K $PYRE (LP path pairs equivalent $ETH). Update when the contract lands.
+  // The yield itself arrives via PyreStaking (one shared pool), so there's no
   // separate Immolated pending/pool to read here.
   async getImmolatedPosition(address: Address): Promise<ImmolatedPosition> {
     const gate = CONTRACTS.immolated;
@@ -269,7 +272,7 @@ export class ChainDataSource implements DataSource {
 
     // Eligible = own an Acolyte burned STRICTLY past Pyre (token + LP burns both
     // accumulate here). This gates the UI; immolate() enforces the real rule on
-    // chain. Once dev/IMMOLATED_CONTRACT_CHANGES.md lands, the two agree.
+    // chain. Once the v2 Immolate contract change lands, the two agree.
     const eligible = tokenId > 0n && weight > pyreThreshold;
 
     return {

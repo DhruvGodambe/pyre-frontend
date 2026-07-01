@@ -112,7 +112,7 @@ flowchart TD
     W --> B2["LP Burn Path\ndeposit ETH + $PYRE\nlock LP position NFT (no LP tokens in V4)"]
 
     B1 -->|"Cumulative crosses 10k"| MINT["Pyre Acolyte Mints\n(EMBER — 1× yield)"]
-    B2 -->|"Cumulative crosses 10k\n+20% weight bonus"| MINT
+    B2 -->|"Cumulative crosses 10k\n(LP: +20% yield flag, same weight)"| MINT
 
     MINT -->|"75k cumulative"| FL["FLAME — 1.5× yield"]
     FL -->|"150k cumulative"| FO["FORGE — 2× yield"]
@@ -156,10 +156,10 @@ flowchart TD
 | Team cut | **20% of ETH fee revenue** |
 | Sell-side fee disposition | **100% burned** |
 | Yield distribution | Fully proportional by weight, no fixed split |
-| LP burn weight bonus | +20% |
+| LP burn yield | 2× the normal Acolyte at the same tier, on a separate LP track (v2 target, contract change pending) |
 | Staker visual identity | None |
-| NFT art rendering | **OPEN — static-per-stage vs on-chain generative SVG not yet decided. Evolves in place by burn weight regardless. See dev/DEV_BRIEF.md §3.** |
-| Seed LP | Permanently locked at launch (V4: position NFT locked — see dev/LP_BURN_AND_REBASE_V4.md) |
+| NFT art rendering | **OPEN — static-per-stage vs on-chain generative SVG not yet decided. Evolves in place by burn weight regardless.** |
+| Seed LP | Permanently locked at launch (V4: position NFT locked) |
 | Auto-stake on mint | No |
 
 ### Open Parameters (Pre-Build)
@@ -167,8 +167,8 @@ flowchart TD
 | Parameter | Status |
 |---|---|
 | **NFT art rendering approach** | **OPEN — static-per-stage vs on-chain generative SVG. Blocks PyreNFT render layer + final art. Highest priority.** |
-| **LP-burn mechanism (V4)** | **OPEN — no LP tokens in V4. NFT-locker (keeps liquidity + fee capture) vs exit-and-burn proceeds (pure burn, no fees). Blocks `burnLP()` + seed-LP. See dev/LP_BURN_AND_REBASE_V4.md.** |
-| **S(t) rebase × V4 concentrated liquidity** | **OPEN — needs a spike; rebase supply is hostile to V4 ranges and there is no V2 `pair.sync()`. See dev/LP_BURN_AND_REBASE_V4.md §4.** |
+| **LP-burn mechanism (V4)** | **DECIDED (2026-06-29): NFT-locker, capture fees → single yield pool. Deployed code still on dead-address (fees stranded) → migrate.** |
+| **S(t) rebase × V4 concentrated liquidity** | **OPEN — needs a spike; rebase supply is hostile to V4 ranges and there is no V2 `pair.sync()`.** |
 | Art style per stage | TBD (depends on rendering decision above) |
 | LP burn / Immolated overlay design | TBD |
 | Initial seed LP ETH amount | TBD |

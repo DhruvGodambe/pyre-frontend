@@ -17,7 +17,10 @@ import {
   bonfireState,
   pyre,
   WAD,
-  LP_WEIGHT_BONUS,
+  LP_BURN_BONUS,
+  IMMOLATED_PEAK,
+  IMMOLATED_ASCEND_COST,
+  IMMOLATED_YIELD_BOOST,
   POOL_FEE_BPS,
   HOOK_FEE_BPS,
   LAUNCH_FEE_MAX_BPS,
@@ -380,12 +383,18 @@ export class MockDataSource implements DataSource {
     await wait(LATENCY_MS);
     const w = this.world;
     const { stage } = stageFromWeight(w.cumulativeBurnWeight);
+    // effectiveWeight = staked × tierMult × lpBonus × immolatedBonus (Model B,
+    // mirrors PyreStaking._calculateWeight). All are YIELD multipliers on stake;
+    // staked == 0 → 0. The temporary quest boost (w.boost) stacks separately.
     const mult = BigInt(Math.round(STAGES[stage].multiplier * 1000));
+    let effectiveWeight = (w.staked * mult) / 1000n;
+    if (w.isLP) effectiveWeight = (effectiveWeight * BigInt(Math.round(LP_BURN_BONUS * 100))) / 100n; // LP 2× yield
+    if (w.immolatedWeight > 0n) effectiveWeight = (effectiveWeight * 12n) / 10n; // Immolated +20%
     return {
       liquidBalance: w.liquid,
       stakedBalance: w.staked,
       pendingRewardsEth: w.pendingRewardsEth,
-      effectiveWeight: (w.staked * mult) / 1000n,
+      effectiveWeight,
       drip: w.drip,
       boost: w.boost,
     };
@@ -414,15 +423,21 @@ export class MockDataSource implements DataSource {
   async getImmolatedPosition(_address: Address): Promise<ImmolatedPosition> {
     await wait(LATENCY_MS);
     const w = this.world;
-    const { stage } = stageFromWeight(w.cumulativeBurnWeight);
-    // Eligible = reached the peak (Pyre) by burning at the Forge. Member = has
-    // ascended in the Hall (immolatedWeight set to their burn weight).
-    const eligible = stage >= 4;
+    // Eligible = REACHED Pyre (the top tier). The honor itself is earned here via
+    // the Ascend rite (a 100K burn), not by burning past Pyre at the Forge. Member
+    // = has taken the rite (immolatedWeight set to their burn weight).
+    const eligible = w.cumulativeBurnWeight >= IMMOLATED_PEAK;
     const isMember = w.immolatedWeight > 0n;
+    // Immolated members carry a +20% yield boost: their effective pull on the pool
+    // is their burn weight × the boost. (A separate yield multiplier that stacks
+    // with the LP 2× yield flag; both are applied to staked weight, not here.)
+    const boostedWeight = BigInt(Math.round(Number(w.immolatedWeight) * IMMOLATED_YIELD_BOOST));
     return {
       isMember,
       eligible,
       weight: w.immolatedWeight,
+      yieldBoost: IMMOLATED_YIELD_BOOST,
+      boostedWeight,
       pendingYieldEth: w.immolatedPendingEth,
       rank: isMember ? 23 : null,
       poolTotalWeight: pyre(6_400_000),
@@ -691,8 +706,11 @@ export class MockDataSource implements DataSource {
     if (ethAmount > this.world.ethBalance) return { ok: false, error: "Insufficient $ETH balance" };
     this.world.liquid -= pyreAmount;
     this.world.ethBalance -= ethAmount;
-    const weight = BigInt(Math.round(Number(pyreAmount) * LP_WEIGHT_BONUS));
-    this.world.cumulativeBurnWeight += weight;
+    // LP burns accumulate tier weight 1:1, exactly like token burns (the contract
+    // does NOT climb tiers faster for LP). The LP reward is a PERMANENT +20% YIELD
+    // flag, applied to staked weight in getStakingPosition (mirrors the contract's
+    // lpBurners flag + LP_BURN_BONUS).
+    this.world.cumulativeBurnWeight += pyreAmount;
     this.world.totalBurned += pyreAmount;
     this.world.isLP = true;
     return { ok: true, hash: `0x${randHex(64)}` };
@@ -706,12 +724,18 @@ export class MockDataSource implements DataSource {
 
   async ascendImmolated(_address: Address): Promise<TxResult> {
     await wait(TX_MS);
-    const { stage } = stageFromWeight(this.world.cumulativeBurnWeight);
-    if (stage < 4) return { ok: false, error: "Not yet at the peak, keep burning at the Forge" };
-    if (this.world.immolatedWeight > 0n) return { ok: false, error: "Already ascended" };
-    // No separate burn (all burning is at the Forge): ascending just enrols you,
-    // your share of the Hall is weighted by your total burn weight.
-    this.world.immolatedWeight = this.world.cumulativeBurnWeight;
+    const w = this.world;
+    if (w.cumulativeBurnWeight < IMMOLATED_PEAK)
+      return { ok: false, error: "Reach Pyre first, the top tier, then take the rite" };
+    if (w.immolatedWeight > 0n) return { ok: false, error: "Already ascended" };
+    if (w.liquid < IMMOLATED_ASCEND_COST)
+      return { ok: false, error: "The Ascend rite burns 100K $PYRE; not enough $PYRE" };
+    // The Ascend rite burns 100K $PYRE here in the Hall (the LP path also pairs the
+    // equivalent $ETH, both locked forever). It counts as burn and enrols you; your
+    // share of the Hall is weighted by your total burn weight.
+    w.liquid -= IMMOLATED_ASCEND_COST;
+    w.cumulativeBurnWeight += IMMOLATED_ASCEND_COST;
+    w.immolatedWeight = w.cumulativeBurnWeight;
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 

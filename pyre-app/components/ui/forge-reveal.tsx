@@ -14,7 +14,7 @@
 
    Two cinematics (both full-screen, portaled over everything):
      kind="tier" : tier upgrade / first forge. Per-tier forge sound.
-     kind="lp"   : the LP burn, a bigger, PERMANENT sacrifice (+20% weight).
+     kind="lp"   : the LP burn, a bigger, PERMANENT sacrifice (+20% yield).
                    Its own, heavier cinematic + sound.
 
    Designer slots are marked with  ⟦DESIGNER⟧  comments.

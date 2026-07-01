@@ -6,7 +6,6 @@
    Read-only. No wallet required (public data). The reference implementation:
    every other panel follows this shape, a hook for data, StateView for
    loading/error, token-driven primitives for the render.
-   Spec: designer-briefing/content/05-ui-screens.md → "The Observatory".
    ========================================================================== */
 
 import { useEffect, useState } from "react";

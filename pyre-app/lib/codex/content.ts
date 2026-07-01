@@ -99,7 +99,7 @@ export const CODEX: CodexChapter[] = [
         heading: "Burn tokens vs Burn LP",
         paragraphs: [
           "There are two ways to burn, each its own track with the same four tiers and the same amounts. Burn tokens: burn $PYRE on its own. Burn LP: pair your $PYRE with $ETH and add both to the pool permanently (you cannot withdraw either).",
-          "An LP Acolyte earns +20% more $ETH yield than a plain-burn Acolyte of the same tier, and it is the exclusive LP version: rarer and visibly set apart from plain-burn Acolytes. A deeper commitment, since you also give $ETH and lock it in the pool forever.",
+          "An LP Acolyte earns 2× the $ETH yield of a plain-burn Acolyte of the same tier, and it is the exclusive LP version: rarer and visibly set apart from plain-burn Acolytes. A deeper commitment, since you also give $ETH and lock it in the pool forever.",
         ],
       },
       {
@@ -177,13 +177,13 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "The Hall is for those who give the most. Reach the top Acolyte tier, the Pyre, then burn 10,000 $PYRE more into the Hall, and you join the Immolated.",
+          "The Hall is for those who give the most. The Immolated is a prestige, not a tier. First reach the top Acolyte tier, the Pyre, at the Forge. That makes you eligible to take the Ascend rite here in the Hall: burn 100K $PYRE (or 100K $PYRE with the equivalent in $ETH if you walk the LP path) to join the Immolated as Immolate or LP Immolate, to match your path.",
         ],
       },
       {
         heading: "The reward",
         paragraphs: [
-          "The Immolated share a dedicated 25% pool of the protocol's $ETH yield, split by burn weight. The more you have given to the Hall, the larger your share. It is the deepest commitment in the village, and it pays the most.",
+          "The Immolated earn a +20% boost to their $ETH yield, on top of their tier (and their LP bonus, if they have one). Like all yield it applies to your staked $PYRE, so the Immolated who stake pull hardest on the pool. It is the deepest commitment in the village, and it pays the most.",
         ],
       },
     ],

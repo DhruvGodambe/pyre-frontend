@@ -53,7 +53,13 @@ import {
   toAmountString,
   percentOf,
 } from "@/lib/format";
-import { STAGES, acolyteName, type Stage } from "@/lib/constants";
+import {
+  STAGES,
+  acolyteName,
+  IMMOLATED_TIER_NAME,
+  IMMOLATED_MULTIPLIER,
+  type Stage,
+} from "@/lib/constants";
 import type { Acolyte, StakingPosition } from "@/lib/types";
 
 export function ForgePanel() {
@@ -150,11 +156,16 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
                 <ForgeHero acolyte={a} size={150} />
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
                   <span className="font-display text-2xl text-brand">
-                    {a.exists ? acolyteName(a.stage) : "None yet"}
+                    {a.isImmolated ? IMMOLATED_TIER_NAME : a.exists ? acolyteName(a.stage) : "None yet"}
                   </span>
-                  {a.exists ? <Badge tone="brand">{a.multiplier}× yield</Badge> : <Badge>No Acolyte yet</Badge>}
+                  {a.isImmolated ? (
+                    <Badge tone="danger">{IMMOLATED_MULTIPLIER}× yield</Badge>
+                  ) : a.exists ? (
+                    <Badge tone="brand">{a.multiplier}× yield</Badge>
+                  ) : (
+                    <Badge>No Acolyte yet</Badge>
+                  )}
                   {a.isLP && <Badge tone="brand">LP</Badge>}
-                  {a.isImmolated && <Badge tone="danger">Immolated</Badge>}
                 </div>
               </div>
               <div id="forge-ladder" className="w-full min-w-0 flex-1 space-y-3 scroll-mt-24">
@@ -162,9 +173,11 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
                 <ProgressBar
                   value={toNumber(a.cumulativeBurnWeight) / toNumber(STAGES[4].threshold)}
                   label={
-                    a.stage >= 4
-                      ? `Pyre Acolyte reached · ${formatToken(a.cumulativeBurnWeight)} burned, the highest tier (3×)`
-                      : `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre Acolyte, the 3× max`
+                    a.isImmolated
+                      ? `Pyre Acolyte · ${formatToken(a.cumulativeBurnWeight)} burned, and Immolated in the Hall, the highest prestige.`
+                      : a.stage >= 4
+                        ? `Pyre Acolyte reached · ${formatToken(a.cumulativeBurnWeight)} burned, the highest tier. Take the Ascend rite in the Hall to become Immolated.`
+                        : `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre Acolyte, the 3× tier`
                   }
                 />
                 {a.stage < 4 && <p className="text-text-3 text-xs">Next tier: {tier.label}</p>}
@@ -220,8 +233,8 @@ function ForgeScene({ a, p, decay }: { a: Acolyte; p: StakingPosition; decay: st
             <p>
               <span className="text-text">Burn LP</span>: pair your $PYRE with $ETH and add both to
               the pool <span className="text-text">permanently</span> (you can&rsquo;t withdraw
-              either). Same tiers, same amounts, but an LP Acolyte earns{" "}
-              <span className="text-brand">+20% more $ETH yield</span> than a plain-burn one of the
+              either). Same tiers, same amounts, but a separate path: an LP Acolyte earns{" "}
+              <span className="text-brand">2× the $ETH yield</span> of a plain-burn one of the
               same tier, and it&rsquo;s the <span className="text-text">exclusive LP version</span>:
               rarer and visibly set apart from plain-burn Acolytes.
             </p>
@@ -419,8 +432,8 @@ function HowItWorks() {
         ))}
       </ol>
       <p className="border-t border-surface-3/50 px-4 py-2 text-[11px] text-text-3">
-        Burning is permanent. <span className="text-text-2">Burn LP (+20%)</span> pairs your $PYRE
-        with $ETH and locks it in the pool forever for a larger bonus.
+        Burning is permanent. <span className="text-text-2">Burn LP (2×)</span> pairs your $PYRE
+        with $ETH and locks it in the pool forever for double the yield.
       </p>
     </details>
   );
@@ -450,14 +463,16 @@ function ForgeHero({ acolyte, size = 150 }: { acolyte: Acolyte; size?: number })
   );
 }
 
-/* The ladder: all four stages at once, the climb to PYRE made visible. */
+/* The ladder: the four Acolyte tiers, the climb from EMBER to PYRE made visible.
+   All four come from cumulative burn weight. Immolated is NOT a tier here: it is a
+   prestige earned separately through the Ascend rite in the Hall, so it lives in
+   the Hall, not on this ladder. */
 function StageLadder({ a }: { a: Acolyte }) {
   return (
     <div className="grid grid-cols-4 gap-1">
       {([1, 2, 3, 4] as Stage[]).map((s) => {
         const reached = a.cumulativeBurnWeight >= STAGES[s].threshold;
         const current = a.exists && a.stage === s;
-        const max = s === 4;
         const tone = current ? "text-brand" : reached ? "text-text-2" : "text-text-3";
         return (
           <div key={s} className={`flex flex-col items-center text-center gap-0.5 ${tone}`}>
@@ -622,7 +637,7 @@ function BurnRitual({
           onClick={() => setLp(true)}
           className={`flex-1 rounded-sm py-1.5 ${lp ? "bg-brand text-bg" : "text-text-2"}`}
         >
-          Burn LP (+20%)
+          Burn LP (2×)
         </button>
       </div>
 
@@ -637,7 +652,7 @@ function BurnRitual({
       {lp && (
         <div className="rounded-md bg-surface-2 px-3 py-2 text-[11px] text-text-3 space-y-1">
           <p>
-            <span className="text-brand">+20% more $ETH yield</span> than a plain-burn Acolyte of
+            <span className="text-brand">2× the $ETH yield</span> of a plain-burn Acolyte of
             the same tier.
           </p>
           <p>
@@ -684,7 +699,7 @@ function BurnRitual({
         <TxImageButton
           tx={burnLP}
           name="burnlp"
-          label="Burn LP (+20%)"
+          label="Burn LP (2×)"
           disabled={blocked}
           onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
         />

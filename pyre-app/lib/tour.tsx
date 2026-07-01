@@ -109,22 +109,20 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
         preText: "First, you'll stake your $PYRE here. That stops it decaying and starts earning you $ETH yield.",
       },
       {
-        text: "Then burn $PYRE here to forge your Acolyte NFT, which multiplies that $ETH yield up to 3×.",
-        preText: "Then you'll burn $PYRE here to forge your Acolyte NFT, which multiplies that $ETH yield up to 3×.",
-        art: "/world/acolytes/acolyte.png",
+        text: "Then comes the burn, and here you choose your path. The first is the Burn path, the direct one: burn $PYRE on its own to forge your Acolyte NFT, which multiplies your staked yield up to 3×. You always burn from your unstaked $PYRE, and the multiplier only pays while you keep $PYRE staked, so keep some staked and burn the rest to climb.",
+        preText: "Then comes the burn, and here you'll choose your path. The first is the Burn path, the direct one: burn $PYRE on its own to forge your Acolyte NFT, which multiplies your staked yield up to 3×. You always burn from your unstaked $PYRE, and the multiplier only pays while you keep $PYRE staked, so keep some staked and burn the rest to climb.",
       },
       {
-        text: "Your Acolyte climbs four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Burn past the Pyre tier, and you ascend to the rarest form of all, the Immolated.",
-        preText: "Your Acolyte will climb four tiers as you burn more, all from the Forge: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×). Burn past the Pyre tier, and you'll ascend to the rarest form of all, the Immolated.",
+        text: "Whichever path you take, your Acolyte climbs the same four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×), the top tier. There is one honor beyond the tiers, the Immolated, but that is a prestige earned in the Hall, not here at the Forge. I'll show you.",
+        preText: "Whichever path you take, your Acolyte will climb the same four tiers as you burn more: Ember Acolyte at 10K burned (1×), Flame Acolyte at 75K (1.5×), Forge Acolyte at 150K (2×), and Pyre Acolyte at 300K (3×), the top tier. There is one honor beyond the tiers, the Immolated, but that is a prestige earned in the Hall, not here at the Forge. I'll show you.",
       },
       {
-        text: "There's a deeper way to burn, too: Burn LP. Pair your $PYRE with $ETH and commit both to the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, earning +20% more $ETH yield than a plain-burn one of the same tier. It climbs the very same tiers, all the way to the Immolated, so a Pyre Acolyte Immolated (LP) is the highest form of all. Come, let me take you to their Hall.",
-        preText: "There's a deeper way to burn, too: Burn LP. You'll pair your $PYRE with $ETH and commit both to the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, earning +20% more $ETH yield than a plain-burn one of the same tier. It climbs the very same tiers, all the way to the Immolated, so a Pyre Acolyte Immolated (LP) is the highest form of all. Come, let me take you to their Hall.",
-        art: "/world/acolytes/acolyte.png",
+        text: "The other path is the LP Burn, a deeper commitment. Instead of $PYRE alone, you pair it with $ETH and lock both in the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, and it earns 2× the $ETH yield of a plain-burn Acolyte of the same tier. Both paths climb the very same four tiers to Pyre, and each can be crowned with the Immolated prestige in the Hall, so an LP Immolated is the highest form of all. Come, let me take you there.",
+        preText: "The other path is the LP Burn, a deeper commitment. Instead of $PYRE alone, you'll pair it with $ETH and lock both in the pool forever, with no taking either back. It forges the exclusive LP Acolyte, rarer and visibly set apart, and it earns 2× the $ETH yield of a plain-burn Acolyte of the same tier. Both paths climb the very same four tiers to Pyre, and each can be crowned with the Immolated prestige in the Hall, so an LP Immolated is the highest form of all. Come, let me take you there.",
       },
     ],
   },
-  // 4. The pinnacle, straight off the Forge's tier ladder.
+  // 4. The prestige, earned by the Ascend rite in the Hall (not a Forge tier).
   immolated: {
     outside: {
       text: "Here it is: the Hall of the Immolated, home to the rarest Acolytes in the village.",
@@ -132,8 +130,8 @@ const LINES: Record<BuildingId, { outside: TourLine; inside: TourInsideStep[] }>
     },
     inside: [
       {
-        text: "Burn past Pyre at the Forge and you ascend here, to the Immolated: the highest rank of all, with the strongest pull on the yield.",
-        preText: "Burn past Pyre at the Forge and you'll ascend here, to the Immolated: the highest rank of all, with the strongest pull on the yield.",
+        text: "The Immolated is no tier, it is the highest prestige in the village, and it is earned here. You take the Ascend rite in this Hall and burn 100K $PYRE, or 100K $PYRE with the equivalent in $ETH if you walk the LP path, becoming Immolate or LP Immolate to match. It adds a permanent +20% to your yield on top of your tier, the strongest pull on the fire.",
+        preText: "The Immolated is no tier, it is the highest prestige in the village, and it is earned here. You'll take the Ascend rite in this Hall and burn 100K $PYRE, or 100K $PYRE with the equivalent in $ETH if you walk the LP path, becoming Immolate or LP Immolate to match. It will add a permanent +20% to your yield on top of your tier, the strongest pull on the fire.",
       },
     ],
   },
@@ -211,8 +209,8 @@ export interface TourBeat {
 /* The opening establishing shot: the camera stays wide on the whole kingdom while
    the Emberkeeper sets the scene, before the first zoom to the Bonfire. */
 const OVERVIEW_LINE: TourLine = {
-  text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Come, let me show you around, building by building.",
-  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake and burn $PYRE to earn $ETH yield and raise your Acolyte NFT. Let me show you what's coming, and how to earn Points toward a reward before the gates open.",
+  text: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake $PYRE to earn $ETH yield, then burn it to forge an Acolyte NFT that multiplies what you earn. Come, let me show you around, building by building.",
+  preText: "Welcome to PYRE. I'm the Emberkeeper: I tend the flame at the heart of this village and guide every newcomer through it. The idea here is simple: stake $PYRE to earn $ETH yield, then burn it to forge an Acolyte NFT that multiplies what you earn. Let me show you what's coming, and how to earn Points toward a reward before the gates open.",
 };
 
 /* Build the whole walk for the current launch phase. Pre-launch beats speak in
