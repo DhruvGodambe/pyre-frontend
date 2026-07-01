@@ -345,6 +345,12 @@ function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => v
 /* The actions                                                              */
 /* ======================================================================== */
 
+/* The Forge's matched action buttons (stakepyre/unstake/burntokens/burnlp) are
+   drawn at 420×124. Cap their width so they render near natural size and centered
+   (never upscaled to fill the whole column, which made them huge), and shrink
+   together on narrow screens. */
+const ACTION_BTN_W = "min(100%, 360px)";
+
 /* Burn → forge/level the Acolyte. */
 function BurnRitual({
   p,
@@ -422,9 +428,17 @@ function BurnRitual({
               label="Burn LP (2×)"
               disabled={blocked}
               onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
+              width={ACTION_BTN_W}
             />
           ) : (
-            <TxImageButton tx={burn} name="burn" label="Burn $PYRE" disabled={blocked} onClick={() => burn.mutate(amt)} />
+            <TxImageButton
+              tx={burn}
+              name="burntokens"
+              label="Burn $PYRE"
+              disabled={blocked}
+              onClick={() => burn.mutate(amt)}
+              width={ACTION_BTN_W}
+            />
           )}
         </>
       )}
@@ -786,9 +800,17 @@ function StakeRitual({ p }: { p: StakingPosition }) {
           label="Unstake · returns over 7 days"
           disabled={blocked}
           onClick={() => unstake.mutate(amt)}
+          width={ACTION_BTN_W}
         />
       ) : (
-        <TxImageButton tx={stake} name="stakepyre" label="Stake $PYRE" disabled={blocked} onClick={onStake} />
+        <TxImageButton
+          tx={stake}
+          name="stakepyre"
+          label="Stake $PYRE"
+          disabled={blocked}
+          onClick={onStake}
+          width={ACTION_BTN_W}
+        />
       )}
 
       {warding && (
