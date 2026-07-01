@@ -245,7 +245,7 @@ function LedgerBody() {
             value={formatEth(claimable)}
             accent={claimable > 0n}
             sub={claimable > 0n ? "ready to claim" : undefined}
-            onClick={() => navigate({ building: "forge", tab: "stake" })}
+            onClick={() => navigate({ building: "vault" })}
           />
 
           {drip && (

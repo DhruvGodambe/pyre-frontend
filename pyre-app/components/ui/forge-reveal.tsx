@@ -1,38 +1,34 @@
 "use client";
 
 /* ============================================================================
-   FORGE REVEAL, the tier-unlock + LP-burn cinematic  (SCAFFOLD)
+   FORGE REVEAL, the tier-unlock cinematic  (SCAFFOLD)
    ----------------------------------------------------------------------------
    This is a STRUCTURAL SCAFFOLD, not the final cinematic. It exists so:
      • the app already TRIGGERS the moment at the right time (a burn that crosses
-       a tier / mints the first Acolyte → kind "tier"; an LP burn → kind "lp"),
+       a tier / mints the first Acolyte / reaches Immolated, on EITHER path),
      • the designer knows exactly which beats + assets to deliver.
 
-   The DESIGNER will replace the placeholder visuals below with the real
-   cinematic, and deliver the sounds (see lib/sfx.ts → playForgeTierUp/playLpBurn).
-   When per-tier Acolyte art lands, AcolyteArt picks it up automatically.
+   ONE tier reveal that ADAPTS to the burn path (reads the Acolyte's own isLP
+   flag): a plain-burn tier shows the 1×→3× multipliers, an LP tier shows the
+   doubled 2×→6× ones and an "(LP)" title + heavier accent/sound. Every new tier
+   you reach on your chosen path gets its own reveal.
 
-   Two cinematics (both full-screen, portaled over everything):
-     kind="tier" : tier upgrade / first forge. Per-tier forge sound.
-     kind="lp"   : the LP burn, a bigger, PERMANENT sacrifice (+20% yield).
-                   Its own, heavier cinematic + sound.
-
-   Designer slots are marked with  ⟦DESIGNER⟧  comments.
+   The DESIGNER replaces the placeholder visuals below with the real cinematic and
+   delivers the sounds (see lib/sfx.ts → playForgeTierUp/playLpBurn); the LP path
+   plays the heavier playLpBurn. When per-tier Acolyte art lands, AcolyteArt picks
+   it up automatically. Designer slots are marked with  ⟦DESIGNER⟧  comments.
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Acolyte } from "@/lib/types";
-import { STAGES, acolyteName, type Stage } from "@/lib/constants";
+import { STAGES, acolyteName, LP_BURN_BONUS, type Stage } from "@/lib/constants";
 import { AcolyteArt } from "./acolyte-art";
 import { playForgeTierUp, playLpBurn } from "@/lib/sfx";
 
-export type RevealKind = "tier" | "lp";
-
 export interface RevealData {
-  kind: RevealKind;
   acolyte: Acolyte;
-  /** for kind "tier": the stage before this upgrade (0 = first forge). */
+  /** the stage before this upgrade (0 = first forge). */
   prevStage?: number;
 }
 
@@ -58,7 +54,7 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
   useEffect(() => {
     const r = requestAnimationFrame(() => setShown(true));
     // ⟦DESIGNER⟧ sounds are placeholders until you deliver them (see lib/sfx.ts).
-    if (data.kind === "lp") playLpBurn();
+    if (data.acolyte.isLP) playLpBurn();
     else playForgeTierUp(data.acolyte.stage, data.acolyte.isImmolated);
     const t = setTimeout(() => close(), AUTO_DISMISS_MS);
     return () => {
@@ -73,15 +69,17 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
     setTimeout(onClose, 380);
   };
 
-  const isLp = data.kind === "lp";
+  // A single tier reveal that adapts to the burn path. For an LP Acolyte the tier
+  // multipliers are the doubled (LP) ones, so every tier you reach on the LP path
+  // gets its own LP tier reveal, same shape as the plain-burn tier reveal.
+  const isLp = data.acolyte.isLP;
+  const factor = isLp ? LP_BURN_BONUS : 1;
+  const mult = (s: Stage) => Math.round(STAGES[s].multiplier * factor * 100) / 100;
   const stage = (data.acolyte.stage || 1) as Stage;
-  const title = isLp
-    ? "Liquidity Bound"
-    : data.acolyte.isImmolated
-      ? "Immolated Acolyte"
-      : acolyteName(stage);
-  const prevMult = data.prevStage && data.prevStage >= 1 ? STAGES[data.prevStage as Stage].multiplier : null;
-  const newMult = STAGES[stage].multiplier;
+  const baseName = data.acolyte.isImmolated ? "Immolated Acolyte" : acolyteName(stage);
+  const title = isLp ? `${baseName} (LP)` : baseName;
+  const prevMult = data.prevStage && data.prevStage >= 1 ? mult(data.prevStage as Stage) : null;
+  const newMult = mult(stage);
   const accent = isLp ? "var(--color-danger)" : "var(--color-brand)";
 
   const body = (
@@ -90,7 +88,7 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
       className="fixed inset-0 z-[80] flex items-center justify-center overflow-hidden bg-bg/95 backdrop-blur-sm transition-opacity duration-300"
       style={{ opacity: leaving ? 0 : shown ? 1 : 0 }}
       role="dialog"
-      aria-label={isLp ? "LP burn" : "Acolyte tier unlocked"}
+      aria-label={isLp ? "LP Acolyte tier unlocked" : "Acolyte tier unlocked"}
     >
       {/* ⟦DESIGNER⟧ ===== CINEMATIC CANVAS =========================================
           Everything inside this box is a placeholder for the real cinematic.
@@ -137,7 +135,8 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
           className="mb-4 font-mono text-[11px] uppercase tracking-[0.4em]"
           style={{ color: accent, opacity: shown ? 1 : 0, transition: "opacity 500ms ease 200ms" }}
         >
-          {isLp ? "A permanent sacrifice" : data.prevStage ? "Tier unlocked" : "Your Acolyte is forged"}
+          {data.prevStage ? "Tier unlocked" : "Your Acolyte is forged"}
+          {isLp ? " · LP path" : ""}
         </span>
 
         {/* the Acolyte rising from the fire */}
@@ -169,12 +168,17 @@ export function ForgeReveal({ data, onClose }: { data: RevealData; onClose: () =
           className="mt-3 text-text-2 text-sm"
           style={{ opacity: shown ? 1 : 0, transition: "opacity 600ms ease 600ms" }}
         >
-          {isLp ? (
-            <>Your $PYRE and $ETH are bound to the fire forever. This Acolyte earns <span className="text-text">+20% $ETH yield</span>.</>
-          ) : prevMult ? (
-            <>Yield multiplier <span className="text-text-3">{prevMult}×</span> → <span className="text-brand">{newMult}×</span> on your staked $PYRE.</>
+          {prevMult ? (
+            <>
+              Yield multiplier <span className="text-text-3">{prevMult}×</span> →{" "}
+              <span style={{ color: accent }}>{newMult}×</span> on your staked $PYRE
+              {isLp ? ", as an LP Acolyte" : ""}.
+            </>
           ) : (
-            <>Yield multiplier <span className="text-brand">{newMult}×</span> on your staked $PYRE.</>
+            <>
+              Yield multiplier <span style={{ color: accent }}>{newMult}×</span> on your staked $PYRE
+              {isLp ? ", as an LP Acolyte" : ""}.
+            </>
           )}
         </p>
 

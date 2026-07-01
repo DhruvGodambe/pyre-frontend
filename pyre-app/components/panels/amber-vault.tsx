@@ -11,8 +11,9 @@ import {
   useStakingPosition,
   useProtocolStats,
   useUserHistory,
+  useClaimStakingRewards,
 } from "@/lib/hooks";
-import { Panel, Stat, ProgressBar, Badge } from "@/components/ui/primitives";
+import { Panel, Stat, ProgressBar, Badge, Button } from "@/components/ui/primitives";
 import { StateView } from "@/components/ui/state";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
@@ -103,6 +104,10 @@ export function AmberVaultPanel() {
                           />
                         )}
                       </div>
+
+                      {/* Claim your staking yield. This is the home for it: the Vault is
+                          where your position + rewards live (the Forge is for stake/burn). */}
+                      <ClaimYield pending={p.pendingRewardsEth} />
 
                       {/* Always-present next step: more burned = more multiplier on the
                           staked yield. Nudge the two actions that grow the position. */}
@@ -220,5 +225,18 @@ function Step({ n, label, done }: { n: number; label: string; done?: boolean }) 
       </span>
       <span className="text-[10px] uppercase tracking-wide leading-tight">{label}</span>
     </div>
+  );
+}
+
+/* Claim the $ETH your staked $PYRE has earned. Lives here in the Vault, where your
+   position + rewards live (the Forge is only for stake/burn). Hidden with nothing
+   to claim. */
+function ClaimYield({ pending }: { pending: bigint }) {
+  const claim = useClaimStakingRewards();
+  if (pending <= 0n) return null;
+  return (
+    <Button className="w-full" disabled={claim.isPending} onClick={() => claim.mutate()}>
+      {claim.isPending ? "Claiming…" : `Claim ${formatEth(pending)}`}
+    </Button>
   );
 }
