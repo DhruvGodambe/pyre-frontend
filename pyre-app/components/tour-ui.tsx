@@ -211,20 +211,17 @@ export function TourNarration() {
       )}
       <div className="pointer-events-auto w-full max-w-xl rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-4 animate-entry">
         <div className="flex gap-3.5">
-          {/* TUTOR PORTRAIT, placeholder slot for the designer's guide character
-              (the Emberkeeper), who will actually talk: this avatar becomes the
-              character art / animation, and `voice` plays the spoken line. */}
+          {/* THE EMBERKEEPER: the designer's character art (hooded, masked,
+              burning eyes), the same keeper who greets at the front door.
+              `voice` plays his spoken line. */}
           <div className="shrink-0">
-            <div
-              className="grid h-16 w-16 place-items-center rounded-full border border-brand/40"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 35%, rgba(240,169,59,0.35), var(--color-surface-2) 72%)",
-              }}
+            <img
+              src={asset("/world/emberkeeper/arm-out.webp")}
+              alt=""
+              draggable={false}
+              className="h-16 w-16 rounded-full object-cover object-top ring-1 ring-brand/40 shadow-[0_0_20px_-6px_rgba(240,169,59,0.7)] select-none"
               aria-hidden
-            >
-              <span className="text-brand text-2xl">✦</span>
-            </div>
+            />
           </div>
 
           {/* Words + controls */}

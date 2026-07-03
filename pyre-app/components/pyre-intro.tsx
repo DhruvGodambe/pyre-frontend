@@ -65,7 +65,7 @@ const EMBERS: Array<React.CSSProperties & Record<string, string>> = [
   { "--x": "96%", "--s": "2px", "--t": "14.5s", "--d": "5.7s", "--o": "0.4", "--drift": "-26px" },
 ];
 
-export function PyreIntro() {
+export function PyreIntro({ onDone }: { onDone?: () => void } = {}) {
   const [open, setOpen] = useState(false);
   const [decided, setDecided] = useState(false);
   const [curtainGone, setCurtainGone] = useState(false);
@@ -194,6 +194,7 @@ export function PyreIntro() {
   const finish = () => {
     // Ends or is skipped: drop the film and reveal the gate underneath.
     setOpen(false);
+    onDone?.();
   };
 
   // Safety net: once COMMITTED, if the film never makes progress (stuck

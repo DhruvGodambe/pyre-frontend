@@ -136,3 +136,26 @@ h1, h2, h3, h4 {
   pointer-events: none;
 }
 
+
+
+/* The Emberkeeper's idle: a breath, nothing more. The BACKGROUND stays
+   pixel-static; only the character layer sways (~2px over 5.5s). */
+@keyframes keeper-idle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.004); }
+}
+.keeper-idle {
+  animation: keeper-idle 5.5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+/* While he SPEAKS, his eyes flare under the hood (his mouth is masked, so the
+   eyes carry the voice). */
+@keyframes keeper-eyes {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.75; }
+}
+.keeper-eyes {
+  animation: keeper-eyes 1.3s ease-in-out infinite;
+}

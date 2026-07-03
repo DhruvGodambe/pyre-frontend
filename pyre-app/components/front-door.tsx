@@ -25,7 +25,7 @@
    The gate art + vignette mirror the in-kingdom GateLanding, so crossing from the
    front door into the world feels continuous. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,13 +36,69 @@ import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor } from "@/lib/sfx";
 
-/* Pre-launch the gate stands SEALED with the proclamation painted INTO the
-   scene (same brushwork, torchlight and cast shadow, so it truly belongs);
-   the HTML below only lays live text onto that painted paper. At launch the
-   original open-gate art returns and the kingdom shows through the arch. */
-const CLOSED_GATE_ART = "/world/interiors/gate-closed-decree.webp";
-/* The painted paper's position in the art (measured): centered at
-   (50.03%, 57.22%), 13.91% of the frame wide, aspect w/h 0.772. */
+/* Pre-launch the gate stands SEALED and the EMBERKEEPER stands before it:
+   the designer EXACT character art (AI-matted cutout, zero repainting),
+   layered over the scene in image coordinates. He delivers the message from
+   the dialogue box once the film clears. At launch the original open-gate
+   art returns. */
+const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
+
+/* The keeper's voice for this scene. NOTE: free-tier ElevenLabs test clip in
+   the gitignored voice-previews folder, so production simply stays silent
+   (the play() catch swallows the 404) until the licensed voice replaces it. */
+const KEEPER_VOICE = "/voice-previews/mystic-callum-gate.mp3";
+
+/* The keeper's lines, typed out like the tour's narration (no voice yet: the
+   Emberkeeper's spoken clips come later via the voice pipeline). The full text
+   is always laid out invisibly so the box never reflows mid-line. Clicking the
+   box (forceDone) lands everything at once. */
+function KeeperSpeech({
+  lines,
+  forceDone,
+  onDone,
+  msPerChar = 22,
+}: {
+  lines: string[];
+  forceDone: boolean;
+  onDone: () => void;
+  /** typing pace; the caller stretches it to the voice clip's duration. */
+  msPerChar?: number;
+}) {
+  const total = lines.reduce((a, l) => a + l.length, 0);
+  const [n, setN] = useState(0);
+  const doneRef = useRef(false);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setN((v) => (v >= total ? v : v + 1));
+    }, msPerChar);
+    return () => window.clearInterval(id);
+  }, [total, msPerChar]);
+  const shownTotal = forceDone ? total : n;
+  useEffect(() => {
+    if (shownTotal >= total && !doneRef.current) {
+      doneRef.current = true;
+      onDone();
+    }
+  }, [shownTotal, total, onDone]);
+  let remaining = shownTotal;
+  return (
+    <>
+      {lines.map((l, i) => {
+        const shown = Math.max(0, Math.min(l.length, remaining));
+        remaining -= l.length;
+        return (
+          <p key={i} className="relative mt-1.5 text-text-2 text-sm leading-relaxed">
+            <span className="invisible">{l}</span>
+            <span className="absolute inset-0" aria-hidden>
+              {l.slice(0, shown)}
+            </span>
+            <span className="sr-only">{l}</span>
+          </p>
+        );
+      })}
+    </>
+  );
+}
 
 export function FrontDoor() {
   const router = useRouter();
@@ -57,6 +113,45 @@ export function FrontDoor() {
   const [entering, setEntering] = useState(false);
   // null = still asking; true/false = the answer from /api/session.
   const [isTeam, setIsTeam] = useState<boolean | null>(null);
+  // The keeper's arrival: hidden (film still playing) -> APPEAR (he stands at
+  // the gate, full figure) -> BOX (he settles into the dialogue box and talks).
+  const [keeper, setKeeper] = useState<"hidden" | "appear" | "box">("hidden");
+  const [spoken, setSpoken] = useState(false);
+  const [voiceMs, setVoiceMs] = useState(22);
+  const keeperAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // His voice: plays when the box opens (the light-the-pyre hold was the
+  // gesture, so playback is allowed; if a browser still refuses, the words
+  // simply type in silence). The typewriter stretches to the clip's length.
+  const KEEPER_TEXT_LEN = 151; // combined line length, keeps pacing honest
+  useEffect(() => {
+    if (keeper !== "box") return;
+    const a = new Audio(asset(KEEPER_VOICE));
+    keeperAudioRef.current = a;
+    a.addEventListener("loadedmetadata", () => {
+      if (Number.isFinite(a.duration) && a.duration > 1) {
+        setVoiceMs(Math.max(16, Math.round((a.duration * 1000 * 0.94) / KEEPER_TEXT_LEN)));
+      }
+    });
+    a.play().catch(() => {});
+    return () => {
+      a.pause();
+      keeperAudioRef.current = null;
+    };
+  }, [keeper]);
+
+  // Skipping the words also quiets the keeper.
+  useEffect(() => {
+    if (spoken) keeperAudioRef.current?.pause();
+  }, [spoken]);
+
+  useEffect(() => {
+    if (keeper !== "appear") return;
+    // A short beat so the visitor SEES him standing at the gate before he
+    // starts talking.
+    const t = window.setTimeout(() => setKeeper("box"), 1200);
+    return () => window.clearTimeout(t);
+  }, [keeper]);
 
   // Returning wallet/guest visitor → straight into the app. Otherwise give the
   // identity a beat to hydrate (guest from storage, wallet reconnect), then commit
@@ -107,8 +202,9 @@ export function FrontDoor() {
       className="fixed inset-0 z-40 overflow-hidden bg-bg transition-opacity duration-[1000ms] ease-out"
       style={{ opacity: entering ? 0 : 1 }}
     >
-      {/* The cinematic film plays over everything on first arrival, then clears. */}
-      <PyreIntro />
+      {/* The cinematic film plays over everything on first arrival, then clears
+          and the Emberkeeper arrives at the threshold. */}
+      <PyreIntro onDone={() => setKeeper("appear")} />
 
       {/* The gate, full-screen, settling in on arrival then pushing THROUGH as a
           team member steps into the world. */}
@@ -128,6 +224,45 @@ export function FrontDoor() {
           sizes="100vw"
           className="object-cover select-none pointer-events-none"
         />
+        {/* The keeper himself: the designer's EXACT pixels (AI-matted cutout,
+            zero repainting), standing left of the doors, cropped by the frame
+            bottom. Positioned in image coordinates via the same cover-proxy
+            geometry as the art, so he stands on the path at every viewport. */}
+        {!LAUNCHED && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)] pointer-events-none">
+            {/* He holds the Ember Codex open; clicking him (or his book) reads
+                it. A whisper of a hover lift is the only affordance. */}
+            <Link
+              href="/codex"
+              aria-label="Read the Ember Codex"
+              title="Read the Ember Codex"
+              className="group absolute bottom-[-1.5%] left-[30%] -translate-x-1/2 h-[57%] pointer-events-auto outline-none focus-visible:ring-2 focus-visible:ring-brand/70 rounded-lg"
+            >
+              <img
+                src={asset("/world/emberkeeper/keeper-crossed-cut.webp")}
+                alt=""
+                draggable={false}
+                className="keeper-idle h-full w-auto max-w-none select-none transition-[filter] duration-300 group-hover:[filter:drop-shadow(0_0_18px_rgba(240,169,59,0.35))_brightness(1.05)]"
+              />
+              {/* Speaking: his eyes flare in rhythm while the voice plays. */}
+              {keeper === "box" && !spoken && (
+                <span
+                  aria-hidden
+                  className="keeper-eyes absolute pointer-events-none"
+                  style={{
+                    left: "36%",
+                    top: "17.5%",
+                    width: "28%",
+                    height: "7%",
+                    background:
+                      "radial-gradient(50% 60% at 50% 50%, rgba(255,168,60,0.8) 0%, rgba(240,105,35,0.3) 55%, transparent 80%)",
+                    mixBlendMode: "screen",
+                  }}
+                />
+              )}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Legibility: a gentle vignette only. The decree carries its own
@@ -151,129 +286,129 @@ export function FrontDoor() {
         />
       </div>
 
-      {/* The proclamation, pinned to the DOORS themselves. The wrapper below
-          replicates the gate art's object-cover geometry (16:9, centered,
-          cover-scaled), so a position expressed in image coordinates stays on
-          the doors at every viewport size. In the art the doors sit at the
-          center-x, ~62% down. Hidden once we're crossing into the world. */}
-      <div
-        className="absolute inset-0 z-10 transition-opacity duration-300 pointer-events-none"
-        style={{ opacity: entering ? 0 : 1 }}
-      >
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)]">
-        {/* The decree rectangle: positioned exactly over the paper PAINTED into
-            the gate art (measured bbox), with container-query units so the type
-            scales with the paper at every viewport. No pasted image: the paper
-            is part of the painting; this only lays words onto it. */}
-        <div className="animate-entry absolute left-[50.03%] top-[57.22%] w-[13.91%] aspect-[0.772] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-auto [container-type:inline-size]">
-
-          {/* Content, laid onto the paper inside its safe area (clear of the
-              nails at the top and the wax seal at the lower right). */}
-          <div className="absolute inset-0 flex flex-col items-center px-[10%] pt-[9%] pb-[10%]">
-          <div className="inline-flex items-center justify-center gap-[2.5cqw] mb-[2.5cqw]">
-            {gate.icon && (
-              <img
-                src={asset(gate.icon)}
-                alt=""
-                className="h-[5.5cqw] w-[5.5cqw] shrink-0 object-contain"
-              />
-            )}
-            <span className="text-[#7d5f38] text-[3.6cqw] uppercase tracking-[0.25em]">
-              The Gate
-            </span>
-          </div>
-          <h2 className="font-display text-[8.2cqw] text-[#5f3712] leading-tight">
-            The Gate Opens Soon
-          </h2>
-          <p className="mt-[2cqw] text-[#54432b] text-[4.2cqw] leading-relaxed mx-auto">
-            The kingdom slumbers behind sealed doors. All that may be known of
-            Pyre lies inscribed in the Ember Codex. Study it, and return when
-            the fire calls.
-          </p>
-          <p className="mt-[1.5cqw] text-[#54432b] text-[4.2cqw] leading-relaxed mx-auto">
-            The opening will be proclaimed on X. Follow with notifications on,
-            and be there the moment the gate unseals.
-          </p>
-
-          {/* The stamp: a clickable X mark pressed into the paper, ink on
-              parchment rather than a web chrome button. */}
-          <a
-            href={X_PROFILE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow Pyre Protocol on X"
-            className="mt-[2.5cqw] inline-flex items-center gap-[2cqw] rounded-[1.5cqw] border-[0.4cqw] border-[#8a6a3a]/70 px-[3.5cqw] py-[1.6cqw] text-[#5a3517] text-[4.2cqw] font-medium hover:bg-[#5f3712]/10 hover:border-[#6b3d10] transition-colors"
+      {/* THE EMBERKEEPER stands at the gate, painted into the scene itself.
+          Once the film clears (and after a beat so he is SEEN), he speaks
+          through the dialogue box, the same box, the same character, as the
+          guided tour in the village. */}
+      {keeper === "box" && (
+        <div
+          className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-4 pb-[4vh] transition-opacity duration-300"
+          style={{ opacity: entering ? 0 : 1 }}
+        >
+          <div
+            className="animate-entry w-full max-w-2xl rounded-panel bg-surface/90 border border-surface-3/60 shadow-panel backdrop-blur p-4 sm:p-5 cursor-pointer"
+            onClick={() => setSpoken(true)}
           >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden
-              className="h-[4cqw] w-[4cqw] fill-current"
-            >
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-            @pyre_protocol
-          </a>
-
-          {/* The two doors, stacked like the seals of a decree: the designer's
-              carved plates (normal + molten hover, first hover never flickers),
-              nudged slightly left so the wax seal keeps its corner. The Enter
-              plate stays sealed (desaturated, inert) for anyone who isn't team. */}
-          <div className="mt-auto flex flex-col items-center gap-[2.5cqw] -translate-x-[7%]">
-            <button
-              onClick={enter}
-              disabled={!isTeam}
-              aria-disabled={!isTeam}
-              aria-label={isTeam ? "Enter Pyre Kingdom" : "Enter Pyre Kingdom (opens at launch)"}
-              title={isTeam ? undefined : "The kingdom is not yet open"}
-              className={
-                "group relative block outline-none transition-transform duration-200 " +
-                (isTeam
-                  ? "hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
-                  : "grayscale opacity-45 cursor-not-allowed")
-              }
-            >
+            <div className="flex gap-4">
+              {/* The keeper, the same figure who just stood at the gate. */}
               <img
-                src={asset("/buttons/enter_normal.png")}
+                src={asset("/world/emberkeeper/crossed.webp")}
                 alt=""
                 draggable={false}
-                className="block h-[13.5cqw] w-auto select-none"
+                className="h-28 w-24 sm:h-36 sm:w-32 shrink-0 rounded-xl object-cover object-top ring-1 ring-brand/40 shadow-[0_0_28px_-8px_rgba(240,169,59,0.7)] select-none"
               />
-              {isTeam && (
-                <img
-                  src={asset("/buttons/enter_hover.png")}
-                  alt=""
-                  aria-hidden
-                  draggable={false}
-                  className="absolute inset-0 h-[13.5cqw] w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+              <div className="min-w-0 flex-1">
+                <div className="text-text-3 text-[11px] uppercase tracking-[0.25em]">
+                  The Emberkeeper
+                </div>
+                <KeeperSpeech
+                  lines={[
+                    "The gate opens soon, stranger. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
+                    "Study the Ember Codex while you wait.",
+                  ]}
+                  forceDone={spoken}
+                  onDone={() => setSpoken(true)}
+                  msPerChar={voiceMs}
                 />
-              )}
-            </button>
 
-            {/* Read the Ember Codex, open to all. */}
-            <Link
-              href="/codex"
-              aria-label="Read the Ember Codex"
-              className="group relative block outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
-            >
-              <img
-                src={asset("/buttons/codex_normal.png")}
-                alt=""
-                draggable={false}
-                className="block h-[13.5cqw] w-auto select-none"
-              />
-              <img
-                src={asset("/buttons/codex_hover.png")}
-                alt=""
-                aria-hidden
-                draggable={false}
-                className="absolute inset-0 h-[13.5cqw] w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
-              />
-            </Link>
-          </div>
+                {/* His instructions appear once the words have landed. */}
+                <div
+                  className={
+                    "mt-3.5 flex flex-wrap items-center gap-3 transition-opacity duration-500 " +
+                    (spoken ? "opacity-100" : "opacity-0 pointer-events-none")
+                  }
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      enter();
+                    }}
+                    disabled={!isTeam}
+                    aria-disabled={!isTeam}
+                    aria-label={isTeam ? "Enter Pyre Kingdom" : "Enter Pyre Kingdom (opens at launch)"}
+                    title={isTeam ? undefined : "The kingdom is not yet open"}
+                    className={
+                      "group relative block outline-none transition-transform duration-200 " +
+                      (isTeam
+                        ? "hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+                        : "grayscale opacity-45 cursor-not-allowed")
+                    }
+                  >
+                    <img
+                      src={asset("/buttons/enter_normal.png")}
+                      alt=""
+                      draggable={false}
+                      className="block h-10 w-auto select-none"
+                    />
+                    {isTeam && (
+                      <img
+                        src={asset("/buttons/enter_hover.png")}
+                        alt=""
+                        aria-hidden
+                        draggable={false}
+                        className="absolute inset-0 h-10 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      />
+                    )}
+                  </button>
+                  <Link
+                    href="/codex"
+                    aria-label="Read the Ember Codex"
+                    onClick={(e) => e.stopPropagation()}
+                    className="group relative block outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+                  >
+                    <img
+                      src={asset("/buttons/codex_normal.png")}
+                      alt=""
+                      draggable={false}
+                      className="block h-10 w-auto select-none"
+                    />
+                    <img
+                      src={asset("/buttons/codex_hover.png")}
+                      alt=""
+                      aria-hidden
+                      draggable={false}
+                      className="absolute inset-0 h-10 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    />
+                  </Link>
+                  <a
+                    href={X_PROFILE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow @pyre_protocol on X"
+                    title="@pyre_protocol"
+                    onClick={(e) => e.stopPropagation()}
+                    className="group relative block h-10 w-10 outline-none transition-transform duration-200 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+                  >
+                    <img
+                      src={asset("/buttons/x_normal.webp")}
+                      alt=""
+                      draggable={false}
+                      className="block h-10 w-10 select-none"
+                    />
+                    <img
+                      src={asset("/buttons/x_hover.webp")}
+                      alt=""
+                      aria-hidden
+                      draggable={false}
+                      className="absolute inset-0 h-10 w-10 select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        </div>
-      </div>
+      )}
 
       {/* Discreet team entrance: an un-signed-in team member signs in and lands in
           the kingdom. Only shown while not recognised as team. */}

@@ -48,3 +48,6 @@ swisstransfer_*/
 /Character_PFP/
 /UI_Elements/
 /Other/
+
+# ElevenLabs test clips (free-tier, non-commercial, never ship)
+pyre-app/public/voice-previews/
