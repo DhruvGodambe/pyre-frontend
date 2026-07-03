@@ -1,0 +1,113 @@
+/* ============================================================================
+   PYRE LANDING
+   One full-viewport scene: the Acolyte, the wordmark, two doors. The palette
+   comes from the hero art itself (near-black ember dark, parchment gold).
+   ========================================================================== */
+
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #f0a93b;
+  --color-brand-deep: #c8731c;
+  --color-parchment: #f2e5c9;   /* the baked wordmark's letter tone */
+  --color-bg: #060403;          /* matches the hero art's outer edges */
+  --color-text: #f4ece0;
+  --color-text-2: #b8ab99;
+  --color-text-3: #7d7263;
+
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --ease-warm: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ----------------------------------------------------------------------------
+   Arrival: the scene breathes in. Hero settles, chrome surfaces one beat later.
+   -------------------------------------------------------------------------- */
+
+@keyframes hero-settle {
+  from { opacity: 0; transform: scale(1.045); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-hero {
+  animation: hero-settle 2200ms var(--ease-warm) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 900ms var(--ease-warm) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Ember motes drifting up. Each mote sets --x, --s (size), --t (duration),
+   --d (delay), --o (peak opacity), --drift (horizontal wander). */
+@keyframes ember-float {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  8%   { opacity: var(--o, 0.6); }
+  62%  { opacity: var(--o, 0.6); }
+  100% { transform: translateY(-92vh) translateX(var(--drift, 20px)); opacity: 0; }
+}
+.ember {
+  position: absolute;
+  bottom: -2vh;
+  left: var(--x, 50%);
+  width: var(--s, 3px);
+  height: var(--s, 3px);
+  border-radius: 9999px;
+  background: radial-gradient(circle, #f7d08a 0%, #f0a93b 55%, transparent 75%);
+  filter: blur(0.4px);
+  animation: ember-float var(--t, 10s) linear infinite;
+  animation-delay: var(--d, 0s);
+  pointer-events: none;
+}
+
+/* The two doors: the designer's carved-plate buttons (593x166 source PNGs).
+   Normal + molten hover are stacked images; hover cross-fades. Both load up
+   front, so the first hover never flickers. */
+.imgbtn {
+  position: relative;
+  display: block;
+  transition: transform 200ms var(--ease-warm), filter 200ms var(--ease-warm);
+}
+.imgbtn img {
+  display: block;
+  height: 64px;
+  width: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.imgbtn .hov {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms var(--ease-warm);
+}
+.imgbtn:hover .hov,
+.imgbtn:focus-visible .hov {
+  opacity: 1;
+}
+.imgbtn:hover {
+  transform: translateY(-1px);
+  filter: drop-shadow(0 8px 24px rgba(240, 88, 24, 0.35));
+}
+.imgbtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
