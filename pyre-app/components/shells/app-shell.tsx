@@ -9,7 +9,6 @@ import { useIsDesktop } from "@/components/ui/use-media";
 import { MobileShell } from "./mobile-shell";
 import { VillageShell } from "./village-shell";
 import { PreviewSwitcher } from "@/components/preview-switcher";
-import { DesignerIntro } from "@/components/designer-intro";
 import { EmberkeeperIntro } from "@/components/emberkeeper-intro";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { CodexReader } from "@/components/codex";
@@ -45,8 +44,6 @@ export function AppShell() {
           (the persistent Codex button in each shell, "Read the rite" inside a
           building, or the gate/intro docs links). */}
       <CodexReader />
-      {/* The mock-only design-preview aid (different audience: the designer). */}
-      <DesignerIntro />
     </>
   );
 }

@@ -33,6 +33,7 @@ import { BUILDING_BY_ID } from "@/components/buildings";
 import { PyreIntro } from "@/components/pyre-intro";
 import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
+import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor } from "@/lib/sfx";
 
 /* Pre-launch the gate stands SEALED with the proclamation painted INTO the
@@ -129,9 +130,10 @@ export function FrontDoor() {
         />
       </div>
 
-      {/* Legibility: vignette + bottom scrim. */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_30%,rgba(11,10,9,0.72)_100%)] pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg via-bg/60 to-transparent pointer-events-none" />
+      {/* Legibility: a gentle vignette only. The decree carries its own
+          contrast, so the scene (especially the foreground path) stays visible. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_45%,rgba(11,10,9,0.5)_100%)] pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-bg/35 to-transparent pointer-events-none" />
 
       {/* Warm ember bloom as a team member crosses the threshold. */}
       <div
@@ -141,9 +143,12 @@ export function FrontDoor() {
 
       {/* Wordmark */}
       <div className="absolute top-5 left-6 z-10">
-        <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-          PYRE
-        </span>
+        <img
+          src={asset("/brand/text-color.png")}
+          alt="Pyre"
+          draggable={false}
+          className="h-8 w-auto select-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+        />
       </div>
 
       {/* The proclamation, pinned to the DOORS themselves. The wrapper below
@@ -180,10 +185,34 @@ export function FrontDoor() {
           <h2 className="font-display text-[8.2cqw] text-[#5f3712] leading-tight">
             The Gate Opens Soon
           </h2>
-          <p className="mt-[2cqw] text-[#54432b] text-[4.5cqw] leading-relaxed mx-auto">
-            The kingdom is not yet open. Read the Pyre documentation in the Ember
-            Codex, and return when the gate is unsealed.
+          <p className="mt-[2cqw] text-[#54432b] text-[4.2cqw] leading-relaxed mx-auto">
+            The kingdom slumbers behind sealed doors. All that may be known of
+            Pyre lies inscribed in the Ember Codex. Study it, and return when
+            the fire calls.
           </p>
+          <p className="mt-[1.5cqw] text-[#54432b] text-[4.2cqw] leading-relaxed mx-auto">
+            The opening will be proclaimed on X. Follow with notifications on,
+            and be there the moment the gate unseals.
+          </p>
+
+          {/* The stamp: a clickable X mark pressed into the paper, ink on
+              parchment rather than a web chrome button. */}
+          <a
+            href={X_PROFILE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Follow Pyre Protocol on X"
+            className="mt-[2.5cqw] inline-flex items-center gap-[2cqw] rounded-[1.5cqw] border-[0.4cqw] border-[#8a6a3a]/70 px-[3.5cqw] py-[1.6cqw] text-[#5a3517] text-[4.2cqw] font-medium hover:bg-[#5f3712]/10 hover:border-[#6b3d10] transition-colors"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden
+              className="h-[4cqw] w-[4cqw] fill-current"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            @pyre_protocol
+          </a>
 
           {/* The two doors, stacked like the seals of a decree: the designer's
               carved plates (normal + molten hover, first hover never flickers),

@@ -101,28 +101,7 @@ type Scene =
 /* The intro is now just the LORE COLD-OPEN + the identity choice. Choosing how
    you enter hands off to the guided world Tour (lib/tour), one onboarding, not
    two. The building walk / rites that used to live here are the Tour now. */
-const SCENES: Scene[] = [
-  {
-    kind: "lore",
-    title: "Welcome to Pyre.",
-    body:
-      "Pyre is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn $ETH yield and level up your NFT.",
-  },
-  {
-    kind: "lore",
-    title: "You're early.",
-    body:
-      "Not many people have found this yet, and early users are rewarded. There are quests to complete in these first days, and what they unlock is revealed closer to launch.",
-  },
-  {
-    kind: "lore",
-    title: "Let me show you around.",
-    body:
-      "I'm the Emberkeeper, your guide. Choose how you'll enter, and I'll walk you through the app, building by building, so you know how it all works. Want the full background first? It's always here.",
-    docs: true,
-  },
-  { kind: "identity" },
-];
+const SCENES: Scene[] = [{ kind: "identity" }];
 
 /* The building glyph (placeholder until the designer's exterior art lands). */
 const glyph = (id: BuildingId) =>
@@ -255,23 +234,6 @@ export function EmberkeeperIntro() {
             The Emberkeeper
           </span>
         </div>
-
-        {/* COLD-OPEN HOOK (step 0 only). Plant the goal + reward up front so the
-            visitor has a reason to finish, without pitching the quest ask yet
-            (that lands after a first win). Glosses "rite" in plain words on first
-            use, and teases the reward without over-promising (revealed at launch).
-            Backed by onboarding research: early reward expectation + goal-gradient
-            lift completion; unexplained jargon drives drop-off. */}
-        {step === 0 && (
-          <div className="mx-5 mt-3 rounded-md border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5">
-            <p className="text-text-2 text-xs leading-relaxed">
-              Stay to the end and you&rsquo;ll complete your{" "}
-              <span className="text-brand">first quest</span>. The early
-              are rewarded: quests earn <span className="text-text">Points</span>, and what
-              they unlock is revealed closer to launch.
-            </p>
-          </div>
-        )}
 
         {/* Scene, re-animates on each step via the `key`. */}
         <div key={step} className="animate-entry px-5 pb-5 pt-2">

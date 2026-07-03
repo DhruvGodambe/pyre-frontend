@@ -1,118 +1,186 @@
 "use client";
 
-/* THE GATE LANDING, the first thing a visitor sees (desktop), once the brand
-   film is done. You arrive at the Gate exterior, the Emberkeeper sets the scene
-   (the lore, as narration over the gate, not a separate modal), then you choose
-   how to enter, right here on the gate.
+/* THE GATE ANSWERS, the desktop arrival (once the brand film is done).
 
-   Entry is a deliberate THREE-beat flow, so stepping into the world feels like
-   an arrival, not a flicker:
-     1. lore  → (first visit only) the Emberkeeper's opening.
-     2. fork  → connect a wallet or continue as a guest.
-     3. ENTER → once an identity is set, the fork gives way to a "you're in"
-                confirmation (the connected address / guest name) with a single
-                Enter button. Pressing it plays the gate's door and pushes the
-                camera THROUGH the gate, bright bloom and all, revealing the
-                woken kingdom behind it.
+   The sealed gate IS the login. No cards, no lore deck, no panel: the visitor
+   stands before the closed doors, and the two carved plates (the landing
+   page's button language) hang one on each door leaf:
 
-   Shows whenever there is NO identity yet (awake === false). A returning visitor
-   whose name/wallet persisted skips it entirely and lands in the kingdom. The
-   lore beats only play on a true first visit; after that it's just the entry
-   fork over the gate. */
+     • Connect Wallet  → on the left leaf
+     • Enter as Guest  → on the right leaf (the name is asked right there)
 
-import { useEffect, useState } from "react";
+   The moment identity is set, the gate answers, and every visible frame of the
+   opening is PAINTED (Nano Banana edits of the same scene), not CSS geometry:
+
+     closed  →  the carved emblem ignites (glow)
+             →  the doors crack AJAR, a blade of light through the seam
+                (gate-ajar.webp, a painted frame of this exact scene)
+             →  the light FLOODS the screen (bloom wash)
+             →  the wash recedes onto the OPEN gate, kingdom glowing through,
+                while the camera pushes in. First-timers walk straight into
+                the Emberkeeper's guided tour.
+
+   Geometry: the art is object-cover; a proxy container replicates that crop,
+   so positions expressed in image coordinates stay on the doors at any
+   viewport. Shows whenever there is NO identity yet (awake === false); a
+   returning visitor gets a single carved Enter plate and the same opening. */
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { BUILDING_BY_ID } from "@/components/buildings";
-import { EntryFork } from "@/components/ui/entry-fork";
-import { GameIcon } from "@/components/ui/game-icon";
 import { useTour } from "@/lib/tour";
-import { useCodex } from "@/lib/codex";
 import { useIdentity } from "@/lib/identity";
+import { useWallet } from "@/lib/wallet";
 import { asset } from "@/lib/config";
-import { shortAddress } from "@/lib/format";
 import { playDoor } from "@/lib/sfx";
 import { storageGet, storageSet } from "@/lib/safe-storage";
 
 const SEEN_KEY = "pyre_intro_seen";
 
-/* The Emberkeeper's opening, delivered over the gate. Same substance as the old
-   lore cards, now spoken at the threshold. */
-const LORE = [
-  {
-    title: "Welcome to Pyre.",
-    body:
-      "Pyre is built around one idea: $PYRE is a token made to be burned. Stake and burn it to earn $ETH yield and level up your Acolyte NFT.",
-  },
-  {
-    title: "You’re early.",
-    body:
-      "Not many have found this yet, and the early are rewarded. There are quests in these first days, and what they unlock is revealed closer to launch.",
-    docs: true,
-  },
-  {
-    title: "Step up to the gate.",
-    body:
-      "I’m the Emberkeeper, your guide. Choose how you’ll enter, and I’ll walk you through the kingdom, building by building.",
-  },
-];
+/* The three painted states of the same scene. */
+const CLOSED_ART = "/world/interiors/gate-closed.webp";
+const AJAR_ART = "/world/interiors/gate-ajar.webp";
+const OPEN_ART = "/world/interiors/gate.webp";
+
+/* Image-coordinate anchors (percent of the 16:9 frame). The door leaves sit
+   either side of the center seam; one plate hangs on each, at door-middle. */
+const PLATE_L = { x: 43.9, y: 61 };
+const PLATE_R = { x: 56.1, y: 61 };
+const PLATE_W = 11; // % of the frame width (593x166 source art)
+
+/* Sequence pacing (ms from begin()). */
+const T_AJAR = 600; // emblem glow → doors crack ajar
+const T_FLOOD = 1500; // → light floods the screen
+const T_DEPART = 1900; // → wash recedes onto the open gate, camera pushes
+const T_DONE = 2950;
+
+type Phase = "choose" | "guest" | "ready" | "igniting" | "ajar" | "flood" | "departing";
+
+const SHADOW = { textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.5)" };
+
+/* One carved plate (normal + molten hover, first hover never flickers),
+   anchored to a point on the painting. */
+function GatePlate({
+  at,
+  art,
+  label,
+  onClick,
+  disabled,
+  pending,
+}: {
+  at: { x: number; y: number };
+  art: string;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  pending?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-busy={pending}
+      className="group absolute block -translate-x-1/2 -translate-y-1/2 outline-none transition-transform duration-200 hover:-translate-y-[calc(50%+2px)] hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.4)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg disabled:opacity-70"
+      style={{ left: `${at.x}%`, top: `${at.y}%`, width: `${PLATE_W}%` }}
+    >
+      <img src={asset(`/buttons/${art}_normal.png`)} alt="" draggable={false} className="block w-full h-auto select-none" />
+      <img
+        src={asset(`/buttons/${art}_hover.png`)}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="absolute inset-0 w-full h-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+      />
+      {pending && (
+        <span className="absolute inset-0 grid place-items-center" aria-hidden>
+          <span className="h-[18%] aspect-square rounded-full border-2 border-white/50 border-t-white animate-spin" />
+        </span>
+      )}
+    </button>
+  );
+}
 
 export function GateLanding({ onDone }: { onDone: () => void }) {
   const tour = useTour();
-  const codex = useCodex();
   const identity = useIdentity();
-  const gate = BUILDING_BY_ID.gate;
+  const { status } = useWallet();
+  const connecting = status === "connecting";
 
-  // First true visit → play the lore beats; afterwards go straight to the fork.
   const [firstTime, setFirstTime] = useState(false);
-  const [loreStep, setLoreStep] = useState(0);
-  const [loreDone, setLoreDone] = useState(true);
   const [shown, setShown] = useState(false);
-  // The user pressed Enter: run the push-through transition, then unmount.
-  const [departing, setDeparting] = useState(false);
+  const [phase, setPhase] = useState<Phase>("choose");
+  const [name, setName] = useState("");
+  const begunRef = useRef(false);
+  // Set ONLY by a click on this screen. An identity that hydrates from the
+  // server (saved guest / reconnecting wallet) must NOT open the gate by
+  // itself: that shows the Welcome-back plate instead.
+  const actedRef = useRef(false);
 
   useEffect(() => {
-    const fresh = !storageGet(SEEN_KEY);
-    setFirstTime(fresh);
-    setLoreDone(!fresh);
+    setFirstTime(!storageGet(SEEN_KEY));
     const r = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(r);
   }, []);
 
-  // An identity exists (wallet connected or guest name set): we're at the Enter
-  // beat. Until the user presses Enter we DON'T leave, the confirmation lingers
-  // so the arrival is a chosen step, not an automatic flicker.
-  const ready = identity.isSet;
+  // A known identity (present at mount OR hydrating late from the server):
+  // the plates give way to a single carved Enter plate, no auto-entry.
+  useEffect(() => {
+    if (identity.isSet && !actedRef.current && (phase === "choose" || phase === "guest")) {
+      setPhase("ready");
+    }
+  }, [identity.isSet, phase]);
 
-  // Press Enter → door sound, then the push-through transition plays for ~1.05s
-  // before we start the tour (first-timers) and unmount.
-  const enter = () => {
-    if (departing) return;
-    playDoor("gate"); // same random door bank as every building
-    setDeparting(true);
-    setTimeout(() => {
+  /* The gate answers: emblem ignites → ajar → flood → push through → done. */
+  const begin = () => {
+    if (begunRef.current) return;
+    begunRef.current = true;
+    setPhase("igniting");
+    window.setTimeout(() => {
+      setPhase("ajar");
+      playDoor("gate");
+    }, T_AJAR);
+    window.setTimeout(() => setPhase("flood"), T_FLOOD);
+    window.setTimeout(() => setPhase("departing"), T_DEPART);
+    window.setTimeout(() => {
       if (firstTime) tour.start();
       storageSet(SEEN_KEY, "1");
       onDone();
-    }, 1050);
+    }, T_DONE);
   };
 
-  const lore = LORE[loreStep];
-  const lastLore = loreStep >= LORE.length - 1;
+  // A wallet connect the visitor STARTED HERE resolving IS the choice: the
+  // gate answers by itself.
+  useEffect(() => {
+    if (actedRef.current && identity.isSet && (phase === "choose" || phase === "guest")) {
+      begin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identity.isSet, phase]);
 
-  const enterLabel = identity.username
-    ? `Welcome, ${identity.username}`
-    : "Wallet connected";
-  const enterSub = identity.address
-    ? shortAddress(identity.address)
-    : "Your guest pass is ready.";
+  const chooseGuest = () => {
+    const n = name.trim();
+    if (n.length < 2) return;
+    actedRef.current = true;
+    identity.continueAsGuest(n);
+    begin();
+  };
+
+  const chooseWallet = () => {
+    actedRef.current = true;
+    identity.connectWallet();
+  };
+
+  const departing = phase === "departing";
+  const sealed = phase === "choose" || phase === "guest" || phase === "ready" || phase === "igniting";
+  const choicesUp = phase === "choose" || phase === "guest";
 
   return (
     <div
       className="fixed inset-0 z-40 overflow-hidden bg-bg transition-opacity duration-[1000ms] ease-out"
       style={{ opacity: departing ? 0 : 1 }}
     >
-      {/* The gate, full-screen, with a slow settle as you arrive, then a push
-          THROUGH it (scale up) as you step into the world. */}
+      {/* The scene stack: settles in on arrival, pushes THROUGH on departure.
+          Inside, a cover-geometry proxy keeps image coordinates true. */}
       <div
         className="absolute inset-0 transition-[transform,opacity] ease-out"
         style={{
@@ -121,23 +189,157 @@ export function GateLanding({ onDone }: { onDone: () => void }) {
           transitionDuration: departing ? "1050ms" : "1200ms",
         }}
       >
-        {gate.interior && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)]">
+          {/* Beneath everything: the OPEN gate, kingdom glowing through. */}
           <Image
-            src={asset(gate.interior)}
+            src={asset(OPEN_ART)}
             alt=""
             fill
             priority
             sizes="100vw"
             className="object-cover select-none pointer-events-none"
           />
-        )}
-      </div>
-      {/* Legibility: a soft vignette + bottom scrim under the content. */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_30%,rgba(11,10,9,0.72)_100%)] pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg via-bg/60 to-transparent pointer-events-none" />
 
-      {/* Warm ember bloom: blooms from the centre as you cross the threshold, so
-          stepping through the gate flares with firelight before it clears. */}
+          {/* Doors cracked AJAR, the painted frame with the blade of light. */}
+          <img
+            src={asset(AJAR_ART)}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none transition-opacity duration-700"
+            style={{ opacity: phase === "ajar" || phase === "flood" ? 1 : 0 }}
+          />
+
+          {/* The sealed gate, the resting state, crossfading into ajar. */}
+          <img
+            src={asset(CLOSED_ART)}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none transition-opacity duration-700"
+            style={{ opacity: sealed ? 1 : 0 }}
+          />
+
+          {/* The carved emblem ignites the moment the gate accepts. */}
+          <div
+            className="absolute pointer-events-none transition-opacity duration-500"
+            style={{
+              left: "41.5%",
+              top: "42%",
+              width: "17%",
+              height: "28%",
+              opacity: phase === "igniting" ? 1 : 0,
+              background:
+                "radial-gradient(50% 50% at 50% 50%, rgba(240,169,59,0.55) 0%, rgba(240,105,35,0.25) 55%, transparent 78%)",
+            }}
+            aria-hidden
+          />
+
+          {/* The flood: light bursts from the seam and washes the screen, then
+              recedes onto the open gate as the camera pushes through. */}
+          <div
+            className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+            style={{
+              opacity: phase === "flood" ? 1 : 0,
+              background:
+                "radial-gradient(75% 95% at 50% 55%, rgba(255,241,208,1) 0%, rgba(250,190,90,0.96) 45%, rgba(150,60,15,0.75) 75%, rgba(30,12,5,0.4) 100%)",
+            }}
+            aria-hidden
+          />
+
+          {/* THE CHOICE: one plate on each door leaf. */}
+          {choicesUp && !identity.isSet && (
+            <>
+              <GatePlate
+                at={PLATE_L}
+                art="connectwallet"
+                label="Connect wallet"
+                onClick={chooseWallet}
+                disabled={connecting}
+                pending={connecting}
+              />
+              {phase !== "guest" ? (
+                <GatePlate
+                  at={PLATE_R}
+                  art="enterguest"
+                  label="Enter as guest"
+                  onClick={() => setPhase("guest")}
+                />
+              ) : (
+                <div
+                  className="absolute -translate-x-1/2 -translate-y-1/2 [container-type:inline-size]"
+                  style={{ left: `${PLATE_R.x}%`, top: `${PLATE_R.y}%`, width: `${PLATE_W + 2}%` }}
+                >
+                  <div className="flex flex-col items-center gap-[3.5cqw]">
+                    <input
+                      autoFocus
+                      value={name}
+                      placeholder="your name"
+                      maxLength={24}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") chooseGuest();
+                        if (e.key === "Escape") setPhase("choose");
+                      }}
+                      className="w-full bg-transparent text-center font-display text-[9.5cqw] text-[#f0c987] placeholder-[#f0c987]/40 outline-none border-b border-[#d8ae6b]/60 focus:border-[#f0c987] pb-[1cqw]"
+                      style={SHADOW}
+                      aria-label="Guest name"
+                    />
+                    <div className="flex items-center gap-[6cqw]">
+                      <button
+                        onClick={() => setPhase("choose")}
+                        className="text-[5.5cqw] text-[#d8ae6b]/80 hover:text-[#f0c987] transition-colors"
+                        style={SHADOW}
+                      >
+                        ← back
+                      </button>
+                      <button
+                        onClick={chooseGuest}
+                        disabled={name.trim().length < 2}
+                        className="text-[6cqw] font-medium text-[#f0c987] underline underline-offset-2 decoration-[#d8ae6b]/70 hover:decoration-[#f0c987] transition-colors disabled:opacity-40"
+                        style={SHADOW}
+                      >
+                        knock →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Returning visitor: one carved plate, the gate already knows you. */}
+          {phase === "ready" && (
+            <div className="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[1.2vh]">
+              <p className="text-brand-soft font-display text-xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+                {identity.username ? `Welcome back, ${identity.username}` : "Your sigil is known"}
+              </p>
+              <button
+                onClick={begin}
+                aria-label="Enter Pyre Kingdom"
+                className="group relative block rounded-lg outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <img
+                  src={asset("/buttons/enter_normal.png")}
+                  alt=""
+                  draggable={false}
+                  className="block h-14 w-auto select-none"
+                />
+                <img
+                  src={asset("/buttons/enter_hover.png")}
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="absolute inset-0 h-14 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Legibility vignette, gentle. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_45%,rgba(11,10,9,0.6)_100%)] pointer-events-none" />
+
+      {/* Warm ember bloom as you cross the threshold. */}
       <div
         className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_45%,rgba(240,169,59,0.55),transparent_60%)] transition-opacity duration-[900ms] ease-out"
         style={{ opacity: departing ? 1 : 0 }}
@@ -145,84 +347,20 @@ export function GateLanding({ onDone }: { onDone: () => void }) {
 
       {/* Wordmark */}
       <div className="absolute top-5 left-6 z-10">
-        <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-          PYRE
-        </span>
+        <img
+          src={asset("/brand/text-color.png")}
+          alt="Pyre"
+          draggable={false}
+          className="h-8 w-auto select-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+        />
       </div>
 
-      {/* Content: lore (first visit) → entry fork → Enter confirmation. Hidden
-          once we're departing so nothing rides over the transition. */}
-      <div
-        className="absolute inset-0 z-10 flex items-end sm:items-center justify-center p-4 sm:p-8 transition-opacity duration-300"
-        style={{ opacity: departing ? 0 : 1 }}
-      >
-        {!loreDone ? (
-          <div key={loreStep} className="animate-entry w-full max-w-xl text-center">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="text-brand text-lg" aria-hidden>
-                ✦
-              </span>
-              <span className="text-text-3 text-[11px] uppercase tracking-[0.25em]">
-                The Emberkeeper
-              </span>
-            </div>
-            <h2 className="font-display text-4xl text-brand drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
-              {lore.title}
-            </h2>
-            <p className="text-text mt-3 text-base leading-relaxed max-w-lg mx-auto drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]">
-              {lore.body}
-            </p>
-            {lore.docs && (
-              <button
-                onClick={() => codex.open()}
-                className="inline-block mt-2 text-brand text-sm hover:text-brand-soft transition-colors"
-              >
-                Open the Ember Codex →
-              </button>
-            )}
-            <div className="mt-6 flex items-center justify-center gap-4">
-              {loreStep > 0 && (
-                <button
-                  onClick={() => setLoreStep((s) => Math.max(0, s - 1))}
-                  className="text-text-3 text-sm hover:text-text-2 transition-colors px-3 py-2"
-                >
-                  ← Back
-                </button>
-              )}
-              <button
-                onClick={() => (lastLore ? setLoreDone(true) : setLoreStep((s) => s + 1))}
-                className="rounded-lg bg-gradient-to-b from-brand to-brand-deep text-bg px-7 py-3 text-sm font-medium shadow-[0_6px_20px_-8px_rgba(240,169,59,0.7)] hover:brightness-110 transition-all"
-              >
-                {lastLore ? "Step up to the gate →" : "Continue"}
-              </button>
-            </div>
-          </div>
-        ) : !ready ? (
-          <div className="animate-entry w-full max-w-md rounded-2xl bg-surface/80 border border-brand/20 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl ring-1 ring-inset ring-white/5 py-9 px-7">
-            <div className="h-px -mt-3 mb-6 bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
-            <EntryFork />
-          </div>
-        ) : (
-          /* ENTER beat: identity confirmed, one door left to open. */
-          <div className="animate-entry w-full max-w-md rounded-2xl bg-surface/80 border border-brand/20 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl ring-1 ring-inset ring-white/5 py-9 px-7 text-center">
-            <div className="h-px -mt-3 mb-6 bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
-            <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/12 ring-1 ring-brand/30 shadow-[0_0_28px_-6px_rgba(240,169,59,0.6)]">
-              <GameIcon name={identity.username ? "guest" : "wallet"} size={30} />
-            </span>
-            <h2 className="font-display text-3xl text-brand leading-none mt-4">{enterLabel}</h2>
-            <p className="mt-2 text-text-3 text-sm">{enterSub}</p>
-            <p className="mt-4 text-text-2 text-sm leading-relaxed max-w-xs mx-auto">
-              The fire is lit and the kingdom is awake. Step through the gate.
-            </p>
-            <button
-              onClick={enter}
-              className="mt-6 w-full rounded-lg bg-gradient-to-b from-brand to-brand-deep text-bg px-7 py-3.5 text-base font-medium shadow-[0_6px_20px_-8px_rgba(240,169,59,0.7)] hover:brightness-110 transition-all"
-            >
-              Enter Pyre Kingdom →
-            </button>
-          </div>
-        )}
-      </div>
+      {/* One whisper of guidance while the choice stands. */}
+      {choicesUp && (
+        <p className="absolute inset-x-0 bottom-[5vh] z-10 text-center text-white/45 text-xs tracking-[0.18em] uppercase drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)] pointer-events-none">
+          The gate opens for those who name themselves
+        </p>
+      )}
     </div>
   );
 }

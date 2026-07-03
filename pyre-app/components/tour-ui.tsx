@@ -20,6 +20,7 @@ import { useTour } from "@/lib/tour";
 import { useCompleteQuestTask, useQuestTasks } from "@/lib/hooks";
 import { useIsDesktop } from "@/components/ui/use-media";
 import { asset } from "@/lib/config";
+import { storageGet, storageSet } from "@/lib/safe-storage";
 import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 import { ImageButton, type ImageButtonName } from "@/components/ui/image-button";
 
@@ -27,6 +28,18 @@ import { ImageButton, type ImageButtonName } from "@/components/ui/image-button"
    absorbs alignment jitter; reading slightly early feels in-sync, trailing
    feels broken. */
 const VOICE_LEAD = 0.12;
+
+/* Narration speed: one chip cycling the standard media steps. playbackRate
+   preserves pitch in all modern browsers, so the Emberkeeper only talks
+   faster, never higher. Text reveal needs no adjustment: it's paced against
+   the CLIP's playhead (clip-seconds), which the rate simply advances faster.
+   Persisted so the choice survives beats, replays and sessions. */
+const SPEEDS = [1, 1.25, 1.5, 2] as const;
+const SPEED_KEY = "pyre_tour_speed";
+const loadSpeed = (): number => {
+  const v = Number(storageGet(SPEED_KEY));
+  return SPEEDS.includes(v as (typeof SPEEDS)[number]) ? v : 1;
+};
 
 /* The Emberkeeper's narration box during the guided tour. */
 export function TourNarration() {
@@ -52,6 +65,16 @@ export function TourNarration() {
   };
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const voice = tour.beat?.voice;
+  // Narration speed: read once, applied to every clip, live-applied on change.
+  const [speed, setSpeed] = useState(loadSpeed);
+  const speedRef = useRef(speed);
+  useEffect(() => {
+    speedRef.current = speed;
+    storageSet(SPEED_KEY, String(speed));
+    if (audioRef.current) audioRef.current.playbackRate = speed;
+  }, [speed]);
+  const cycleSpeed = () =>
+    setSpeed((s) => SPEEDS[(SPEEDS.indexOf(s as (typeof SPEEDS)[number]) + 1) % SPEEDS.length]);
   // The clip's playhead in seconds, or null when there is nothing to pace the
   // text against (no clip, muted, autoplay blocked, or the clip finished):
   // null shows the whole line at once.
@@ -72,6 +95,7 @@ export function TourNarration() {
       return;
     }
     const a = new Audio(asset(voice));
+    a.playbackRate = speedRef.current;
     audioRef.current = a;
     // Follow the playhead only while the clip is actually sounding; that way a
     // late start (slow load) resumes pacing, and a bailed reveal isn't
@@ -210,6 +234,14 @@ export function TourNarration() {
                 The Emberkeeper
               </span>
               <div className="flex items-center gap-3">
+                <button
+                  onClick={cycleSpeed}
+                  title="Narration speed"
+                  aria-label={`Narration speed: ${speed}x. Click to change.`}
+                  className="shrink-0 rounded-full border border-surface-3/70 px-2 py-0.5 text-text-3 text-[11px] tabular hover:text-brand hover:border-brand transition-colors"
+                >
+                  {speed}x
+                </button>
                 <button
                   onClick={() => setMuted((m) => !m)}
                   title={muted ? "Unmute the Emberkeeper" : "Mute"}

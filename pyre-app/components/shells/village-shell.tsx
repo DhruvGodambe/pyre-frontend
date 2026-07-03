@@ -259,9 +259,12 @@ export function VillageShell() {
   return (
     <main className="min-h-dvh relative overflow-hidden bg-bg">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-6 py-4">
-        <span className="font-display text-3xl text-brand tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          PYRE
-        </span>
+        <img
+          src={asset("/brand/text-color.png")}
+          alt="Pyre"
+          draggable={false}
+          className="h-8 w-auto select-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+        />
       </header>
 
       {/* Your standing, top-right: one box with identity, disconnect, and the
