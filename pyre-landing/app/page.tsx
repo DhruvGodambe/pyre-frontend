@@ -81,13 +81,6 @@ export default function Landing() {
             <img src="/buttons/codex_hover.png" alt="" className="hov" aria-hidden />
           </a>
         </div>
-
-        <p
-          className="animate-rise text-text-3 text-[10px] tracking-[0.34em] uppercase"
-          style={{ "--d": "1100ms" } as React.CSSProperties}
-        >
-          ✦ The gate opens soon ✦
-        </p>
       </div>
 
       {/* Corners: whisper-quiet. */}

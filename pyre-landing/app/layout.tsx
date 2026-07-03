@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: "Pyre Protocol",
   description:
-    "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte. The gate opens soon.",
+    "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte.",
   openGraph: {
     title: "Pyre Protocol",
     description:
-      "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte. The gate opens soon.",
+      "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte.",
     url: SITE,
     siteName: "Pyre Protocol",
     images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "The Acolyte of Pyre" }],
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     site: "@pyre_protocol",
     title: "Pyre Protocol",
     description:
-      "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte. The gate opens soon.",
+      "Stake to survive. Burn to transcend. Stake $PYRE to earn $ETH, burn it to forge your Acolyte.",
     images: ["/og.jpg"],
   },
 };
