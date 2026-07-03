@@ -593,16 +593,17 @@ export function VillageShell() {
           (outside beats) and steps inside the interiors (inside beats) above. */}
       {tour.active && tour.beat && <TourNarration />}
 
-      {/* Mock-only: replay the guided tour without re-running the whole intro. */}
-      {USE_MOCK && awake && !tour.active && (
-        <div className="fixed bottom-3 right-14 z-40">
-          <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={150} />
+      {/* Bottom-right dock: the Codex sits beside Replay tour (mock-only), kept
+          clear of the mute / ? toggles in the corner so nothing overlaps. Hidden
+          only during the tour. */}
+      {awake && !tour.active && (
+        <div className="fixed bottom-3 right-32 z-40 flex items-center gap-2">
+          <CodexButton />
+          {USE_MOCK && (
+            <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={150} />
+          )}
         </div>
       )}
-
-      {/* The Ember Codex: always one click away (bottom-left), so the docs are
-          never buried in the tour or the gate. Hidden only during the tour. */}
-      {awake && !tour.active && <CodexButton className="fixed bottom-3 left-3 z-40" />}
     </main>
   );
 }

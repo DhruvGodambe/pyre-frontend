@@ -104,9 +104,9 @@ type Scene =
 const SCENES: Scene[] = [
   {
     kind: "lore",
-    title: "Welcome to PYRE.",
+    title: "Welcome to Pyre.",
     body:
-      "PYRE is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn $ETH yield and level up your NFT.",
+      "Pyre is a project built around one idea: $PYRE is a token made to be burned. Burn and stake it to earn $ETH yield and level up your NFT.",
   },
   {
     kind: "lore",

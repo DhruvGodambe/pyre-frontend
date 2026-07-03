@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH, KINGDOM_PATH } from "@/lib/config";
 
-/* Login for the skeleton's own URL. In normal use the designer reaches /app
-   already authenticated (one login on the brief covers both). Fetches the
-   basePath-prefixed API path so it works on both the proxied and direct URLs. */
+/* Login for the team (designer + team, one password). Reached via the discreet
+   "Team access" link on the public front door, or by hitting a gated /kingdom URL
+   directly. On success it lands in the kingdom. Fetches the BASE_PATH-prefixed
+   API path so it works whether the app is served at the root or behind a prefix. */
 export default function LoginPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -16,7 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const res = await fetch("/app/api/login", {
+    const res = await fetch(`${BASE_PATH}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -24,8 +26,11 @@ export default function LoginPage() {
     if (res.ok) {
       // Honour ?next (a relative deep-link path) so shared building links land
       // where intended after the gate. Relative-only, to avoid open redirects.
+      // Default into the kingdom: login is team-only, so there's no reason to send
+      // them back to the public front door.
       const next = new URLSearchParams(window.location.search).get("next");
-      const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      const dest =
+        next && next.startsWith("/") && !next.startsWith("//") ? next : KINGDOM_PATH;
       router.push(dest);
       router.refresh();
     } else {

@@ -6,6 +6,8 @@
    here, never anything tying to a person. Swap the placeholders when live.
    ========================================================================== */
 
+import { BASE_PATH } from "./config";
+
 export const X_HANDLE = "pyre_protocol"; // no leading @
 export const X_PROFILE_URL = `https://x.com/${X_HANDLE}`;
 export const DOCS_URL = "https://docs.pyreprotocol.com"; // TODO: real docs URL
@@ -38,8 +40,10 @@ export function likeIntent(tweetId: string): string {
   return `https://twitter.com/intent/like?tweet_id=${tweetId}`;
 }
 
-/** A visitor's shareable referral link into the app (basePath = /app). */
+/** A visitor's shareable referral link into the app. Follows BASE_PATH so it
+    stays correct whether the app is served at the root or behind a path prefix. */
 export function referralLink(code: string): string {
-  if (typeof window === "undefined") return `/app?ref=${code}`;
-  return `${window.location.origin}/app?ref=${code}`;
+  const path = `${BASE_PATH}/?ref=${code}`;
+  if (typeof window === "undefined") return path;
+  return `${window.location.origin}${path}`;
 }

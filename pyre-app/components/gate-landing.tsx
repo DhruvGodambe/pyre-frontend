@@ -13,10 +13,10 @@
                 confirmation (the connected address / guest name) with a single
                 Enter button. Pressing it plays the gate's door and pushes the
                 camera THROUGH the gate, bright bloom and all, revealing the
-                woken village behind it.
+                woken kingdom behind it.
 
    Shows whenever there is NO identity yet (awake === false). A returning visitor
-   whose name/wallet persisted skips it entirely and lands in the village. The
+   whose name/wallet persisted skips it entirely and lands in the kingdom. The
    lore beats only play on a true first visit; after that it's just the entry
    fork over the gate. */
 
@@ -39,9 +39,9 @@ const SEEN_KEY = "pyre_intro_seen";
    lore cards, now spoken at the threshold. */
 const LORE = [
   {
-    title: "Welcome to PYRE.",
+    title: "Welcome to Pyre.",
     body:
-      "PYRE is built around one idea: $PYRE is a token made to be burned. Stake and burn it to earn $ETH yield and level up your Acolyte NFT.",
+      "Pyre is built around one idea: $PYRE is a token made to be burned. Stake and burn it to earn $ETH yield and level up your Acolyte NFT.",
   },
   {
     title: "You’re early.",
@@ -52,7 +52,7 @@ const LORE = [
   {
     title: "Step up to the gate.",
     body:
-      "I’m the Emberkeeper, your guide. Choose how you’ll enter, and I’ll walk you through the village, building by building.",
+      "I’m the Emberkeeper, your guide. Choose how you’ll enter, and I’ll walk you through the kingdom, building by building.",
   },
 ];
 
@@ -212,7 +212,7 @@ export function GateLanding({ onDone }: { onDone: () => void }) {
             <h2 className="font-display text-3xl text-brand leading-none mt-4">{enterLabel}</h2>
             <p className="mt-2 text-text-3 text-sm">{enterSub}</p>
             <p className="mt-4 text-text-2 text-sm leading-relaxed max-w-xs mx-auto">
-              The fire is lit and the village is awake. Step through the gate.
+              The fire is lit and the kingdom is awake. Step through the gate.
             </p>
             <button
               onClick={enter}

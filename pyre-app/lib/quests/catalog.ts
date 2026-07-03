@@ -53,7 +53,7 @@ export const QUEST_CATALOG: QuestDef[] = [
   {
     id: "intro",
     title: "Let the Emberkeeper guide you through Pyre",
-    description: "Take the Emberkeeper's guided tour of the village.",
+    description: "Take the Emberkeeper's guided tour of the kingdom.",
     href: null,
     unlockAt: null,
     required: true,

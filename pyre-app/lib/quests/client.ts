@@ -11,9 +11,10 @@ import type { QuestTask, StoredIdentity } from "../types";
 import type { TxResult } from "../datasource/types";
 import { BASE_PATH } from "../config";
 
-/* The app runs under a basePath (/app). A raw fetch() does NOT inherit it the
-   way next/link and next/image do, so every API path must be prefixed or it
-   404s behind the basePath (in dev AND production). */
+/* Prefix every API path with BASE_PATH. It's "" when the app is served at the
+   root (today), but a raw fetch() does NOT inherit a basePath the way next/link
+   and next/image do, so routing through this keeps the paths correct if the app
+   ever moves back behind a path prefix. */
 const api = (path: string) => `${BASE_PATH}${path}`;
 
 async function postJson(url: string, body: unknown): Promise<TxResult> {

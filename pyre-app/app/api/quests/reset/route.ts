@@ -10,7 +10,7 @@
 import { NextResponse } from "next/server";
 import { getQuestStore } from "@/lib/db";
 import { getOrCreateSessionId } from "@/lib/quests/session";
-import { USE_MOCK } from "@/lib/config";
+import { USE_MOCK, BASE_PATH } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +23,9 @@ export async function GET() {
   await getQuestStore().unmarkComplete(sessionId, "intro");
   // Bounce back into the app with a RELATIVE link (meta-refresh), so it stays on
   // whatever domain you're using and never leaks the internal deployment origin.
+  const home = `${BASE_PATH}/`;
   return new NextResponse(
-    `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/app"></head><body style="background:#0b0a08;color:#f0a93b;font-family:Georgia,serif;padding:2rem">Tour reset. <a href="/app" style="color:#f0a93b">Return to PYRE &rarr;</a></body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${home}"></head><body style="background:#0b0a08;color:#f0a93b;font-family:Georgia,serif;padding:2rem">Tour reset. <a href="${home}" style="color:#f0a93b">Return to PYRE &rarr;</a></body></html>`,
     { headers: { "content-type": "text/html; charset=utf-8" } }
   );
 }

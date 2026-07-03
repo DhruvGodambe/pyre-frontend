@@ -112,3 +112,27 @@ h1, h2, h3, h4 {
 .animate-entry {
   animation: pyre-entry var(--duration-entry) var(--ease-warm);
 }
+
+/* Ember motes drifting up (same language as the landing page). Each mote sets
+   --x, --s (size), --t (duration), --d (delay), --o (peak opacity), --drift
+   (horizontal wander). Used by the intro title screen. */
+@keyframes ember-float {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  8%   { opacity: var(--o, 0.6); }
+  62%  { opacity: var(--o, 0.6); }
+  100% { transform: translateY(-92vh) translateX(var(--drift, 20px)); opacity: 0; }
+}
+.ember {
+  position: absolute;
+  bottom: -2vh;
+  left: var(--x, 50%);
+  width: var(--s, 3px);
+  height: var(--s, 3px);
+  border-radius: 9999px;
+  background: radial-gradient(circle, #f7d08a 0%, #f0a93b 55%, transparent 75%);
+  filter: blur(0.4px);
+  animation: ember-float var(--t, 10s) linear infinite;
+  animation-delay: var(--d, 0s);
+  pointer-events: none;
+}
+

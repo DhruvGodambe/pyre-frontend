@@ -11,7 +11,6 @@ import { VillageShell } from "./village-shell";
 import { PreviewSwitcher } from "@/components/preview-switcher";
 import { DesignerIntro } from "@/components/designer-intro";
 import { EmberkeeperIntro } from "@/components/emberkeeper-intro";
-import { PyreIntro } from "@/components/pyre-intro";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { CodexReader } from "@/components/codex";
 import { captureReferral } from "@/lib/quests/client";
@@ -36,9 +35,8 @@ export function AppShell() {
           blank page (matters most on degraded devices, full disk, failed media). */}
       <ErrorBoundary>{isDesktop ? <VillageShell /> : <MobileShell />}</ErrorBoundary>
       <PreviewSwitcher />
-      {/* The cinematic brand film, plays first on arrival, over everything,
-          with a Skip. When it ends/skips, the world is revealed. */}
-      <PyreIntro />
+      {/* The cinematic brand film now plays on the PUBLIC front door ("/"), not
+          here, so stepping through the gate into the kingdom doesn't replay it. */}
       {/* First-time onboarding. Desktop arrives at the Gate landing (in the
           VillageShell), which delivers the lore + entry; this modal is the
           mobile take (no village to land in there). */}

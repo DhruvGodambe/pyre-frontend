@@ -239,7 +239,14 @@
       "Bash(rm -f package.json package-lock.json)",
       "Bash(node tools/selectors.js)",
       "PowerShell($ff = \\(Get-Command ffprobe -ErrorAction SilentlyContinue\\); if \\($ff\\) { & ffprobe -v error -select_streams v:0 -show_entries stream=width,height,codec_name,pix_fmt,duration -of default=noprint_wrappers=1 \"C:\\\\Users\\\\USER\\\\Downloads\\\\bonfire.webm\" } else { Write-Host \"ffprobe not found\" })",
-      "Bash(node ./node_modules/typescript/bin/tsc --noEmit)"
+      "Bash(node ./node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(node _verify-sell2.mjs)",
+      "Bash(rm -f _verify-sell2.mjs)",
+      "Bash(python -c \"import json;d=json.load\\(open\\('C:/Users/USER/.claude.json'\\)\\);print\\('top keys:',list\\(d.keys\\(\\)\\)\\);print\\('GLOBAL mcpServers:',list\\(d.get\\('mcpServers',{}\\).keys\\(\\)\\)\\);print\\(\\);[print\\('project:',p,'-> mcpServers:',list\\(v.get\\('mcpServers',{}\\).keys\\(\\)\\)\\) for p,v in d.get\\('projects',{}\\).items\\(\\) if v.get\\('mcpServers'\\)]\")",
+      "Bash(python -c \"import json;d=json.load\\(open\\('C:/Users/USER/.claude/plugins/installed_plugins.json'\\)\\);print\\(json.dumps\\(d,indent=1\\)\\)\")",
+      "Bash(claude plugin *)",
+      "Bash(curl -s -L -b pyre_designer_auth=b4b2114008ad5252086e8a085de5852e98f9d4c0fc07e087649ca8549a5dc681 -o /tmp/root.html -w 'code=%{http_code} size=%{size_download}\\\\n' https://designer.pyreprotocol.com/)",
+      "Read(//tmp/**)"
     ]
   }
 }

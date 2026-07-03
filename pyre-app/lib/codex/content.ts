@@ -1,19 +1,26 @@
-/* THE EMBER CODEX, the in-world documentation.
+/* THE EMBER CODEX, the protocol documentation.
 
-   Content lives here as plain structured data so it's easy to edit without
-   touching the reader UI (components/codex.tsx). Each chapter maps to a building
-   where it makes sense (so "Read the rite" inside a building opens its chapter),
-   plus a few global chapters (overview, tokenomics, the tax, security, FAQ).
+   This is the real documentation for Pyre, not a tour of the buildings. Each
+   chapter specifies one subsystem, drawn from the deployed contracts (github
+   DhruvGodambe/pyre-protocol) and mirrored in lib/constants.ts. A building's
+   "Read the rite" opens the chapter that documents that subsystem.
 
-   Voice: the Emberkeeper. Plain, warm, no hype, no em-dashes. Numbers here are the
-   designed mechanics; the final on-chain values are confirmed at launch. */
+   Voice: precise, neutral, technical. State mechanisms and parameters; never
+   promise outcomes. No hype, no em-dashes. $PYRE and $ETH are always written
+   with the $. Numbers here are the designed mechanics; final on-chain values
+   are published at launch and are verifiable against the contracts. */
 
 import type { BuildingId } from "@/components/buildings";
+
+/** Functional diagrams the reader can render inside a section (components/codex-diagrams.tsx). */
+export type CodexDiagramId = "yield-flow" | "decay-curve";
 
 export interface CodexSection {
   heading?: string;
   paragraphs?: string[];
   bullets?: string[];
+  /** an optional on-brand diagram rendered after this section's text. */
+  diagram?: CodexDiagramId;
 }
 
 export interface CodexChapter {
@@ -22,51 +29,137 @@ export interface CodexChapter {
   tagline: string;
   /** the building this chapter documents, if any (used by "Read the rite"). */
   building?: BuildingId;
+  /** custom art for chapters WITHOUT a building (e.g. the village on the overview):
+      a square-ish icon and a full-width hero image, both asset() paths. */
+  icon?: string;
+  hero?: string;
+  heroAlt?: string;
   sections: CodexSection[];
 }
 
 export const CODEX: CodexChapter[] = [
   {
     id: "what-is-pyre",
-    title: "What is PYRE",
-    tagline: "The flame, the decay, the yield",
+    title: "What is Pyre",
+    tagline: "Protocol overview",
+    icon: "/brand/logo-color.png",
+    hero: "village",
+    heroAlt: "The Pyre kingdom",
     sections: [
       {
         paragraphs: [
-          "PYRE is a token built around one act: the burn. Tokens that sit idle slowly decay, returning to the fire. Tokens you commit to the flame work for you, earning real $ETH yield and forging an Acolyte that grows stronger the more you give.",
-          "The village you are standing in is the protocol made visible. Every building is one part of the system. Walk it, and you understand it.",
+          "Pyre Protocol is a token economy deployed on Ethereum and built directly on Uniswap v4. It combines three mechanisms: a hard-capped token with epoch-based decay on idle balances, single-sided staking that accrues yield denominated in $ETH, and a burn-to-mint NFT, the Acolyte, whose tier acts as a multiplier on staking yield.",
+          "The design premise is simple to state: every liquid $PYRE balance carries a holding cost, applied per epoch, while committed balances do not. Holders choose between two forms of commitment. Staking exempts a balance from decay and earns a pro rata share of $ETH yield. Burning permanently removes supply and mints or upgrades an Acolyte, raising the multiplier on everything the stake earns. The two mechanisms are designed to be combined.",
+          "The Ember Codex documents each subsystem in its own chapter, and each subsystem is drawn as a building in the kingdom: the Bonfire is supply and decay, the Forge is staking and burning, the Black Market is the Acolyte. Read the chapters in order for the full specification, or open the chapter behind any building.",
         ],
       },
       {
-        heading: "The two acts",
-        bullets: [
-          "Stake: lock your $PYRE to earn $ETH yield and stop it from decaying.",
-          "Burn: send $PYRE into the fire to forge and level your Acolyte, which multiplies your yield.",
-        ],
+        diagram: "yield-flow",
       },
       {
         paragraphs: [
-          "Staking earns. Burning multiplies. Neither alone is the whole story, together they are the loop the entire village runs on.",
+          "The chapters that follow specify the system in full: the on-chain architecture, the decay schedule and its halvings, the staking weight formula, the Acolyte tiers and both burn tracks, and the Immolated prestige. Every parameter quoted in this Codex mirrors the deployed contracts, and all of it can be verified on-chain once addresses are published at launch.",
         ],
       },
     ],
   },
   {
-    id: "bonfire",
+    id: "architecture",
+    title: "Under the Hood",
+    tagline: "Uniswap v4, hooks, and the Diamond",
+    icon: "/brand/logo-color.png",
+    sections: [
+      {
+        paragraphs: [
+          "Pyre is implemented as a Uniswap v4 hook with a set of periphery contracts around it. This chapter describes the on-chain architecture: what v4 provides, how the hook is structured, and which contract owns each mechanism.",
+        ],
+      },
+      {
+        heading: "Why Uniswap v4",
+        paragraphs: [
+          "Uniswap v4 replaces the contract-per-pool model of earlier versions with a singleton: one PoolManager contract holds every pool. Alongside the singleton design, v4 introduces hooks, external contracts that a pool registers at creation and that the PoolManager invokes at fixed points in the pool's lifecycle, including beforeSwap and afterSwap.",
+          "Hooks are what allow Pyre to exist as a protocol rather than a token with off-chain promises. Protocol logic executes inside the same transaction as the swap that triggers it, atomically: either the swap and the protocol logic both execute, or neither does. The core path depends on no keepers, schedulers, or trusted operators.",
+        ],
+        bullets: [
+          "The canonical market is a single $PYRE/$ETH pool on the v4 PoolManager.",
+          "The Pyre hook is registered on that pool and runs on every swap through it.",
+          "Hook execution is atomic with the swap it accompanies.",
+        ],
+      },
+      {
+        heading: "The hook is a Diamond (EIP-2535)",
+        paragraphs: [
+          "The Pyre hook follows the Diamond standard, EIP-2535, a modular contract architecture. Rather than one monolithic contract, the hook's logic is divided into facets, each owning a single concern. The pool registers one stable hook address, and every subsystem operates behind it.",
+        ],
+        bullets: [
+          "SwapHook facet: implements the v4 callbacks and routes each swap through the protocol's logic.",
+          "Burn facet: accounting for token burns and cumulative burn weight.",
+          "LpBurn facet: executes the LP burn track and locks the v4 liquidity position permanently.",
+          "YieldDistribution facet: moves $ETH into the staking contract's yield accumulator for distribution.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Uniswap v4 encodes a hook's permission set, the list of callbacks it is allowed to implement, into the hook's own address, which is mined with CREATE2 at deployment. The set of callbacks is therefore fixed the moment the pool is created: callbacks not claimed at deployment can never be added.",
+        ],
+      },
+      {
+        heading: "The periphery contracts",
+        paragraphs: [
+          "Four contracts around the hook own the protocol's state:",
+        ],
+        bullets: [
+          "PyreToken (ERC-20): the $PYRE token. Enforces the 1,000,000,000 hard cap and implements epoch decay on liquid balances.",
+          "PyreStaking: holds staked $PYRE, computes each staker's effective weight, accrues the $ETH yield accumulator, and manages the 7 day unstake release.",
+          "Acolyte (ERC-721): the Acolyte NFT. Records cumulative burn weight, resolves tier and burn track, and is read directly by the staking contract when weighting yield.",
+          "ImmolatedGate: the Ascend rite. Verifies Pyre-tier eligibility and executes the one-time Immolation.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Decay is not applied by any external process. The token contract maintains a global decay index that compounds per epoch, and each account settles lazily against that index whenever the account is next touched. Balances are therefore correct at every block without any keeper iterating over holders.",
+        ],
+      },
+      {
+        heading: "Verifiability",
+        paragraphs: [
+          "The hook's permission set, the supply cap, and the structure of the decay schedule are fixed at deployment. Contract addresses are published at launch, and every figure in this Codex can be checked against them directly on-chain.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "supply-and-decay",
     title: "The Bonfire",
-    tagline: "The living count of all that's burned",
+    tagline: "Supply, decay, and tokenomics",
     building: "bonfire",
     sections: [
       {
         paragraphs: [
-          "At the heart of the village burns the Bonfire. It is the running total of every $PYRE ever sent to the fire, by everyone, updating live.",
-          "Two things feed it. The burns people choose, forging their Acolytes. And decay: $PYRE left idle, unstaked, slowly returns to the flame on its own.",
+          "$PYRE has a hard cap of 1,000,000,000 tokens, enforced by the token contract. There is no emissions schedule and no inflation: supply moves in one direction only. It falls through two channels, the burns holders execute at the Forge and the epoch decay applied to idle balances.",
+          "The Bonfire at the center of the kingdom is the live counter of cumulative burned supply from both channels, read from the chain.",
         ],
       },
       {
-        heading: "Decay",
+        heading: "Decay mechanics",
         paragraphs: [
-          "Idle $PYRE is not safe $PYRE. Holding without staking means a small, steady share burns away over time. The cure is simple: stake at the Forge, and decay stops.",
+          "The protocol keeps time in epochs. Each epoch, a fixed percentage of every liquid balance is burned, compounding per epoch. Decay applies exclusively to liquid $PYRE: balances held by the staking contract are exempt for as long as they remain staked.",
+        ],
+        bullets: [
+          "Epoch length: one hour (3,600 seconds).",
+          "Initial decay rate: 0.45% per epoch on liquid balances.",
+          "Halving schedule: the rate halves every 2,000 epochs, roughly every 83 days.",
+          "Floor: the rate never falls below 0.01% per epoch.",
+        ],
+      },
+      {
+        diagram: "decay-curve",
+      },
+      {
+        heading: "Design rationale",
+        paragraphs: [
+          "The schedule front-loads the cost of idleness. Decay is steepest in the protocol's earliest epochs, when the incentive to commit matters most, and eases with each halving toward the floor. The floor is deliberate: the holding cost of an idle balance never reaches zero, so the decision between staking and decaying remains live for the life of the protocol.",
+          "Decayed tokens are burned, not redistributed. Every epoch of decay is a permanent reduction of supply, indistinguishable on-chain from a chosen burn.",
         ],
       },
     ],
@@ -74,38 +167,46 @@ export const CODEX: CodexChapter[] = [
   {
     id: "forge",
     title: "The Forge",
-    tagline: "Stake to earn, burn to ascend",
+    tagline: "Staking and burning",
     building: "forge",
     sections: [
       {
         heading: "Staking",
         paragraphs: [
-          "Stake your $PYRE at the Forge and two things happen at once: your tokens stop decaying, and they begin earning you a share of the protocol's $ETH yield.",
+          "Staking transfers $PYRE into the staking contract, where it is exempt from decay and begins accruing yield. Yield is denominated and paid in $ETH, not in additional $PYRE, and it accrues continuously against the staking contract's yield accumulator.",
+          "Distribution is pro rata by effective weight. A staker's effective weight is their staked balance multiplied by every multiplier the wallet holds: the Acolyte tier multiplier, the burn track multiplier (token burn or LP burn), and the Immolated boost. Effective weight = staked balance x tier multiplier x track multiplier x Immolated boost. A larger weight draws a proportionally larger share of the same flow.",
         ],
       },
       {
-        heading: "Burning, and your Acolyte",
+        heading: "Claiming and unstaking",
         paragraphs: [
-          "Burn $PYRE and you forge an Acolyte, a living NFT that is the mark of what you have given. The more you burn, the higher its tier, and the more your $ETH yield is multiplied.",
+          "Accrued $ETH can be claimed at any time. Claiming is independent of principal: it never unstakes or otherwise touches staked $PYRE.",
+          "Unstaking is not instant. It initiates a 7 day linear release during which the position returns to the liquid balance steadily across the window. The returning portion accrues no yield, and each portion that arrives is liquid $PYRE again, subject to decay like any other liquid balance. The release exists to make exits gradual rather than atomic.",
+        ],
+      },
+      {
+        heading: "Burning and the Acolyte",
+        paragraphs: [
+          "Burning permanently removes $PYRE from supply and credits the wallet's cumulative burn weight, the running total of everything it has ever burned. When cumulative burn weight first crosses the Ember threshold, the Acolyte, an ERC-721, is minted to the wallet; the same token then upgrades in place as later burns cross each subsequent threshold. Tier is monotonic: it only rises, and no single burn needs to cross a threshold on its own.",
         ],
         bullets: [
-          "Ember Acolyte, 10,000 burned, 1x yield",
-          "Flame Acolyte, 75,000 burned, 1.5x yield",
-          "Forge Acolyte, 150,000 burned, 2x yield",
-          "Pyre Acolyte, 300,000 burned, 3x yield",
+          "Ember Acolyte: 10,000 $PYRE cumulative burn, 1x yield multiplier.",
+          "Flame Acolyte: 75,000 $PYRE cumulative burn, 1.5x yield multiplier.",
+          "Forge Acolyte: 150,000 $PYRE cumulative burn, 2x yield multiplier.",
+          "Pyre Acolyte: 300,000 $PYRE cumulative burn, 3x yield multiplier.",
         ],
       },
       {
-        heading: "Burn tokens vs Burn LP",
+        heading: "Two burn tracks",
         paragraphs: [
-          "There are two ways to burn, each its own track with the same four tiers and the same amounts. Burn tokens: burn $PYRE on its own. Burn LP: pair your $PYRE with $ETH and add both to the pool permanently (you cannot withdraw either).",
-          "An LP Acolyte earns 2× the $ETH yield of a plain-burn Acolyte of the same tier, and it is the exclusive LP version: rarer and visibly set apart from plain-burn Acolytes. A deeper commitment, since you also give $ETH and lock it in the pool forever.",
+          "There are two burn tracks with identical thresholds. The token burn track burns $PYRE alone. The LP burn track pairs $PYRE with $ETH as liquidity in the canonical pool and locks the resulting position permanently: principal can never be withdrawn, by anyone, including the burner.",
+          "An LP Acolyte carries double the multiplier of a token-burn Acolyte at every tier, 2x to 6x against 1x to 3x, reflecting the deeper and two-sided commitment. The mechanics of the position lock, and why locked liquidity keeps contributing after the burn, are specified in the Acolyte chapter.",
         ],
       },
       {
         paragraphs: [
-          "Burning alone earns nothing. The Acolyte multiplies the yield you earn from staking, so the two acts are meant to be done together: stake to earn, burn to multiply.",
-          "A fifth mark, the Immolated Acolyte, waits beyond the top tier. The Hall above will tell you how to claim it.",
+          "One rule governs the entire Forge: burning alone earns nothing. The Acolyte is a multiplier on staking yield, not a yield source. A wallet holding a Pyre Acolyte with zero staked $PYRE accrues zero $ETH. Staking earns, burning multiplies, and the protocol is designed for both together.",
+          "Beyond the top tier sits one further standing, the Immolated, reached through the Ascend rite. It is specified in the chapter on the Hall of the Immolated.",
         ],
       },
     ],
@@ -113,13 +214,25 @@ export const CODEX: CodexChapter[] = [
   {
     id: "vault",
     title: "The Amber Vault",
-    tagline: "Everything that is yours",
+    tagline: "Position accounting",
     building: "vault",
     sections: [
       {
         paragraphs: [
-          "The Vault is your own ledger: your Acolyte and its tier, your balances, your staked $PYRE, and the $ETH yield waiting to be claimed.",
-          "It is the quiet center of your game, with quick paths back to the Forge to stake or burn more.",
+          "The Amber Vault is the position ledger. Every $PYRE balance a wallet holds sits in exactly one of three states, and the Vault reports all three at once, alongside the wallet's Acolyte, its tier and track, and unclaimed $ETH.",
+        ],
+      },
+      {
+        heading: "Liquid, staked, and returning",
+        bullets: [
+          "Liquid: undeployed $PYRE in the wallet. It can be staked, burned, or swapped, and it is the only state subject to epoch decay.",
+          "Staked: $PYRE held by the staking contract. Exempt from decay, accruing $ETH pro rata by effective weight.",
+          "Returning: $PYRE inside the 7 day unstake release, flowing back to liquid steadily. It accrues no yield during the window.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Together, the three states and the Acolyte are a wallet's complete protocol position: what is accruing, what is idle, and what is in transit between the two. Every action that changes the position is taken at the Forge.",
         ],
       },
     ],
@@ -127,13 +240,26 @@ export const CODEX: CodexChapter[] = [
   {
     id: "observatory",
     title: "The Observatory",
-    tagline: "The whole protocol, at a glance",
+    tagline: "Protocol metrics",
     building: "observatory",
     sections: [
       {
         paragraphs: [
-          "From the Observatory you read the state of the entire protocol: total supply, the rate of decay, total burned, and the $ETH yield flowing to stakers.",
-          "No wallet is needed to look. It is the honest window on the system, open to anyone deciding whether to step in.",
+          "The Observatory is the protocol's public dashboard, readable without a wallet, signature, or account. Every figure is read from the chain, so the protocol's state can be audited before anything is committed to it.",
+        ],
+      },
+      {
+        heading: "What the readings mean",
+        bullets: [
+          "Total supply: remaining $PYRE. Monotonically decreasing.",
+          "Total burned: cumulative supply removed, across chosen burns and epoch decay.",
+          "Decay rate: the per-epoch rate currently applied to liquid balances, reflecting all halvings to date.",
+          "$ETH yield: the current flow being distributed across total staked weight.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Nothing shown here is a projection or an estimate. The same values are exposed by the contracts directly, and every parameter quoted in this Codex can be checked against them at any time.",
         ],
       },
     ],
@@ -141,30 +267,69 @@ export const CODEX: CodexChapter[] = [
   {
     id: "exchange",
     title: "The Grand Exchange",
-    tagline: "Trade $PYRE and $ETH",
+    tagline: "Swapping $PYRE",
     building: "exchange",
     sections: [
       {
         paragraphs: [
-          "The Grand Exchange is where $PYRE and $ETH are swapped, built directly on Uniswap v4. Every fee is shown before you confirm, nothing is hidden in the trade.",
+          "The Grand Exchange is the swap interface for the canonical $PYRE/$ETH pool on Uniswap v4, the pool the Pyre hook is registered on. It is the protocol's venue for entering and exiting $PYRE.",
+          "Quotes are shown in full before execution: the exact amount to be received is displayed and nothing executes without explicit confirmation. Execution settles against the v4 PoolManager in a single transaction.",
         ],
       },
       {
-        heading: "See also",
-        paragraphs: ["The sell tax that protects the launch is its own chapter: The Tax."],
+        paragraphs: [
+          "Swapped-in $PYRE arrives as a liquid balance, and liquid balances decay per epoch. The intended next step after acquiring $PYRE is the Forge: stake it, burn it, or both.",
+        ],
       },
     ],
   },
   {
     id: "market",
     title: "The Black Market",
-    tagline: "Buy and sell Acolytes",
+    tagline: "The Acolyte NFT",
     building: "market",
     sections: [
       {
         paragraphs: [
-          "Acolytes are NFTs, and the Black Market is where they change hands. Browse the Acolytes others have forged and buy one, or list your own.",
-          "An Acolyte carries the burn weight that made it, so it is more than art: it is a position in the village.",
+          "The Acolyte is Pyre's ERC-721. It is minted by burning, it records the wallet's cumulative burn weight on-chain, and its tier multiplies staking yield. A wallet holds at most one Acolyte, and the token is freely transferable.",
+          "An Acolyte is not a claim on anything external. It is the on-chain record of the burn itself, and the staking contract reads it directly when computing effective weight. Its value derives from the supply permanently removed to create it and the multiplier that removal earned.",
+        ],
+      },
+      {
+        heading: "The four tiers",
+        paragraphs: [
+          "Tier resolves from cumulative burn weight and never falls. Thresholds and multipliers are set in the Acolyte contract and mirrored at the Forge. Each tier's art is rarer and more elaborate than the last.",
+        ],
+        bullets: [
+          "Ember: 10,000 burned. 1x on the token track, 2x on the LP track.",
+          "Flame: 75,000 burned. 1.5x on the token track, 3x on the LP track.",
+          "Forge: 150,000 burned. 2x on the token track, 4x on the LP track.",
+          "Pyre: 300,000 burned. 3x on the token track, 6x on the LP track.",
+        ],
+      },
+      {
+        heading: "Token-burn and LP-burn Acolytes",
+        paragraphs: [
+          "The two burn tracks mint mechanically and visually distinct Acolytes. A token-burn Acolyte is minted by burning $PYRE alone. An LP Acolyte is minted by pairing $PYRE with $ETH into the canonical pool and locking the position; it is the rarer of the two and carries twice the multiplier at every tier, pricing the two-sided, irreversible commitment it represents.",
+        ],
+      },
+      {
+        heading: "The LP lock",
+        paragraphs: [
+          "In Uniswap v4 a liquidity position is not a fungible LP token but a position NFT. An LP burn deposits the pair and transfers that position into a locker contract which permanently blocks principal withdrawal. The liquidity itself never leaves the pool: it remains active market depth for $PYRE for the life of the protocol, and the locked position continues to contribute $ETH to the yield stakers share.",
+          "This is the structural difference between the tracks. A token burn reduces supply once and is complete. An LP burn reduces circulating supply, permanently deepens the pool, and keeps contributing to protocol yield indefinitely. The doubled multiplier prices that difference.",
+        ],
+      },
+      {
+        heading: "The Immolated",
+        paragraphs: [
+          "Beyond the top tier sits one further form: the Immolated, the rarest state the Acolyte takes and the protocol's terminal prestige. It is not a tier reached by accumulation but a rite chosen after reaching Pyre. Its mechanics are specified in the chapter on the Hall of the Immolated.",
+        ],
+      },
+      {
+        heading: "The secondary market",
+        paragraphs: [
+          "Acolytes trade on the Black Market. Because tier and cumulative burn weight travel with the token, acquiring an Acolyte acquires its multiplier: the buyer's staked $PYRE is weighted by the purchased tier from acquisition onward. An Acolyte is a transferable position in the protocol, not only a collectible.",
         ],
       },
     ],
@@ -172,18 +337,25 @@ export const CODEX: CodexChapter[] = [
   {
     id: "immolated",
     title: "The Hall of the Immolated",
-    tagline: "The inner order",
+    tagline: "The Ascend rite",
     building: "immolated",
     sections: [
       {
         paragraphs: [
-          "The Hall is for those who give the most. The Immolated is a prestige, not a tier. First reach the top Acolyte tier, the Pyre, at the Forge. That makes you eligible to take the Ascend rite here in the Hall: burn 100K $PYRE (or 100K $PYRE with the equivalent in $ETH if you walk the LP path) to join the Immolated as Immolate or LP Immolate, to match your path.",
+          "The Immolated is the protocol's terminal prestige. It is not a fifth tier: it is a one-time, irreversible rite, available only to wallets that have already reached the Pyre tier.",
         ],
       },
       {
-        heading: "The reward",
+        heading: "The Ascend rite",
         paragraphs: [
-          "The Immolated earn a +20% boost to their $ETH yield, on top of their tier (and their LP bonus, if they have one). Like all yield it applies to your staked $PYRE, so the Immolated who stake pull hardest on the pool. It is the deepest commitment in the village, and it pays the most.",
+          "Eligibility requires the Pyre tier, 300,000 $PYRE of cumulative burn weight. The rite itself burns a further 100,000 $PYRE in the Hall, executed through the ImmolatedGate contract. A wallet on the LP track pairs the equivalent $ETH as well, both locked permanently, and becomes LP Immolated. The rite executes once per wallet and cannot be undone.",
+        ],
+      },
+      {
+        heading: "What it grants",
+        paragraphs: [
+          "Immolation grants a permanent 1.2x multiplier on staking yield, stacking multiplicatively with tier and track. Of all staked weight, Immolated wallets are therefore the most heavily weighted per token staked.",
+          "This also defines the protocol's ceiling. The maximum tier multiplier is 6x, the Pyre tier on the LP track. With the Immolated boost, the highest effective multiplier any wallet can reach is 6 x 1.2, a 7.2x weight on staked yield. Beyond the multiplier, the Immolated Acolyte is visually distinct from every form beneath it.",
         ],
       },
     ],
@@ -191,89 +363,13 @@ export const CODEX: CodexChapter[] = [
   {
     id: "ashen-cup",
     title: "The Ashen Cup",
-    tagline: "Earn Points toward launch rewards",
+    tagline: "Quests and Points",
     building: "tavern",
     sections: [
       {
         paragraphs: [
-          "Before the gates open, the Ashen Cup is the one door already ajar. Complete quests to earn Points and climb the leaderboard.",
-          "Invite others and you earn for every real arrival. What Points unlock is revealed closer to launch, but the order of the board is being written now.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "tokenomics",
-    title: "Tokenomics",
-    tagline: "Supply, decay, and yield",
-    sections: [
-      {
-        heading: "The flow",
-        bullets: [
-          "Supply shrinks over time: decay and burns both remove $PYRE permanently.",
-          "Stakers earn $ETH yield; Acolytes multiply that yield up to 3x.",
-          "The Immolated draw from a separate 25% $ETH pool.",
-        ],
-      },
-      {
-        paragraphs: [
-          "PYRE is designed to reward conviction. The longer and harder you commit, the more the system bends toward you, while idle supply quietly leaves the board.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "the-tax",
-    title: "The Tax",
-    tagline: "Launch protection that fades",
-    sections: [
-      {
-        paragraphs: [
-          "At launch a sell tax guards the fire from the first wave of mercenaries. It starts high and decays on its own: 23% at the very start, falling in a straight line to 5% over the first two hours, where it settles.",
-          "The intent is plain: punish the instant flip, protect everyone who is actually here to stay. Wait out the curve and you trade at the resting rate.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "security",
-    title: "Security",
-    tagline: "Contracts and audits",
-    sections: [
-      {
-        paragraphs: [
-          "PYRE is built on audited, battle-tested foundations and its own contracts are written to be read. Contract addresses, audit reports, and verification links are published here as they are finalized.",
-        ],
-      },
-      {
-        heading: "Verify, don't trust",
-        paragraphs: [
-          "Every number in this Codex can be checked on-chain. When in doubt, read the contract.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "faq",
-    title: "Questions",
-    tagline: "The things people ask first",
-    sections: [
-      {
-        heading: "Do I have to burn?",
-        paragraphs: [
-          "No. You can stake and earn $ETH yield without ever burning. Burning is how you multiply that yield by forging an Acolyte. Many do both.",
-        ],
-      },
-      {
-        heading: "What happens if I just hold?",
-        paragraphs: [
-          "Idle $PYRE decays slowly into the Bonfire. Staking stops it. Holding without staking is the one position the system works against.",
-        ],
-      },
-      {
-        heading: "Is my Acolyte permanent?",
-        paragraphs: [
-          "Yes. It is an NFT you own, carrying the burn weight that forged it. You can hold it, or sell it at the Black Market.",
+          "Before launch, the Ashen Cup is the only unlocked building. It hosts the quest program: complete quests to earn Points and climb the leaderboard, and earn additional Points for every invited participant who arrives and takes part.",
+          "What Points redeem for is disclosed closer to launch. Standings accumulate now, are recorded, and are retained through launch.",
         ],
       },
     ],

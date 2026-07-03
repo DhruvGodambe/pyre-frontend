@@ -33,12 +33,20 @@ export const REAL_WALLET =
    -------------------------------------------------------------------------- */
 export const LAUNCHED = process.env.NEXT_PUBLIC_LAUNCHED === "true"; // default: pre-launch
 
-/** The app is served under /app (next.config.mjs basePath). Raw assets, the
-    intro video, and <Image> sources (Next does NOT reliably prefix basePath on
-    image src in this multi-zone setup), must add it. Use asset() for any file
-    under /public. */
-export const BASE_PATH = "/app";
+/** The app is served at the root of app.pyreprotocol.com, so there is no path
+    prefix (BASE_PATH = ""). Kept as a single knob: if the app ever moves back
+    behind a path (e.g. "/app"), set it here AND next.config.mjs basePath to
+    match, and every asset()/api() path follows. Use asset() for any file under
+    /public. */
+export const BASE_PATH = "";
 export const asset = (path: string) => `${BASE_PATH}${path}`;
+
+/** The gated kingdom (the real app: village world + panels) lives under this
+    path. The PUBLIC front door ("/", the trailer + gate) and the public Ember
+    Codex ("/codex") sit OUTSIDE it, so KOLs can see the trailer/docs without a
+    password while the kingdom stays team-only (see middleware.ts). Building
+    deep-links are KINGDOM_PATH-relative, e.g. /kingdom/ashencup. */
+export const KINGDOM_PATH = `${BASE_PATH}/kingdom`;
 
 /* Testing phase → default to Sepolia (the dev tests the pool + hook on a
    testnet). Flips to mainnet (1) at launch via NEXT_PUBLIC_CHAIN_ID, or set it

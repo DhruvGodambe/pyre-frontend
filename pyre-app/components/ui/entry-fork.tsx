@@ -104,7 +104,7 @@ function ChoiceRow({
 /* `heading`/`blurb` let each caller set the voice (Gate vs intro). `onChose`
    fires once a fresh identity is set (caller decides what happens next). */
 export function EntryFork({
-  heading = "Welcome to PYRE",
+  heading = "Welcome to Pyre",
   blurb = "You don’t need a wallet to start. Connect one if you like, or continue as a guest, either way you get full access.",
   onChose,
   autoCloseOnConnect = true,

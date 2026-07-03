@@ -10,13 +10,23 @@
    live in the shells; this is only the on-screen narration. */
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+/* useLayoutEffect warns when server-rendered; the shells do SSR this component
+   (it just returns null until the tour starts), so swap in useEffect there. */
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { useTour } from "@/lib/tour";
 import { useCompleteQuestTask, useQuestTasks } from "@/lib/hooks";
 import { useIsDesktop } from "@/components/ui/use-media";
 import { asset } from "@/lib/config";
+import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 import { ImageButton, type ImageButtonName } from "@/components/ui/image-button";
+
+/* How far (seconds) the revealed text runs ahead of the voice. A touch of lead
+   absorbs alignment jitter; reading slightly early feels in-sync, trailing
+   feels broken. */
+const VOICE_LEAD = 0.12;
 
 /* The Emberkeeper's narration box during the guided tour. */
 export function TourNarration() {
@@ -42,19 +52,55 @@ export function TourNarration() {
   };
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const voice = tour.beat?.voice;
+  // The clip's playhead in seconds, or null when there is nothing to pace the
+  // text against (no clip, muted, autoplay blocked, or the clip finished):
+  // null shows the whole line at once.
+  const [playhead, setPlayhead] = useState<number | null>(null);
 
-  // Play the Tutor's voice clip for the current beat (once the designer delivers
-  // audio + sets `voice`). Stops/replaces on every beat change; respects mute.
-  useEffect(() => {
+  // Play the Emberkeeper's voice clip for the current beat. Stops/replaces on
+  // every beat change; respects mute. While it plays, `playhead` follows the
+  // clip so the on-screen letters keep pace with the spoken words. Layout
+  // effect so the reveal resets before paint: otherwise every beat change
+  // flashes the full line for a frame before the words start. The "ended" and
+  // play-rejection handlers only act while this clip is still the current one:
+  // a replaced clip settling late must not blank a newer clip's pacing.
+  useIsomorphicLayoutEffect(() => {
     audioRef.current?.pause();
     audioRef.current = null;
-    if (!voice || muted) return;
+    if (!voice || muted) {
+      setPlayhead(null);
+      return;
+    }
     const a = new Audio(asset(voice));
     audioRef.current = a;
-    void a.play().catch(() => {
-      /* autoplay can be blocked; the visitor can unmute to retry */
-    });
-    return () => a.pause();
+    // Follow the playhead only while the clip is actually sounding; that way a
+    // late start (slow load) resumes pacing, and a bailed reveal isn't
+    // overwritten. Not gated on the play() promise: some environments leave it
+    // pending forever, which must not freeze the text.
+    let raf = 0;
+    const follow = () => {
+      if (!a.paused && !a.ended) setPlayhead(a.currentTime);
+      raf = requestAnimationFrame(follow);
+    };
+    const bail = () => {
+      // show the whole line rather than none of it
+      if (audioRef.current === a) setPlayhead(null);
+    };
+    a.addEventListener("ended", bail);
+    a.addEventListener("error", bail);
+    setPlayhead(0);
+    raf = requestAnimationFrame(follow);
+    void a.play().catch(bail); // autoplay blocked
+    // Watchdog for playback that neither starts nor errors (blocked autoplay
+    // with a forever-pending play(), stalled load): don't hold a bare line.
+    const watchdog = window.setTimeout(() => {
+      if (a.paused || a.currentTime === 0) bail();
+    }, 2000);
+    return () => {
+      window.clearTimeout(watchdog);
+      cancelAnimationFrame(raf);
+      a.pause();
+    };
   }, [voice, muted]);
 
   if (!tour.beat) return null;
@@ -86,6 +132,35 @@ export function TourNarration() {
       : `${b?.name} · ${tour.beat.step} of ${tour.beat.total}`;
 
   const art = tour.beat.art;
+
+  // Letter-exact reveal. Every word of the line has measured [start, end]
+  // seconds (whisper-aligned against the actual clip by scripts/align-voice.py,
+  // regenerate there when clips or lines change), and letters fill in across
+  // each word's own span, so the text tracks the Emberkeeper's voice to the
+  // letter. The timing list is matched to the displayed variant of the line by
+  // word count; with no timing data the whole line shows (never hide words on
+  // missing data). The full line is always laid out (unspoken part invisible)
+  // so the box keeps its final height and nothing reflows mid-line.
+  const text = tour.beat.text;
+  let shown = text.length;
+  if (playhead !== null && voice) {
+    const words = text.split(" ");
+    const timing = VOICE_TIMING[voice]?.find((t) => t.length === words.length);
+    if (timing) {
+      const t = playhead + VOICE_LEAD;
+      shown = 0;
+      for (let i = 0; i < words.length; i++) {
+        const [start, end] = timing[i];
+        if (t >= end) {
+          shown += words[i].length + 1; // the whole word and its trailing space
+        } else {
+          if (t > start) shown += Math.round((words[i].length * (t - start)) / (end - start));
+          break;
+        }
+      }
+      shown = Math.min(shown, text.length);
+    }
+  }
 
   return (
     <>
@@ -159,7 +234,13 @@ export function TourNarration() {
               </div>
             </div>
             <div className="mb-0.5 text-text-3 text-[10px] uppercase tracking-widest">{headerLabel}</div>
-            <p className="text-text-2 text-sm leading-relaxed">{tour.beat.text}</p>
+            <p className="text-text-2 text-sm leading-relaxed">
+              <span className="sr-only">{text}</span>
+              <span aria-hidden>
+                {text.slice(0, shown)}
+                <span className="opacity-0">{text.slice(shown)}</span>
+              </span>
+            </p>
             <div className="mt-3 flex items-center gap-3">
               {tour.index > 0 && (
                 <ImageButton name="back" label="Back" onClick={tour.back} width={96} />
@@ -192,7 +273,7 @@ export function TourNarration() {
           <h3 className="font-display text-2xl text-brand">Skip the tour?</h3>
           <p className="text-text-2 text-sm mt-2 leading-relaxed">
             {introDone ? (
-              "You can replay it any time from the village."
+              "You can replay it any time from the kingdom."
             ) : (
               <>
                 Finish the tour and you instantly complete a quest, earning{" "}

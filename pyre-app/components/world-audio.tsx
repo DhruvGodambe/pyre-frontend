@@ -153,7 +153,7 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
       onClick={toggle}
       title={muted ? "Unmute music" : "Mute music"}
       aria-label={muted ? "Unmute music" : "Mute music"}
-      className="fixed bottom-3 right-3 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-sm px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
+      className="fixed bottom-3 right-16 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-sm px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
     >
       {muted ? "🔇" : "🔊"}
     </button>

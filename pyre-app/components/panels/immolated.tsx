@@ -91,7 +91,7 @@ function HallFame({ you }: { you?: { rank: number; weight: bigint } }) {
   return (
     <div className="pt-3 border-t border-surface-3/60">
       <h3 className="font-display text-lg text-brand">Hall of Fame</h3>
-      <p className="text-text-3 text-xs mb-3">The village&rsquo;s greatest burners.</p>
+      <p className="text-text-3 text-xs mb-3">The kingdom&rsquo;s greatest burners.</p>
       <StateView query={board}>{(rows) => <HallOfFame rows={rows} you={you} />}</StateView>
     </div>
   );
@@ -107,7 +107,7 @@ export function ImmolatedPanel() {
   const canAffordAscend = liquid >= IMMOLATED_ASCEND_COST;
 
   return (
-    <Panel title="Hall of the Immolated" tagline="The highest prestige in the village">
+    <Panel title="Hall of the Immolated" tagline="The highest prestige in the kingdom">
       <RequireWallet message="Connect to see if you've reached the Immolated.">
         <StateView query={pos}>
           {(p) =>
@@ -154,7 +154,7 @@ export function ImmolatedPanel() {
                       {p.isLP ? " plus the equivalent $ETH" : ""}
                     </span>
                     , to become {p.isLP ? "LP Immolated" : "Immolated"}, the highest prestige in the
-                    village, and claim a permanent
+                    kingdom, and claim a permanent
                     <span className="text-brand"> +20% boost</span> to your share of the yield pool.
                   </p>
                   <div className="mt-4 flex flex-col items-center gap-1.5">
@@ -182,7 +182,7 @@ export function ImmolatedPanel() {
                 <EmptyState
                   icon="⌖"
                   title="Not yet"
-                  message="The Immolated is the village's highest prestige, not a tier. Reach Pyre, the top Acolyte tier, by burning at the Forge (normal or LP), then return here to take the Ascend rite: burn 100K $PYRE to ascend and claim a permanent +20% boost to your yield share."
+                  message="The Immolated is the kingdom's highest prestige, not a tier. Reach Pyre, the top Acolyte tier, by burning at the Forge (normal or LP), then return here to take the Ascend rite: burn 100K $PYRE to ascend and claim a permanent +20% boost to your yield share."
                 />
                 <div className="flex justify-center">
                   <NavCta to="forge">Burn at the Forge →</NavCta>

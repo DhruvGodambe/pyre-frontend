@@ -2,12 +2,11 @@
 const nextConfig = {
   // Pin the workspace root (the machine has multiple lockfiles).
   outputFileTracingRoot: import.meta.dirname,
-  // Served under designer.pyreprotocol.com/app via the brief's rewrite
-  // (Next.js multi-zones). All routes + assets live under /app.
-  basePath: "/app",
+  // Served at the root of app.pyreprotocol.com (its own Vercel project + domain).
+  // No basePath: all routes + assets live at "/". If this ever moves back behind
+  // a path prefix, set basePath here AND BASE_PATH in lib/config.ts to match.
   // World/building art is already pre-sized & compressed at build time, so the
-  // on-the-fly optimizer adds nothing — and its url param doesn't carry basePath,
-  // which 400s behind our /app basePath. Serve the assets directly instead.
+  // on-the-fly optimizer adds nothing. Serve the assets directly instead.
   images: { unoptimized: true },
   webpack: (config) => {
     // wagmi v3's @wagmi/connectors barrel references a pile of OPTIONAL wallet

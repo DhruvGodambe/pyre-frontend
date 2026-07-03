@@ -1,25 +1,21 @@
 "use client";
 
-/* THE EMBER CODEX, the in-world documentation reader.
+/* THE EMBER CODEX, standalone public page (/codex).
 
-   - CodexReader: a full-screen reader (rendered once, globally, in AppShell).
-     Chapter list on the side, the Emberkeeper's prose in the body. Opened from
-     anywhere via useCodex().
-   - CodexButton: the persistent tome button placed in both shells, so the docs
-     are always one tap away, not buried in the tour or the gate.
-   - CodexRiteLink: the contextual "Read the rite" link shown inside a building,
-     opening the Codex straight to that building's chapter.
+   Same content and layout as the in-kingdom CodexReader overlay (components/
+   codex.tsx), but rendered as a normal, ungated page so KOLs can read the docs
+   without any access to the kingdom. It carries its own chapter state (no need
+   for the CodexProvider overlay context), reads the same CODEX content, and links
+   back to the gate. Keep the two renderers visually in sync. */
 
-   Content + open/close state live in lib/codex/content.ts and lib/codex.tsx. */
-
-import { useEffect } from "react";
-import { BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
-import { useCodex } from "@/lib/codex";
+import { useState } from "react";
+import Link from "next/link";
+import { BUILDING_BY_ID } from "@/components/buildings";
+import { CODEX } from "@/lib/codex/content";
 import { asset } from "@/lib/config";
 import { CodexDiagram } from "@/components/codex-diagrams";
 import { VillageHero } from "@/components/village-hero";
 
-/* Open-book glyph (placeholder until the designer ships a tome icon). */
 function BookGlyph({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
@@ -34,61 +30,20 @@ function BookGlyph({ className = "" }: { className?: string }) {
   );
 }
 
-/* The persistent entry button. Drop it in a shell with positioning via className. */
-export function CodexButton({ className = "" }: { className?: string }) {
-  const codex = useCodex();
-  return (
-    <button
-      onClick={() => codex.open()}
-      aria-label="Open the Ember Codex"
-      className={`inline-flex items-center gap-2 rounded-full bg-surface-2/95 border border-brand/40 text-brand text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:bg-surface-2 transition-colors ${className}`}
-    >
-      <BookGlyph className="h-4 w-4" />
-      <span className="font-display tracking-wide">The Codex</span>
-    </button>
-  );
-}
+export function CodexPage() {
+  const [chapterId, setChapterId] = useState(CODEX[0].id);
+  const chapter = CODEX.find((c) => c.id === chapterId) ?? CODEX[0];
 
-/* Contextual link for inside a building: opens the Codex to its chapter. */
-export function CodexRiteLink({ building, className = "" }: { building: BuildingId; className?: string }) {
-  const codex = useCodex();
-  return (
-    <button
-      onClick={() => codex.openBuilding(building)}
-      className={`inline-flex items-center gap-1.5 text-text-3 text-xs hover:text-brand transition-colors ${className}`}
-    >
-      <BookGlyph className="h-3.5 w-3.5" />
-      Read the rite
-    </button>
-  );
-}
-
-export function CodexReader() {
-  const codex = useCodex();
-
-  // Close on Escape.
-  useEffect(() => {
-    if (!codex.isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") codex.close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [codex.isOpen, codex]);
-
-  if (!codex.isOpen) return null;
-  const { chapter } = codex;
   const building = chapter.building ? BUILDING_BY_ID[chapter.building] : undefined;
-  // Icon + full-scene hero: from the building, or the chapter's own art (the
-  // overview uses the PYRE crest + the village map).
   const iconSrc = building?.icon ?? chapter.icon;
-  const heroSrc = building ? building.exterior ?? building.interior ?? building.art ?? "" : chapter.hero ?? "";
+  const heroSrc = building
+    ? building.exterior ?? building.interior ?? building.art ?? ""
+    : chapter.hero ?? "";
   const heroAlt = building ? `${building.name} in the Pyre kingdom` : chapter.heroAlt ?? "";
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-bg animate-entry">
-      {/* Warm stone wash behind everything, so the reader feels like part of the
-          village, not a plain modal. */}
+    <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
+      {/* Warm stone wash behind everything, matching the reader. */}
       <div
         className="absolute inset-0 -z-10"
         style={{ background: "radial-gradient(120% 90% at 50% 0%, rgba(240,169,59,0.10), transparent 60%)" }}
@@ -106,36 +61,31 @@ export function CodexReader() {
             </p>
           </div>
         </div>
-        <button
-          onClick={codex.close}
-          aria-label="Close the Codex"
+        <Link
+          href="/"
           className="shrink-0 rounded-md text-text-3 hover:text-text-2 text-sm px-3 py-2 transition-colors"
         >
-          Close ✕
-        </button>
+          ← The Gate
+        </Link>
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row">
         {/* Chapter list: a scroll-strip on mobile, a sidebar on desktop. */}
         <nav className="shrink-0 border-b md:border-b-0 md:border-r border-surface-3/60 md:w-72 md:overflow-y-auto">
           <ul className="flex md:flex-col gap-1 overflow-x-auto p-2 md:p-3">
-            {codex.chapters.map((c) => {
+            {CODEX.map((c) => {
               const active = c.id === chapter.id;
               const cbIcon = c.building ? BUILDING_BY_ID[c.building]?.icon : c.icon;
               return (
                 <li key={c.id} className="shrink-0 md:shrink">
                   <button
-                    onClick={() => codex.setChapter(c.id)}
+                    onClick={() => setChapterId(c.id)}
                     className={`w-full flex items-center gap-2.5 text-left rounded-md px-3 py-2 transition-colors ${
                       active ? "bg-brand/10 border border-brand/40" : "hover:bg-surface-2 border border-transparent"
                     }`}
                   >
                     {cbIcon ? (
-                      <img
-                        src={asset(cbIcon)}
-                        alt=""
-                        className="h-9 w-9 shrink-0 object-contain"
-                      />
+                      <img src={asset(cbIcon)} alt="" className="h-9 w-9 shrink-0 object-contain" />
                     ) : (
                       <span className="h-9 w-9 shrink-0" aria-hidden />
                     )}
@@ -159,11 +109,7 @@ export function CodexReader() {
           <div className="mx-auto max-w-2xl">
             <div className="flex items-center gap-3">
               {iconSrc && (
-                <img
-                  src={asset(iconSrc)}
-                  alt=""
-                  className="h-11 w-11 shrink-0 object-contain"
-                />
+                <img src={asset(iconSrc)} alt="" className="h-11 w-11 shrink-0 object-contain" />
               )}
               <div className="min-w-0">
                 <h1 className="font-display text-3xl sm:text-4xl text-brand leading-tight">{chapter.title}</h1>
@@ -182,9 +128,7 @@ export function CodexReader() {
             <div className="mt-6 space-y-6">
               {chapter.sections.map((s, i) => (
                 <section key={i} className="space-y-3">
-                  {s.heading && (
-                    <h3 className="font-display text-lg text-text">{s.heading}</h3>
-                  )}
+                  {s.heading && <h3 className="font-display text-lg text-text">{s.heading}</h3>}
                   {s.paragraphs?.map((p, j) => (
                     <p key={j} className="text-text-2 text-[15px] leading-relaxed">
                       {p}

@@ -5,7 +5,7 @@
    ----------------------------------------------------------------------------
    A tiny shared "where to go next" so one part of the app can send the visitor
    into a specific building (and even a tab inside it), AND so every building has
-   its own shareable URL, e.g. /app/ashencup opens the Ashen Cup. It stays a
+   its own shareable URL, e.g. /kingdom/ashencup opens the Ashen Cup. It stays a
    single-page app: the URL is updated with the History API (no reload), and a
    direct visit / paste deep-links straight into that building.
 
@@ -15,7 +15,7 @@
    ========================================================================== */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { BASE_PATH } from "./config";
+import { KINGDOM_PATH } from "./config";
 
 export interface NavTarget {
   /** A BuildingId, or "" to mean "back to the map" (browser Back). */
@@ -46,7 +46,7 @@ const SLUG_TO_ID: Record<string, string> = Object.fromEntries(
 function buildingFromLocation(): string | null {
   if (typeof window === "undefined") return null;
   let path = window.location.pathname;
-  if (path.startsWith(BASE_PATH)) path = path.slice(BASE_PATH.length);
+  if (path.startsWith(KINGDOM_PATH)) path = path.slice(KINGDOM_PATH.length);
   const slug = path.replace(/^\/+|\/+$/g, "").split("/")[0];
   return slug ? SLUG_TO_ID[slug] ?? null : null;
 }
@@ -70,14 +70,14 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const syncUrl = useCallback((buildingId: string | null) => {
     if (typeof window === "undefined") return;
     const slug = buildingId ? BUILDING_SLUGS[buildingId] : null;
-    const target = `${BASE_PATH}${slug ? `/${slug}` : ""}`;
+    const target = `${KINGDOM_PATH}${slug ? `/${slug}` : ""}`;
     if (window.location.pathname !== target) {
       window.history.pushState(null, "", target + window.location.search + window.location.hash);
     }
   }, []);
 
   // Deep-link on first load, and react to browser Back/Forward: open the
-  // building named in the URL ("" = the map, when Back returns to /app).
+  // building named in the URL ("" = the map, when Back returns to /kingdom).
   useEffect(() => {
     const id = buildingFromLocation();
     if (id) setPending({ building: id });
