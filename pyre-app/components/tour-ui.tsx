@@ -225,12 +225,12 @@ export function TourNarration() {
                     draggable={false}
                   />
                 </button>
-                <button
+                <ImageButton
+                  name="skiptour"
+                  label="Skip tour"
+                  width={104}
                   onClick={() => setConfirmSkip(true)}
-                  className="text-text-3 text-xs hover:text-text-2 transition-colors"
-                >
-                  Skip tour
-                </button>
+                />
               </div>
             </div>
             <div className="mb-0.5 text-text-3 text-[10px] uppercase tracking-widest">{headerLabel}</div>

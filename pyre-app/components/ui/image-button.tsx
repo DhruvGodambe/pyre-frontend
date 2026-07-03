@@ -47,6 +47,8 @@ const BUTTONS = {
   continue: ["/world/ui/continue_normal.png", "/world/ui/continue_hover.png", 545, 171],
   back: ["/world/ui/back_normal.png", "/world/ui/back_hover.png", 239, 106],
   replaytour: ["/world/ui/replaytour_normal.png", "/world/ui/replaytour_hover.png", 593, 166],
+  skiptour: ["/world/ui/skiptour_normal.png", "/world/ui/skiptour_hover.png", 593, 166],
+  skipintro: ["/world/ui/skipintro_normal.png", "/world/ui/skipintro_hover.png", 593, 166],
   question: ["/world/ui/question_normal.png", "/world/ui/question_hover.png", 256, 232],
 } as const;
 

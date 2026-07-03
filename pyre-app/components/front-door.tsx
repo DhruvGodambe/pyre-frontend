@@ -35,10 +35,13 @@ import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { playDoor } from "@/lib/sfx";
 
-/* Pre-launch the gate stands SEALED (closed stone doors, sun-wheel carved), so
-   "The Gate Opens Soon" is literal. At launch the original open-gate art
-   returns and the kingdom shows through the arch. */
-const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
+/* Pre-launch the gate stands SEALED with the proclamation painted INTO the
+   scene (same brushwork, torchlight and cast shadow, so it truly belongs);
+   the HTML below only lays live text onto that painted paper. At launch the
+   original open-gate art returns and the kingdom shows through the arch. */
+const CLOSED_GATE_ART = "/world/interiors/gate-closed-decree.webp";
+/* The painted paper's position in the art (measured): centered at
+   (50.03%, 57.22%), 13.91% of the frame wide, aspect w/h 0.772. */
 
 export function FrontDoor() {
   const router = useRouter();
@@ -143,59 +146,103 @@ export function FrontDoor() {
         </span>
       </div>
 
-      {/* The two doors. Hidden once we're crossing into the world. */}
+      {/* The proclamation, pinned to the DOORS themselves. The wrapper below
+          replicates the gate art's object-cover geometry (16:9, centered,
+          cover-scaled), so a position expressed in image coordinates stays on
+          the doors at every viewport size. In the art the doors sit at the
+          center-x, ~62% down. Hidden once we're crossing into the world. */}
       <div
-        className="absolute inset-0 z-10 flex items-end sm:items-center justify-center p-4 sm:p-8 transition-opacity duration-300"
+        className="absolute inset-0 z-10 transition-opacity duration-300 pointer-events-none"
         style={{ opacity: entering ? 0 : 1 }}
       >
-        <div className="animate-entry w-full max-w-md rounded-2xl bg-surface/80 border border-brand/20 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl ring-1 ring-inset ring-white/5 py-9 px-7 text-center">
-          <div className="h-px -mt-3 mb-6 bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
-          <div className="inline-flex items-center gap-2 mb-2">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)]">
+        {/* The decree rectangle: positioned exactly over the paper PAINTED into
+            the gate art (measured bbox), with container-query units so the type
+            scales with the paper at every viewport. No pasted image: the paper
+            is part of the painting; this only lays words onto it. */}
+        <div className="animate-entry absolute left-[50.03%] top-[57.22%] w-[13.91%] aspect-[0.772] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-auto [container-type:inline-size]">
+
+          {/* Content, laid onto the paper inside its safe area (clear of the
+              nails at the top and the wax seal at the lower right). */}
+          <div className="absolute inset-0 flex flex-col items-center px-[10%] pt-[9%] pb-[10%]">
+          <div className="inline-flex items-center justify-center gap-[2.5cqw] mb-[2.5cqw]">
             {gate.icon && (
               <img
                 src={asset(gate.icon)}
                 alt=""
-                className="h-5 w-5 shrink-0 object-contain"
+                className="h-[5.5cqw] w-[5.5cqw] shrink-0 object-contain"
               />
             )}
-            <span className="text-text-3 text-[11px] uppercase tracking-[0.25em]">
+            <span className="text-[#7d5f38] text-[3.6cqw] uppercase tracking-[0.25em]">
               The Gate
             </span>
           </div>
-          <h2 className="font-display text-3xl text-brand leading-tight">
+          <h2 className="font-display text-[8.2cqw] text-[#5f3712] leading-tight">
             The Gate Opens Soon
           </h2>
-          <p className="mt-2 text-text-2 text-sm leading-relaxed max-w-xs mx-auto">
+          <p className="mt-[2cqw] text-[#54432b] text-[4.5cqw] leading-relaxed mx-auto">
             The kingdom is not yet open. Read the Pyre documentation in the Ember
             Codex, and return when the gate is unsealed.
           </p>
 
-          {/* The two doors, side by side. */}
-          <div className="mt-6 flex items-stretch gap-3">
-            {/* Enter Pyre Kingdom, live only for the team; "(Coming soon)" for all
-                other visitors. */}
+          {/* The two doors, stacked like the seals of a decree: the designer's
+              carved plates (normal + molten hover, first hover never flickers),
+              nudged slightly left so the wax seal keeps its corner. The Enter
+              plate stays sealed (desaturated, inert) for anyone who isn't team. */}
+          <div className="mt-auto flex flex-col items-center gap-[2.5cqw] -translate-x-[7%]">
             <button
               onClick={enter}
               disabled={!isTeam}
               aria-disabled={!isTeam}
+              aria-label={isTeam ? "Enter Pyre Kingdom" : "Enter Pyre Kingdom (opens at launch)"}
+              title={isTeam ? undefined : "The kingdom is not yet open"}
               className={
-                "flex-1 flex flex-col items-center justify-center text-center rounded-lg px-4 py-3 text-sm font-medium transition-all " +
+                "group relative block outline-none transition-transform duration-200 " +
                 (isTeam
-                  ? "bg-gradient-to-b from-brand to-brand-deep text-bg shadow-[0_6px_20px_-8px_rgba(240,169,59,0.7)] hover:brightness-110"
-                  : "bg-surface-2/70 text-text-3 border border-surface-3/60 cursor-not-allowed")
+                  ? "hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+                  : "grayscale opacity-45 cursor-not-allowed")
               }
             >
-              <span>Enter Pyre Kingdom{isTeam ? " →" : ""}</span>
+              <img
+                src={asset("/buttons/enter_normal.png")}
+                alt=""
+                draggable={false}
+                className="block h-[13.5cqw] w-auto select-none"
+              />
+              {isTeam && (
+                <img
+                  src={asset("/buttons/enter_hover.png")}
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="absolute inset-0 h-[13.5cqw] w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                />
+              )}
             </button>
 
             {/* Read the Ember Codex, open to all. */}
             <Link
               href="/codex"
-              className="flex-1 flex items-center justify-center text-center rounded-lg bg-surface-2/95 border border-brand/40 text-brand px-4 py-3 text-sm font-medium hover:border-brand hover:bg-surface-2 transition-colors"
+              aria-label="Read the Ember Codex"
+              className="group relative block outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
             >
-              Read the Ember Codex
+              <img
+                src={asset("/buttons/codex_normal.png")}
+                alt=""
+                draggable={false}
+                className="block h-[13.5cqw] w-auto select-none"
+              />
+              <img
+                src={asset("/buttons/codex_hover.png")}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="absolute inset-0 h-[13.5cqw] w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+              />
             </Link>
           </div>
+          </div>
+        </div>
         </div>
       </div>
 

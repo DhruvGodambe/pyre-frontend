@@ -30,6 +30,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BASE_PATH } from "@/lib/config";
+import { ImageButton } from "@/components/ui/image-button";
 
 const VIDEO_SRC = `${BASE_PATH}/intro/pyre-intro.mp4`;
 
@@ -310,21 +311,27 @@ export function PyreIntro() {
       {/* Playback chrome: only once the fire has caught. */}
       {started && (
         <>
-          {/* Sound toggle, prominent, because the film wants to be heard. */}
+          {/* Sound toggle: the designer's audio icon, the same control the
+              tour's narration box uses, so mute looks identical app-wide. */}
           <button
             onClick={toggleSound}
-            className="absolute top-5 left-5 rounded-full bg-black/55 border border-white/15 text-white/90 text-sm px-4 py-2 backdrop-blur hover:border-brand hover:text-brand transition-colors"
+            title={muted ? "Sound on" : "Mute"}
+            aria-label={muted ? "Turn sound on" : "Mute"}
+            className="absolute top-5 left-5 transition-transform duration-fast hover:scale-110 active:scale-95"
           >
-            {muted ? "🔊 Sound on" : "🔇 Mute"}
+            <img
+              src={`${BASE_PATH}/world/ui/${muted ? "audio_off" : "audio_on"}.png`}
+              alt=""
+              draggable={false}
+              className="h-8 w-auto select-none pointer-events-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
+            />
           </button>
 
-          {/* Skip, always available, never hidden. */}
-          <button
-            onClick={finish}
-            className="absolute bottom-5 right-5 rounded-full bg-black/55 border border-white/15 text-white/90 text-sm px-5 py-2.5 backdrop-blur hover:border-brand hover:text-brand transition-colors"
-          >
-            Skip intro →
-          </button>
+          {/* Skip, always available, never hidden: the designer's carved plate,
+              matching the tour's controls. */}
+          <div className="absolute bottom-5 right-5">
+            <ImageButton name="skipintro" label="Skip intro" width={150} onClick={finish} />
+          </div>
         </>
       )}
     </div>
