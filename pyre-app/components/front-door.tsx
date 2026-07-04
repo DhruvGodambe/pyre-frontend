@@ -237,6 +237,8 @@ export function FrontDoor() {
                 is the only affordance. */}
             <Link
               href="/codex"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Read the Ember Codex"
               title="Read the Ember Codex"
               className="group absolute bottom-[-1.5%] left-[30%] -translate-x-1/2 h-[57%] pointer-events-auto outline-none focus-visible:ring-2 focus-visible:ring-brand/70 rounded-lg"
@@ -367,6 +369,8 @@ export function FrontDoor() {
                   </button>
                   <Link
                     href="/codex"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label="Read the Ember Codex"
                     onClick={(e) => e.stopPropagation()}
                     className="group relative block outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"

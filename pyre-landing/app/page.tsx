@@ -76,7 +76,13 @@ export default function Landing() {
             <img src="/buttons/launch_normal.png" alt="" />
             <img src="/buttons/launch_hover.png" alt="" className="hov" aria-hidden />
           </a>
-          <a href={DOCS_URL} className="imgbtn" aria-label="Read the Codex">
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="imgbtn"
+            aria-label="Read the Codex"
+          >
             <img src="/buttons/codex_normal.png" alt="" />
             <img src="/buttons/codex_hover.png" alt="" className="hov" aria-hidden />
           </a>
