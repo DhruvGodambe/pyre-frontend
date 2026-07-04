@@ -4,7 +4,7 @@
    everything else about the page is Pyre's own.) */
 
 const APP_URL = "https://app.pyreprotocol.com";
-const DOCS_URL = "https://app.pyreprotocol.com/codex";
+const DOCS_URL = "/codex"; // served here via rewrite; the brand domain is the shareable one
 const X_URL = "https://x.com/pyre_protocol";
 const TELEGRAM_URL = "https://t.me/pyreprotocol";
 
