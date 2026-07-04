@@ -10,7 +10,6 @@
    is framed as bound-in illustration plates. */
 
 import { useState } from "react";
-import Link from "next/link";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { CODEX } from "@/lib/codex/content";
 import { asset } from "@/lib/config";
@@ -72,25 +71,10 @@ export function CodexPage() {
             </p>
           </div>
         </div>
-        <Link
-          href="/"
-          aria-label="Back to the Gate"
-          className="group relative block shrink-0 outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
-        >
-          <img
-            src={asset("/buttons/gate_normal.png")}
-            alt=""
-            draggable={false}
-            className="block h-10 w-auto select-none"
-          />
-          <img
-            src={asset("/buttons/gate_hover.png")}
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="absolute inset-0 h-10 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
-          />
-        </Link>
+        {/* No door to the gate from here: the landing offers a clean fork
+            (read the Codex OR enter the app), and after launch the Codex
+            lives inside the world. The Gate plates (buttons/gate_*.png) stay
+            in the repo for that day. */}
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row">
