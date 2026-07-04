@@ -201,6 +201,7 @@ export const CODEX: CodexChapter[] = [
         paragraphs: [
           "There are two burn tracks with identical thresholds. The token burn track burns $PYRE alone. The LP burn track pairs $PYRE with $ETH as liquidity in the canonical pool and locks the resulting position permanently: principal can never be withdrawn, by anyone, including the burner.",
           "An LP Acolyte carries double the multiplier of a token-burn Acolyte at every tier, 2x to 6x against 1x to 3x, reflecting the deeper and two-sided commitment. The mechanics of the position lock, and why locked liquidity keeps contributing after the burn, are specified in the Acolyte chapter.",
+          "A burned LP position is locked, not dead. The principal is beyond reach forever, but the position itself stays live inside the pool, and a live position never stops generating yield. That yield flows back into the protocol in perpetuity: every LP burn permanently adds a working engine that no one can ever switch off.",
         ],
       },
       {
@@ -316,7 +317,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The LP lock",
         paragraphs: [
-          "In Uniswap v4 a liquidity position is not a fungible LP token but a position NFT. An LP burn deposits the pair and transfers that position into a locker contract which permanently blocks principal withdrawal. The liquidity itself never leaves the pool: it remains active market depth for $PYRE for the life of the protocol, and the locked position continues to contribute $ETH to the yield stakers share.",
+          "In Uniswap v4 a liquidity position is not a fungible LP token but a position NFT. An LP burn deposits the pair and transfers that position into a locker contract which permanently blocks principal withdrawal. The liquidity itself never leaves the pool: it remains active market depth for $PYRE for the life of the protocol, and the locked position continues to generate yield that flows back into the protocol.",
           "This is the structural difference between the tracks. A token burn reduces supply once and is complete. An LP burn reduces circulating supply, permanently deepens the pool, and keeps contributing to protocol yield indefinitely. The doubled multiplier prices that difference.",
         ],
       },
@@ -349,6 +350,7 @@ export const CODEX: CodexChapter[] = [
         heading: "The Ascend rite",
         paragraphs: [
           "Eligibility requires the Pyre tier, 300,000 $PYRE of cumulative burn weight. The rite itself burns a further 100,000 $PYRE in the Hall, executed through the ImmolatedGate contract. A wallet on the LP track pairs the equivalent $ETH as well, both locked permanently, and becomes LP Immolated. The rite executes once per wallet and cannot be undone.",
+          "For an LP Immolated wallet the sacrifice keeps working after the rite: the locked liquidity remains live in the pool and keeps generating yield that flows back into the protocol, for as long as the pool exists.",
         ],
       },
       {
@@ -363,13 +365,13 @@ export const CODEX: CodexChapter[] = [
   {
     id: "ashen-cup",
     title: "The Ashen Cup",
-    tagline: "Quests and Points",
+    tagline: "Quests and Embers",
     building: "tavern",
     sections: [
       {
         paragraphs: [
-          "Before launch, the Ashen Cup is the only unlocked building. It hosts the quest program: complete quests to earn Points and climb the leaderboard, and earn additional Points for every invited participant who arrives and takes part.",
-          "What Points redeem for is disclosed closer to launch. Standings accumulate now, are recorded, and are retained through launch.",
+          "Before launch, the Ashen Cup is the only unlocked building. It hosts the quest program: complete quests to earn Embers (points) and climb the leaderboard, and earn additional Embers for every invited participant who arrives and takes part.",
+          "What Embers redeem for is disclosed closer to launch. Standings accumulate now, are recorded, and are retained through launch.",
         ],
       },
     ],

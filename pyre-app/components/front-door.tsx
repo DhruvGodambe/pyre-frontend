@@ -123,7 +123,7 @@ export function FrontDoor() {
   // His voice: plays when the box opens (the light-the-pyre hold was the
   // gesture, so playback is allowed; if a browser still refuses, the words
   // simply type in silence). The typewriter stretches to the clip's length.
-  const KEEPER_TEXT_LEN = 151; // combined line length, keeps pacing honest
+  const KEEPER_TEXT_LEN = 187; // combined line length, keeps pacing honest
   useEffect(() => {
     if (keeper !== "box") return;
     const a = new Audio(asset(KEEPER_VOICE));
@@ -140,10 +140,13 @@ export function FrontDoor() {
     };
   }, [keeper]);
 
-  // Skipping the words also quiets the keeper.
-  useEffect(() => {
-    if (spoken) keeperAudioRef.current?.pause();
-  }, [spoken]);
+  // Skipping the words also quiets the keeper. Only a deliberate skip cuts the
+  // voice; when the typing simply finishes first (it is paced to land a beat
+  // early), the clip plays out its final words.
+  const skipSpeech = () => {
+    setSpoken(true);
+    keeperAudioRef.current?.pause();
+  };
 
   useEffect(() => {
     if (keeper !== "appear") return;
@@ -230,8 +233,8 @@ export function FrontDoor() {
             geometry as the art, so he stands on the path at every viewport. */}
         {!LAUNCHED && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)] pointer-events-none">
-            {/* He holds the Ember Codex open; clicking him (or his book) reads
-                it. A whisper of a hover lift is the only affordance. */}
+            {/* Clicking him opens the Ember Codex; a whisper of a hover glow
+                is the only affordance. */}
             <Link
               href="/codex"
               aria-label="Read the Ember Codex"
@@ -296,16 +299,18 @@ export function FrontDoor() {
           style={{ opacity: entering ? 0 : 1 }}
         >
           <div
-            className="animate-entry w-full max-w-2xl rounded-panel bg-surface/90 border border-surface-3/60 shadow-panel backdrop-blur p-4 sm:p-5 cursor-pointer"
-            onClick={() => setSpoken(true)}
+            className="animate-entry relative w-full max-w-2xl rounded-panel bg-surface/90 border border-surface-3/60 shadow-panel backdrop-blur p-4 sm:p-5 cursor-pointer"
+            onClick={skipSpeech}
           >
             <div className="flex gap-4">
-              {/* The keeper, the same figure who just stood at the gate. */}
+              {/* His face up close: the wide shot already shows the figure at
+                  the gate, so the box carries the close-up (hood and burning
+                  eyes) instead of repeating him in miniature. */}
               <img
-                src={asset("/world/emberkeeper/crossed.webp")}
+                src={asset("/world/emberkeeper/crossed-face.webp")}
                 alt=""
                 draggable={false}
-                className="h-28 w-24 sm:h-36 sm:w-32 shrink-0 rounded-xl object-cover object-top ring-1 ring-brand/40 shadow-[0_0_28px_-8px_rgba(240,169,59,0.7)] select-none"
+                className="h-24 w-24 sm:h-28 sm:w-28 shrink-0 rounded-xl object-cover ring-1 ring-brand/40 shadow-[0_0_28px_-8px_rgba(240,169,59,0.7)] select-none"
               />
               <div className="min-w-0 flex-1">
                 <div className="text-text-3 text-[11px] uppercase tracking-[0.25em]">
@@ -313,8 +318,8 @@ export function FrontDoor() {
                 </div>
                 <KeeperSpeech
                   lines={[
-                    "The gate opens soon, stranger. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
-                    "Study the Ember Codex while you wait.",
+                    "Welcome, stranger. The gate is currently closed. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
+                    "You might want to study the Ember Codex while you wait.",
                   ]}
                   forceDone={spoken}
                   onDone={() => setSpoken(true)}
@@ -380,30 +385,35 @@ export function FrontDoor() {
                       className="absolute inset-0 h-10 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
                     />
                   </Link>
-                  <a
-                    href={X_PROFILE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Follow @pyre_protocol on X"
-                    title="@pyre_protocol"
-                    onClick={(e) => e.stopPropagation()}
-                    className="group relative block h-10 w-10 outline-none transition-transform duration-200 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-brand rounded-md"
-                  >
-                    <img
-                      src={asset("/buttons/x_normal.webp")}
-                      alt=""
-                      draggable={false}
-                      className="block h-10 w-10 select-none"
-                    />
-                    <img
-                      src={asset("/buttons/x_hover.webp")}
-                      alt=""
-                      aria-hidden
-                      draggable={false}
-                      className="absolute inset-0 h-10 w-10 select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
-                    />
-                  </a>
                 </div>
+
+                {/* X, tucked into the box's bottom-right corner. */}
+                <a
+                  href={X_PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow @pyre_protocol on X"
+                  title="@pyre_protocol"
+                  onClick={(e) => e.stopPropagation()}
+                  className={
+                    "group absolute bottom-3 right-3 sm:bottom-4 sm:right-4 block h-10 w-10 outline-none transition-all duration-500 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-brand rounded-md " +
+                    (spoken ? "opacity-100" : "opacity-0 pointer-events-none")
+                  }
+                >
+                  <img
+                    src={asset("/buttons/x_normal.webp")}
+                    alt=""
+                    draggable={false}
+                    className="block h-10 w-10 select-none"
+                  />
+                  <img
+                    src={asset("/buttons/x_hover.webp")}
+                    alt=""
+                    aria-hidden
+                    draggable={false}
+                    className="absolute inset-0 h-10 w-10 select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  />
+                </a>
               </div>
             </div>
           </div>

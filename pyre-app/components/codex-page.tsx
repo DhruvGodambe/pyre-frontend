@@ -2,11 +2,12 @@
 
 /* THE EMBER CODEX, standalone public page (/codex).
 
-   Same content and layout as the in-kingdom CodexReader overlay (components/
-   codex.tsx), but rendered as a normal, ungated page so KOLs can read the docs
-   without any access to the kingdom. It carries its own chapter state (no need
-   for the CodexProvider overlay context), reads the same CODEX content, and links
-   back to the gate. Keep the two renderers visually in sync. */
+   Same structure as always: chapter list on the left, one scrollable chapter
+   on the right, ungated so KOLs can read the docs by link. The chrome is
+   quiet dark surfaces with warm brass borders; the chapter itself is inked
+   onto clean painted parchment (the text multiplies onto the page, so the
+   grain shows through the glyphs). Dark art, the village map and diagrams,
+   is framed as bound-in illustration plates. */
 
 import { useState } from "react";
 import Link from "next/link";
@@ -15,6 +16,13 @@ import { CODEX } from "@/lib/codex/content";
 import { asset } from "@/lib/config";
 import { CodexDiagram } from "@/components/codex-diagrams";
 import { VillageHero } from "@/components/village-hero";
+
+/* Ink on parchment: dark enough to read like print. */
+const INK = "#2e2113";
+const INK_HEAD = "#5d2609";
+const INK_SOFT = "#6b5233";
+const INK_ACCENT = "#9c4a12";
+const PLATE_FRAME = "border-2 border-[#9c7844]/60 rounded-md";
 
 function BookGlyph({ className = "" }: { className?: string }) {
   return (
@@ -42,16 +50,19 @@ export function CodexPage() {
   const heroAlt = building ? `${building.name} in the Pyre kingdom` : chapter.heroAlt ?? "";
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
-      {/* Warm stone wash behind everything, matching the reader. */}
-      <div
-        className="absolute inset-0 -z-10"
-        style={{ background: "radial-gradient(120% 90% at 50% 0%, rgba(240,169,59,0.10), transparent 60%)" }}
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#14100c]">
+      {/* ONE desk under everything: header, chapter list and page all sit on
+          the same wood, so nothing can fail to blend. */}
+      <img
+        src={asset("/world/codex/desk.webp")}
+        alt=""
+        draggable={false}
+        className="absolute inset-0 -z-10 h-full w-full object-cover select-none"
         aria-hidden
       />
 
-      {/* Header */}
-      <header className="flex items-center justify-between gap-3 border-b border-surface-3/60 px-4 py-3 sm:px-6">
+      {/* Header: quiet lettering in the dark above the page. */}
+      <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3 min-w-0">
           <BookGlyph className="h-6 w-6 text-brand shrink-0" />
           <div className="min-w-0">
@@ -70,8 +81,9 @@ export function CodexPage() {
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row">
-        {/* Chapter list: a scroll-strip on mobile, a sidebar on desktop. */}
-        <nav className="shrink-0 border-b md:border-b-0 md:border-r border-surface-3/60 md:w-72 md:overflow-y-auto">
+        {/* Chapter list: a scroll-strip on mobile, a sidebar on desktop,
+            floating in the same dark as the page's backdrop. */}
+        <nav className="shrink-0 md:w-72 md:overflow-y-auto">
           <ul className="flex md:flex-col gap-1 overflow-x-auto p-2 md:p-3">
             {CODEX.map((c) => {
               const active = c.id === chapter.id;
@@ -81,7 +93,9 @@ export function CodexPage() {
                   <button
                     onClick={() => setChapterId(c.id)}
                     className={`w-full flex items-center gap-2.5 text-left rounded-md px-3 py-2 transition-colors ${
-                      active ? "bg-brand/10 border border-brand/40" : "hover:bg-surface-2 border border-transparent"
+                      active
+                        ? "bg-brand/10 border border-[#9c7844]/60"
+                        : "hover:bg-[#241a10]/80 border border-transparent"
                     }`}
                   >
                     {cbIcon ? (
@@ -90,7 +104,11 @@ export function CodexPage() {
                       <span className="h-9 w-9 shrink-0" aria-hidden />
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className={`block font-display text-base leading-tight ${active ? "text-brand" : "text-text-2"}`}>
+                      <span
+                        className={`block font-display text-base leading-tight ${
+                          active ? "text-brand" : "text-[#d8b57a]"
+                        }`}
+                      >
                         {c.title}
                       </span>
                       <span className="hidden md:block text-text-3 text-xs leading-tight mt-0.5">
@@ -104,54 +122,107 @@ export function CodexPage() {
           </ul>
         </nav>
 
-        {/* Chapter body */}
-        <article className="flex-1 min-h-0 overflow-y-auto px-5 py-6 sm:px-8">
-          <div className="mx-auto max-w-2xl">
-            <div className="flex items-center gap-3">
-              {iconSrc && (
-                <img src={asset(iconSrc)} alt="" className="h-11 w-11 shrink-0 object-contain" />
-              )}
-              <div className="min-w-0">
-                <h1 className="font-display text-3xl sm:text-4xl text-brand leading-tight">{chapter.title}</h1>
-                <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{chapter.tagline}</p>
+        {/* Chapter body: a parchment page. The painted page sits fixed behind
+            while the inked words scroll over it. */}
+        <div className="relative flex-1 min-h-0">
+          {/* The page: an old book leaf cut out with real transparency, lying
+              on the desk. On large screens the whole leaf shows (worn edges
+              and all); on small screens the clean center is cropped in. */}
+          <img
+            src={asset("/world/codex/leaf.webp")}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover lg:object-fill select-none lg:[filter:drop-shadow(0_16px_36px_rgba(0,0,0,0.55))]"
+            aria-hidden
+          />
+          <article
+            key={chapter.id}
+            className="codex-ink codex-scroll codex-fade absolute inset-x-0 top-0 bottom-0 overflow-y-auto px-5 py-9 sm:px-10 lg:top-[4.5%] lg:bottom-[8%]"
+          >
+            <div className="mx-auto max-w-2xl pb-10">
+              <div className="flex items-center gap-3">
+                {iconSrc && (
+                  <img
+                    src={asset(iconSrc)}
+                    alt=""
+                    className="h-11 w-11 shrink-0 object-contain drop-shadow-[0_1px_2px_rgba(60,35,10,0.45)]"
+                  />
+                )}
+                <div className="min-w-0">
+                  <h1
+                    className="font-display text-3xl sm:text-4xl leading-tight"
+                    style={{ color: INK_HEAD }}
+                  >
+                    {chapter.title}
+                  </h1>
+                  <p
+                    className="mt-1 text-[10px] uppercase tracking-[0.28em]"
+                    style={{ color: INK_SOFT }}
+                  >
+                    {chapter.tagline}
+                  </p>
+                </div>
+              </div>
+              <div
+                className="mt-4 h-px bg-gradient-to-r from-transparent via-[#8a6030]/70 to-transparent"
+                aria-hidden
+              />
+              {heroSrc === "village" ? (
+                <div
+                  className={`mt-5 ${PLATE_FRAME} overflow-hidden bg-[#241a12]/95 p-1 shadow-[inset_0_0_12px_rgba(40,20,5,0.8)] [&_figure]:mt-0 [&_figure]:rounded-none [&_figure]:border-0 [&_figure]:bg-transparent`}
+                >
+                  <VillageHero />
+                </div>
+              ) : heroSrc ? (
+                <img
+                  src={asset(heroSrc)}
+                  alt={heroAlt}
+                  className={`mt-5 w-full ${PLATE_FRAME} shadow-[0_2px_10px_rgba(60,30,5,0.35)] [filter:sepia(0.15)_saturate(0.95)]`}
+                />
+              ) : null}
+              <div className="mt-6 space-y-6">
+                {chapter.sections.map((s, i) => (
+                  <section key={i} className="space-y-3">
+                    {s.heading && (
+                      <h3 className="font-display text-xl" style={{ color: "#7a3a15" }}>
+                        {s.heading}
+                      </h3>
+                    )}
+                    {s.paragraphs?.map((p, j) => (
+                      <p
+                        key={j}
+                        className={`codex-body${i === 0 && j === 0 ? " codex-lead" : ""}`}
+                        style={{ color: INK }}
+                      >
+                        {p}
+                      </p>
+                    ))}
+                    {s.bullets && (
+                      <ul className="space-y-2">
+                        {s.bullets.map((b, j) => (
+                          <li key={j} className="codex-body flex gap-2" style={{ color: INK }}>
+                            <span className="shrink-0" style={{ color: INK_ACCENT }} aria-hidden>
+                              ✦
+                            </span>
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {s.diagram && (
+                      <div className={`${PLATE_FRAME} bg-[#241a12]/95 p-2 shadow-[inset_0_0_12px_rgba(40,20,5,0.8)]`}>
+                        <CodexDiagram id={s.diagram} />
+                      </div>
+                    )}
+                  </section>
+                ))}
+              </div>
+              <div className="mt-10 text-center text-sm" style={{ color: INK_SOFT }} aria-hidden>
+                ✦ ✦ ✦
               </div>
             </div>
-            {heroSrc === "village" ? (
-              <VillageHero />
-            ) : heroSrc ? (
-              <img
-                src={asset(heroSrc)}
-                alt={heroAlt}
-                className="mt-5 w-full rounded-panel border border-surface-3/70"
-              />
-            ) : null}
-            <div className="mt-6 space-y-6">
-              {chapter.sections.map((s, i) => (
-                <section key={i} className="space-y-3">
-                  {s.heading && <h3 className="font-display text-lg text-text">{s.heading}</h3>}
-                  {s.paragraphs?.map((p, j) => (
-                    <p key={j} className="text-text-2 text-[15px] leading-relaxed">
-                      {p}
-                    </p>
-                  ))}
-                  {s.bullets && (
-                    <ul className="space-y-1.5">
-                      {s.bullets.map((b, j) => (
-                        <li key={j} className="flex gap-2 text-text-2 text-[15px] leading-relaxed">
-                          <span className="text-brand shrink-0" aria-hidden>
-                            ✦
-                          </span>
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {s.diagram && <CodexDiagram id={s.diagram} />}
-                </section>
-              ))}
-            </div>
-          </div>
-        </article>
+          </article>
+        </div>
       </div>
     </div>
   );

@@ -139,15 +139,62 @@ h1, h2, h3, h4 {
 
 
 /* The Emberkeeper's idle: a breath, nothing more. The BACKGROUND stays
-   pixel-static; only the character layer sways (~2px over 5.5s). */
+   pixel-static, and his boots never leave the path: the figure only expands
+   a fraction from the ground up (chest rises, feet planted), no bobbing. */
 @keyframes keeper-idle {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-2px) scale(1.004); }
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.006); }
 }
 .keeper-idle {
   animation: keeper-idle 5.5s ease-in-out infinite;
   transform-origin: 50% 100%;
   will-change: transform;
+}
+
+/* The Ember Codex: text set like print on the painted parchment. The ink
+   multiplies onto the page, so the grain shows through the glyphs, and each
+   chapter opens with a drop cap. */
+.codex-ink {
+  mix-blend-mode: multiply;
+}
+.codex-body {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.7;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+.codex-lead::first-letter {
+  float: left;
+  font-size: 3.05em;
+  line-height: 0.85;
+  padding: 2px 7px 0 0;
+  color: #5d2609;
+  font-weight: 600;
+}
+
+/* The text lives only on the clean part of the page; it fades out softly
+   before reaching the worn edges above and below. */
+.codex-fade {
+  mask-image: linear-gradient(180deg, transparent, black 30px, black calc(100% - 30px), transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, black 30px, black calc(100% - 30px), transparent);
+}
+
+/* Quiet, ink-brown scrollbar on the parchment. */
+.codex-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 58, 21, 0.45) transparent;
+}
+.codex-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.codex-scroll::-webkit-scrollbar-thumb {
+  background: rgba(122, 58, 21, 0.4);
+  border-radius: 3px;
+}
+.codex-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* While he SPEAKS, his eyes flare under the hood (his mouth is masked, so the

@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { CodexPage } from "@/components/codex-page";
 
 export const metadata: Metadata = {
-  title: "The Ember Codex — Pyre Protocol",
+  title: "The Ember Codex: Pyre Protocol",
   description: "Official Pyre Protocol documentation: the flame, the decay, the yield.",
   robots: { index: false, follow: false },
 };
