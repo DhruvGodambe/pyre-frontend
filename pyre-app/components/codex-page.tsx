@@ -74,9 +74,22 @@ export function CodexPage() {
         </div>
         <Link
           href="/"
-          className="shrink-0 rounded-md text-text-3 hover:text-text-2 text-sm px-3 py-2 transition-colors"
+          aria-label="Back to the Gate"
+          className="group relative block shrink-0 outline-none transition-transform duration-200 hover:-translate-y-px hover:drop-shadow-[0_8px_24px_rgba(240,88,24,0.35)] focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
         >
-          ← The Gate
+          <img
+            src={asset("/buttons/gate_normal.png")}
+            alt=""
+            draggable={false}
+            className="block h-10 w-auto select-none"
+          />
+          <img
+            src={asset("/buttons/gate_hover.png")}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="absolute inset-0 h-10 w-auto select-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+          />
         </Link>
       </header>
 
