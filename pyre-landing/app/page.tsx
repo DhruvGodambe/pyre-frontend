@@ -4,7 +4,10 @@
    everything else about the page is Pyre's own.) */
 
 const APP_URL = "https://app.pyreprotocol.com";
-const DOCS_URL = "/codex"; // served here via rewrite; the brand domain is the shareable one
+/* TEMPORARY absolute URL: flip back to "/codex" once pyre-app deploys with its
+   assetPrefix (that deploy is held while keeper-box work is in flight there).
+   The /codex rewrite is already live here, only the app's chunks are missing. */
+const DOCS_URL = "https://app.pyreprotocol.com/codex";
 const X_URL = "https://x.com/pyre_protocol";
 const TELEGRAM_URL = "https://t.me/pyreprotocol";
 

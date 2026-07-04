@@ -17,8 +17,10 @@ const nextConfig = {
   async rewrites() {
     return {
       afterFiles: [
+        // No /_next rewrite: Vercel answers missing /_next/static files before
+        // rewrites run, so the app ships absolute asset URLs instead
+        // (assetPrefix in pyre-app/next.config.mjs).
         { source: "/codex", destination: `${APP}/codex` },
-        { source: "/_next/:path*", destination: `${APP}/_next/:path*` },
         { source: "/world/:path*", destination: `${APP}/world/:path*` },
         { source: "/brand/:path*", destination: `${APP}/brand/:path*` },
       ],

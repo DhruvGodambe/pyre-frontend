@@ -8,6 +8,12 @@ const nextConfig = {
   // World/building art is already pre-sized & compressed at build time, so the
   // on-the-fly optimizer adds nothing. Serve the assets directly instead.
   images: { unoptimized: true },
+  // The Ember Codex is ALSO served at pyreprotocol.com/codex through the
+  // landing project's rewrites (the brand domain is what KOLs share). Vercel
+  // answers missing /_next/static files before rewrites run, so proxied pages
+  // can't fall through for chunks; absolute asset URLs sidestep that entirely.
+  // Production only: previews must load their own (differently hashed) chunks.
+  assetPrefix: process.env.VERCEL_ENV === "production" ? "https://app.pyreprotocol.com" : undefined,
   webpack: (config) => {
     // wagmi v3's @wagmi/connectors barrel references a pile of OPTIONAL wallet
     // SDKs (for connectors we don't use, we ship injected() only). webpack can't
