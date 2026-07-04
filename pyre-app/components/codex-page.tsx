@@ -169,7 +169,7 @@ export function CodexPage() {
               />
               {heroSrc === "village" ? (
                 <div
-                  className={`mt-5 ${PLATE_FRAME} overflow-hidden bg-[#241a12]/95 p-1 shadow-[inset_0_0_12px_rgba(40,20,5,0.8)] [&_figure]:mt-0 [&_figure]:rounded-none [&_figure]:border-0 [&_figure]:bg-transparent`}
+                  className={`mt-5 ${PLATE_FRAME} overflow-hidden shadow-[0_2px_10px_rgba(60,30,5,0.35)] [&_figure]:mt-0 [&_figure]:rounded-none [&_figure]:border-0 [&_figure]:bg-transparent`}
                 >
                   <VillageHero />
                 </div>
