@@ -7,6 +7,7 @@
 
 import { notFound } from "next/navigation";
 import { KeeperBox, KeeperText, PlateButton } from "@/components/ui/keeper-box";
+import { Panel, ProgressBar } from "@/components/ui/primitives";
 import { asset } from "@/lib/config";
 
 const LONG =
@@ -68,6 +69,58 @@ export default function KeeperPreview() {
           </div>
         </div>
       </KeeperBox>
+
+      {/* FORGED PANEL PILOT (Ashen Cup language test): the keeper box chrome
+          carrying an in-kingdom panel. Static stand-in content, the real
+          Quests box needs live providers. */}
+      <div className="w-full max-w-4xl grid gap-8 items-start lg:grid-cols-3">
+        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2" frame="forged">
+          <div className="space-y-4">
+            <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
+              <span className="text-brand">⚠ 260 Points</span> still unclaimed. Rewards are revealed at launch.
+            </div>
+            <div className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
+              <span className="text-text-3 text-xs uppercase tracking-wider">Points earned</span>
+              <span className="tabular text-brand text-lg">140</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-text-3 uppercase tracking-wider">Your quests</span>
+                <span className="tabular text-text-2">2 of 6 done</span>
+              </div>
+              <ProgressBar value={2 / 6} />
+            </div>
+            <div className="rounded-md border border-brand/40 bg-brand/[0.06] px-3 py-2.5">
+              <div className="text-text-3 text-[10px] uppercase tracking-widest">Quest 3 of 6</div>
+              <div className="mt-0.5 flex items-center justify-between gap-2">
+                <span className="text-sm text-text">Follow Pyre on X</span>
+                <span className="tabular shrink-0 text-xs text-text-3">+40</span>
+              </div>
+              <p className="mt-0.5 text-text-3 text-xs">Open the profile and follow. Come back and it counts.</p>
+            </div>
+            <div className="rounded-md bg-surface-2 px-3 py-2.5 opacity-70">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm text-text-3 line-through">Take the tour</span>
+                <span className="tabular shrink-0 text-xs text-success">✓ 60</span>
+              </div>
+            </div>
+          </div>
+        </Panel>
+        <Panel title="Leaderboard" tagline="Top point earners" frame="forged">
+          <ol className="space-y-1">
+            {[
+              ["Emberhand", 940],
+              ["ashen_kate", 720],
+              ["0xFlame", 615],
+            ].map(([name, pts], i) => (
+              <li key={i} className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm bg-surface-2">
+                <span className="text-text-2 tabular">#{i + 1} {name}</span>
+                <span className="tabular text-brand shrink-0">{pts}</span>
+              </li>
+            ))}
+          </ol>
+        </Panel>
+      </div>
 
       {/* Phone width: the narrowest real case. */}
       <div className="w-[358px]">

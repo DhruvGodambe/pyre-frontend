@@ -15,11 +15,11 @@ import { asset } from "@/lib/config";
    interior, so a panel reads like a wooden plaque / stone tablet hung on the
    tavern wall, the warm interior still glowing through. CSS-only (no asset), so
    we can dial the look live; swap to a real designer texture later. */
-type FrameSkin = "wood" | "stone";
+type FrameSkin = "wood" | "stone" | "forged";
 /* Each skin fully defines the outer <section> style (it owns its own thickness,
    via padding for a textured band or a border for a nine-sliced frame) plus the
    corner radius the recessed interior should use. */
-const FRAME_SKINS: Record<FrameSkin, { outer: CSSProperties; innerRadius: number }> = {
+const FRAME_SKINS: Record<Exclude<FrameSkin, "forged">, { outer: CSSProperties; innerRadius: number }> = {
   wood: {
     innerRadius: 7,
     outer: {
@@ -95,6 +95,32 @@ export function Panel({
       or pick "wood" / "stone" explicitly. Opt-in, so only framed panels change. */
   frame?: boolean | FrameSkin;
 }) {
+  // The forged skin: the keeper box's blackened-iron chrome (same border-image
+  // frame, same forged name plate riding the top edge), so the buildings speak
+  // the language the visitor already met at the gate and in the tour. The title
+  // moves ONTO the plate; the tagline stays inside as the first line.
+  if (frame === "forged") {
+    return (
+      <section className={`keeper-frame ${className}`}>
+        {title && (
+          <div className="keeper-plate">
+            <span>{title}</span>
+          </div>
+        )}
+        <div className="relative">
+          {(tagline || action) && (
+            <header className="flex items-baseline justify-between mb-4">
+              {tagline && (
+                <p className="text-text-3 text-xs uppercase tracking-widest">{tagline}</p>
+              )}
+              {action}
+            </header>
+          )}
+          {children}
+        </div>
+      </section>
+    );
+  }
   if (frame) {
     const skin = FRAME_SKINS[frame === true ? "wood" : frame];
     return (

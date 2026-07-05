@@ -57,7 +57,7 @@ export function TavernPanel() {
   }, [pending, clearPending]);
 
   return (
-    <div ref={ref} className="space-y-5">
+    <div ref={ref} className="space-y-8">
       <p className="text-text-2 text-sm">
         Earn <span className="text-brand">Points</span> before launch: complete
         quests, invite friends, and climb the leaderboard. What Points unlock is
@@ -66,19 +66,21 @@ export function TavernPanel() {
 
       {/* Three separate boxes. On desktop the tall Quests box takes the left two
           thirds; Invite + Leaderboard stack down the right. On mobile they fall
-          into one column. No tabs, everything is visible at once. */}
-      <div className="grid gap-5 items-start lg:grid-cols-3">
-        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2" frame>
+          into one column. No tabs, everything is visible at once. The wide gaps
+          are load-bearing: each forged name plate straddles its frame's top
+          edge, so panels need clearance above. */}
+      <div className="grid gap-8 items-start lg:grid-cols-3">
+        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2" frame="forged">
           <QuestFunnel />
         </Panel>
-        <div className="space-y-5">
+        <div className="space-y-8">
           <div ref={summonRef}>
-            <Panel title="Invite friends" tagline="Earn Points for every friend" frame>
+            <Panel title="Invite friends" tagline="Earn Points for every friend" frame="forged">
               <SummonSection />
             </Panel>
           </div>
           <div ref={standingRef}>
-            <Panel title="Leaderboard" tagline="Top point earners" frame>
+            <Panel title="Leaderboard" tagline="Top point earners" frame="forged">
               <QuestLeaderboard />
             </Panel>
           </div>

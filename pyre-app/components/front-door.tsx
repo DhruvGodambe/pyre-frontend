@@ -189,11 +189,13 @@ export function FrontDoor() {
     return () => window.clearTimeout(t);
   }, [keeper]);
 
-  // Returning wallet/guest visitor → straight into the app. Otherwise give the
-  // identity a beat to hydrate (guest from storage, wallet reconnect), then commit
-  // to the public front door (film + gate) for a fresh visitor.
+  // PRE-LAUNCH: everyone faces the closed gate, no exceptions. A saved
+  // wallet/guest identity from before the gate existed does NOT skip past it
+  // (team still enters via the Enter Pyre plate; the film has a Skip plate).
+  // AT LAUNCH the returning-visitor fast path comes back: identity set →
+  // straight into the app, no film, no gate.
   useEffect(() => {
-    if (identity.isSet) {
+    if (LAUNCHED && identity.isSet) {
       router.replace(KINGDOM_PATH);
       return;
     }

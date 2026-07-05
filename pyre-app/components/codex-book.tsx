@@ -216,11 +216,9 @@ export function CodexBook({
                         ))}
                       </ul>
                     )}
-                    {s.diagram && (
-                      <div className={`${PLATE_FRAME} bg-[#241a12]/95 p-2 shadow-[inset_0_0_12px_rgba(40,20,5,0.8)]`}>
-                        <CodexDiagram id={s.diagram} />
-                      </div>
-                    )}
+                    {/* Illuminated plates paint their own borders and sit on
+                        the parchment directly, like a figure printed on the leaf. */}
+                    {s.diagram && <CodexDiagram id={s.diagram} />}
                   </section>
                 ))}
               </div>

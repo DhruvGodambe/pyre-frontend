@@ -12,8 +12,13 @@
 
 import type { BuildingId } from "@/components/buildings";
 
-/** Functional diagrams the reader can render inside a section (components/codex-diagrams.tsx). */
-export type CodexDiagramId = "yield-flow" | "decay-curve";
+/** Illuminated plates the reader can render inside a section (components/codex-diagrams.tsx). */
+export type CodexDiagramId =
+  | "great-map"
+  | "decay-curve"
+  | "tier-ladder"
+  | "burn-tracks"
+  | "ascend-rite";
 
 export interface CodexSection {
   heading?: string;
@@ -54,7 +59,7 @@ export const CODEX: CodexChapter[] = [
         ],
       },
       {
-        diagram: "yield-flow",
+        diagram: "great-map",
       },
       {
         paragraphs: [
@@ -197,6 +202,9 @@ export const CODEX: CodexChapter[] = [
         ],
       },
       {
+        diagram: "tier-ladder",
+      },
+      {
         heading: "Two burn tracks",
         paragraphs: [
           "There are two burn tracks with identical thresholds. The token burn track burns $PYRE alone. The LP burn track pairs $PYRE with $ETH as liquidity in the canonical pool and locks the resulting position permanently: principal can never be withdrawn, by anyone, including the burner.",
@@ -322,6 +330,9 @@ export const CODEX: CodexChapter[] = [
         ],
       },
       {
+        diagram: "burn-tracks",
+      },
+      {
         heading: "The Immolated",
         paragraphs: [
           "Beyond the top tier sits one further form: the Immolated, the rarest state the Acolyte takes and the protocol's terminal prestige. It is not a tier reached by accumulation but a rite chosen after reaching Pyre. Its mechanics are specified in the chapter on the Hall of the Immolated.",
@@ -352,6 +363,9 @@ export const CODEX: CodexChapter[] = [
           "Eligibility requires the Pyre tier, 300,000 $PYRE of cumulative burn weight. The rite itself burns a further 100,000 $PYRE in the Hall, executed through the ImmolatedGate contract. A wallet on the LP track pairs the equivalent $ETH as well, both locked permanently, and becomes LP Immolated. The rite executes once per wallet and cannot be undone.",
           "For an LP Immolated wallet the sacrifice keeps working after the rite: the locked liquidity remains live in the pool and keeps generating yield that flows back into the protocol, for as long as the pool exists.",
         ],
+      },
+      {
+        diagram: "ascend-rite",
       },
       {
         heading: "What it grants",
