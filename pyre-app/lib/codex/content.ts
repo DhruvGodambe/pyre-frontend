@@ -384,8 +384,21 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "Before launch, the Ashen Cup is the only unlocked building. It hosts the quest program: complete quests to earn Embers (points) and climb the leaderboard, and earn additional Embers for every invited participant who arrives and takes part.",
-          "What Embers redeem for is disclosed closer to launch. Standings accumulate now, are recorded, and are retained through launch.",
+          "The Ashen Cup is the kingdom's tavern: the hearth where the community gathers while the fires of the protocol are being prepared, and the home of the quest program.",
+          "Quests arrive at the Cup as drops, not on a fixed schedule. Each one is a small task, and completing it earns Embers, the points of the pre-launch season. A fresh drop is marked as newly lit until it has been seen, so a returning visitor can tell at a glance whether the board has changed.",
+        ],
+      },
+      {
+        heading: "Embers and the leaderboard",
+        paragraphs: [
+          "Every Ember earned counts toward a single leaderboard, visible inside the Cup. Totals accumulate now, are recorded, and are retained through launch: nothing earned at the Cup expires when the protocol goes live.",
+          "What Embers redeem for is disclosed closer to launch.",
+        ],
+      },
+      {
+        heading: "Invitations",
+        paragraphs: [
+          "The Cup rewards those who bring others to the table. Every invited participant who arrives and takes part credits the inviter with additional Embers, on top of everything the newcomer earns for themselves.",
         ],
       },
     ],
