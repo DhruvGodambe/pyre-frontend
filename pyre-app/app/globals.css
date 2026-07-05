@@ -138,6 +138,198 @@ h1, h2, h3, h4 {
 
 
 
+/* ============================================================================
+   THE KEEPER'S BOX, the Emberkeeper's forged dialogue frame (KeeperBox).
+   A painted blackened-iron frame (Nano Banana asset, border-image so it
+   scales to any size), a warm charcoal panel lit from below, his name on a
+   forged plate riding the top edge, and embers rising through the lower
+   third. Colors live here, in the control panel, not in the component.
+   ========================================================================== */
+.keeper-frame {
+  --kf: 44px; /* frame thickness; corners + edges render from the painted art */
+  position: relative;
+  border: var(--kf) solid transparent;
+  /* `fill` carries the painted charred-soot panel + its baked bottom glow. */
+  border-image: url("/world/ui/keeper-frame.webp") 165 fill / var(--kf) / 0 stretch;
+}
+@media (max-width: 640px) {
+  .keeper-frame { --kf: 30px; }
+}
+/* The corner embers breathe: a soft warm bloom over the painted coals in the
+   four corner plates, nothing else moves. Static under reduced motion. */
+@keyframes keeper-corners {
+  from { opacity: 0.1; }
+  to   { opacity: 0.42; }
+}
+.keeper-frame::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--kf) * -0.9);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 0% 0%,     rgba(255, 120, 30, 0.55), transparent 11%),
+    radial-gradient(circle at 100% 0%,   rgba(255, 120, 30, 0.55), transparent 11%),
+    radial-gradient(circle at 0% 100%,   rgba(255, 130, 35, 0.7),  transparent 13%),
+    radial-gradient(circle at 100% 100%, rgba(255, 130, 35, 0.7),  transparent 13%);
+  animation: keeper-corners 3.6s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .keeper-frame::after { animation: none; opacity: 0.22; }
+}
+
+/* The forged name plate, straddling the top edge. Outer = bronze rim,
+   inner = dark iron face; the same bevel clip on both makes the rim. */
+.keeper-plate {
+  position: absolute;
+  left: 50%;
+  top: calc(-1 * var(--kf));
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  padding: 1.5px;
+  clip-path: polygon(0 50%, 12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%);
+  background: linear-gradient(180deg, #8a6a3f, #52381e 55%, #2a1c10);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.7));
+  white-space: nowrap;
+}
+.keeper-plate > span {
+  display: block;
+  clip-path: polygon(0 50%, 11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%);
+  background: linear-gradient(180deg, #38302a, #1b1512 60%, #120e0b);
+  padding: 0.42em 1.9em 0.38em;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #d8ae6b;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* Primary actions: forged plates riding the frame's bottom edge, mirroring
+   the name plate above. One blank plate asset (border-image) fits every
+   label; labels stay real HTML. 52px tall on phones / 47px on desktop, the
+   Material (48dp) / Apple HIG (44pt) touch floors. */
+.keeper-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Top-anchored on the panel's bottom edge: if plates ever wrap, extra rows
+     grow DOWN past the frame, never up over the words. */
+  top: calc(100% - 2px);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.keeper-actions > * { pointer-events: auto; }
+.keeper-plate-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  min-width: 128px;
+  padding: 0 26px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-decoration: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+  transition: transform var(--duration-fast);
+}
+@media (min-width: 640px) {
+  .keeper-plate-btn { height: 47px; }
+}
+/* Two stacked skins, THE DESIGNER'S button plate (blanked by Nano Banana so
+   labels stay HTML): normal below, molten hover above cross-fading in, the
+   same no-flicker pattern as the rest of the button family. */
+.keeper-plate-btn::before,
+.keeper-plate-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 11px solid transparent;
+  pointer-events: none;
+}
+.keeper-plate-btn::before {
+  border-image: url("/world/ui/keeper-plate.webp") 120 fill / 11px stretch;
+}
+.keeper-plate-btn::after {
+  border-image: url("/world/ui/keeper-plate-hover.webp") 120 fill / 11px stretch;
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+.keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked)::after,
+.keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked)::after {
+  opacity: 1;
+}
+.keeper-plate-btn > span {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--color-brand);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+}
+@media (max-width: 640px) {
+  .keeper-plate-btn { padding: 0 18px; min-width: 108px; }
+  .keeper-plate-btn > span { font-size: 15px; }
+}
+.keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked),
+.keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked) {
+  transform: translateY(-1px);
+}
+.keeper-plate-btn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -5px;
+}
+/* Shut plates: true disabled and the LOCKED variant share one cold, ashen
+   look. Locked stays clickable (the keeper answers the tap), so it keeps the
+   base cursor and a faint press dip as proof the tap registered. */
+.keeper-plate-btn:disabled,
+.keeper-plate-btn--locked {
+  cursor: not-allowed;
+  filter: grayscale(1) brightness(0.75);
+}
+.keeper-plate-btn:disabled > span,
+.keeper-plate-btn--locked > span { color: #8d8272; }
+/* The lock medallion is dark bronze art and the locked plate is already
+   grayscaled + dimmed, so the crest gets LIFTED instead: brightened well past
+   the label so it reads as the state's headline, with a shadow to pull it off
+   the plate. */
+.keeper-plate-btn--locked > span > img {
+  filter: brightness(1.85) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+}
+.keeper-plate-btn--locked:active { transform: translateY(1px); }
+
+/* The fixed narration window: always --klines lines tall no matter the
+   script; KeeperText slides earlier lines up so the spoken line is always
+   the bottom visible one (teleprompter, the fixed-box pattern from shipped
+   games and subtitle standards). */
+.keeper-window {
+  overflow: hidden;
+  height: calc(var(--klines, 3) * 23px);
+}
+.keeper-window p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 23px;
+  color: var(--color-text-2);
+}
+.keeper-window-scroll {
+  transition: transform 280ms var(--ease-warm);
+}
+@media (prefers-reduced-motion: reduce) {
+  .keeper-window-scroll { transition: none; }
+}
+
 /* The Emberkeeper's idle: a breath, nothing more. The BACKGROUND stays
    pixel-static, and his boots never leave the path: the figure only expands
    a fraction from the ground up (chest rises, feet planted), no bobbing. */
@@ -195,14 +387,4 @@ h1, h2, h3, h4 {
 }
 .codex-scroll::-webkit-scrollbar-track {
   background: transparent;
-}
-
-/* While he SPEAKS, his eyes flare under the hood (his mouth is masked, so the
-   eyes carry the voice). */
-@keyframes keeper-eyes {
-  0%, 100% { opacity: 0.1; }
-  50% { opacity: 0.75; }
-}
-.keeper-eyes {
-  animation: keeper-eyes 1.3s ease-in-out infinite;
 }

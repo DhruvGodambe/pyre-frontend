@@ -22,7 +22,8 @@ import { useIsDesktop } from "@/components/ui/use-media";
 import { asset } from "@/lib/config";
 import { storageGet, storageSet } from "@/lib/safe-storage";
 import { VOICE_TIMING } from "@/lib/tour-voice-timing";
-import { ImageButton, type ImageButtonName } from "@/components/ui/image-button";
+import { ImageButton } from "@/components/ui/image-button";
+import { KeeperBox, KeeperText, PlateButton } from "@/components/ui/keeper-box";
 
 /* How far (seconds) the revealed text runs ahead of the voice. A touch of lead
    absorbs alignment jitter; reading slightly early feels in-sync, trailing
@@ -127,6 +128,25 @@ export function TourNarration() {
     };
   }, [voice, muted]);
 
+  // Reading-pace fallback: with no voice pacing (muted, no clip, autoplay
+  // blocked, or the clip ended early) the fixed window still fills at a
+  // comfortable subtitle pace instead of jumping to the tail of a long line.
+  // Monotonic: the reveal never moves backwards when pacing sources swap.
+  const beatText = tour.beat?.text ?? "";
+  const [synth, setSynth] = useState(0);
+  const maxShownRef = useRef(0);
+  useIsomorphicLayoutEffect(() => {
+    setSynth(0);
+    maxShownRef.current = 0;
+  }, [beatText]);
+  useEffect(() => {
+    if (!beatText) return;
+    const id = window.setInterval(() => {
+      setSynth((v) => (v >= beatText.length ? v : v + 1));
+    }, 24);
+    return () => window.clearInterval(id);
+  }, [beatText]);
+
   if (!tour.beat) return null;
   const overview = tour.beat.overview;
   const b = tour.beat.building ? BUILDING_BY_ID[tour.beat.building] : null;
@@ -144,11 +164,6 @@ export function TourNarration() {
       : !inside && isDesktop
         ? "Step inside"
         : "Continue";
-  const primaryArt: ImageButtonName = overview
-    ? "begintour"
-    : !tour.isLastBeat && !inside && isDesktop
-      ? "stepinside"
-      : "continue";
   const headerLabel = overview
     ? "The Pyre Kingdom"
     : inside
@@ -166,25 +181,32 @@ export function TourNarration() {
   // missing data). The full line is always laid out (unspoken part invisible)
   // so the box keeps its final height and nothing reflows mid-line.
   const text = tour.beat.text;
-  let shown = text.length;
+  let paced: number | null = null;
   if (playhead !== null && voice) {
     const words = text.split(" ");
     const timing = VOICE_TIMING[voice]?.find((t) => t.length === words.length);
     if (timing) {
       const t = playhead + VOICE_LEAD;
-      shown = 0;
+      paced = 0;
       for (let i = 0; i < words.length; i++) {
         const [start, end] = timing[i];
         if (t >= end) {
-          shown += words[i].length + 1; // the whole word and its trailing space
+          paced += words[i].length + 1; // the whole word and its trailing space
         } else {
-          if (t > start) shown += Math.round((words[i].length * (t - start)) / (end - start));
+          if (t > start) paced += Math.round((words[i].length * (t - start)) / (end - start));
           break;
         }
       }
-      shown = Math.min(shown, text.length);
+      paced = Math.min(paced, text.length);
     }
   }
+  // Voice paces when it can; the reading-pace counter carries otherwise. The
+  // max() keeps the reveal monotonic across source swaps (e.g. clip ends).
+  const shown = Math.min(
+    text.length,
+    Math.max(paced ?? synth, maxShownRef.current)
+  );
+  maxShownRef.current = shown;
 
   return (
     <>
@@ -209,27 +231,32 @@ export function TourNarration() {
           />
         </div>
       )}
-      <div className="pointer-events-auto w-full max-w-xl rounded-panel bg-surface/95 border border-surface-3/60 shadow-panel backdrop-blur p-4 animate-entry">
-        <div className="flex gap-3.5">
+      <KeeperBox
+        className="pointer-events-auto w-full max-w-xl shadow-panel animate-entry"
+        actions={<PlateButton label={primaryLabel} onClick={onPrimary} />}
+      >
+        <div className="flex items-center gap-4">
           {/* THE EMBERKEEPER: the designer's character art (hooded, masked,
-              burning eyes), the same keeper who greets at the front door.
-              `voice` plays his spoken line. */}
-          <div className="shrink-0">
-            <img
-              src={asset("/world/emberkeeper/arm-out.webp")}
-              alt=""
-              draggable={false}
-              className="h-16 w-16 rounded-full object-cover object-top ring-1 ring-brand/40 shadow-[0_0_20px_-6px_rgba(240,169,59,0.7)] select-none"
-              aria-hidden
-            />
-          </div>
+              burning eyes), the same keeper who greets at the front door,
+              framed square like the front door's close-up and centered on
+              the text column. The name lives on the forged plate riding the
+              box's top edge. */}
+          <img
+            src={asset("/world/emberkeeper/arm-out.webp")}
+            alt=""
+            draggable={false}
+            className="h-20 w-20 sm:h-28 sm:w-28 shrink-0 rounded-md object-cover object-top ring-1 ring-black/70 shadow-[0_2px_10px_rgba(0,0,0,0.6)] select-none"
+            aria-hidden
+          />
 
           {/* Words + controls */}
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="text-text-3 text-[11px] uppercase tracking-[0.2em]">
-                The Emberkeeper
-              </span>
+              <div>
+                {tour.index > 0 && (
+                  <ImageButton name="back" label="Back" onClick={tour.back} width={80} />
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={cycleSpeed}
@@ -263,28 +290,10 @@ export function TourNarration() {
               </div>
             </div>
             <div className="mb-0.5 text-text-3 text-[10px] uppercase tracking-widest">{headerLabel}</div>
-            <p className="text-text-2 text-sm leading-relaxed">
-              <span className="sr-only">{text}</span>
-              <span aria-hidden>
-                {text.slice(0, shown)}
-                <span className="opacity-0">{text.slice(shown)}</span>
-              </span>
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              {tour.index > 0 && (
-                <ImageButton name="back" label="Back" onClick={tour.back} width={96} />
-              )}
-              <div className="flex-1" />
-              <ImageButton
-                name={primaryArt}
-                label={primaryLabel}
-                onClick={onPrimary}
-                width={primaryArt === "begintour" ? 168 : 156}
-              />
-            </div>
+            <KeeperText text={text} shown={shown} lines={3} />
           </div>
         </div>
-      </div>
+      </KeeperBox>
     </div>
 
     {/* Skip confirmation: loss-aversion before bailing. Finishing the tour grants

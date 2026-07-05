@@ -43,7 +43,9 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
     const t0 = performance.now();
     const step = (t: number) => {
       const k = Math.min(1, (t - t0) / ms);
-      el.volume = from + (target - from) * k;
+      // Clamp: an eased/ducked target can land a hair outside [0,1], and the
+      // media element throws (IndexSizeError) instead of clamping.
+      el.volume = Math.min(1, Math.max(0, from + (target - from) * k));
       if (k < 1) rafRef.current = requestAnimationFrame(step);
       else done?.();
     };
