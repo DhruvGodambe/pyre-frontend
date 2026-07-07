@@ -1,13 +1,15 @@
-"""Align the Emberkeeper voice clips to the tour script, word by word.
+"""Align the Emberkeeper voice clips to their scripts, word by word.
 
-Reads every tour line (text + preText variants) straight out of lib/tour.tsx,
-transcribes its voice clip with faster-whisper (word timestamps), aligns the
-known script words to the heard words, and writes lib/tour-voice-timing.ts:
-per clip, per text variant, a [start, end] second pair for every word. The
-narration box uses those to reveal the line letter-exact with the voice.
+Reads every tour line (text + preText variants) straight out of lib/tour.tsx
+PLUS the front door's voiced scripts (gate greeting + sealed reply) out of
+components/front-door.tsx, transcribes each voice clip with faster-whisper
+(word timestamps), aligns the known script words to the heard words, and
+writes lib/tour-voice-timing.ts: per clip, per text variant, a [start, end]
+second pair for every word. The narration box and the gate's KeeperSpeech use
+those to reveal the line letter-exact with the voice.
 
 Run from pyre-app/:  python scripts/align-voice.py
-Re-run whenever voice clips or tour lines change.
+Re-run whenever voice clips, tour lines, or the gate lines change.
 
 Requires: pip install faster-whisper  (model downloads on first run)
 """
@@ -20,6 +22,7 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent
 TOUR = APP / "lib" / "tour.tsx"
+FRONT_DOOR = APP / "components" / "front-door.tsx"
 OUT = APP / "lib" / "tour-voice-timing.ts"
 VOICE_DIR = APP / "public"
 
@@ -27,6 +30,31 @@ LINE_RE = re.compile(
     r'text:\s*"([^"]+)",\s*preText:\s*"([^"]+)",\s*voice:\s*"([^"]+)"',
     re.DOTALL,
 )
+
+
+def gate_lines() -> list[tuple[str, str, str]]:
+    """The front door's voiced scripts as (text, pre_text, voice) rows, read
+    out of front-door.tsx. Line arrays join with a single space: KeeperSpeech
+    joins them with one "\\n" and splits words on space OR newline, so the
+    word count (and separator accounting) matches."""
+    src = FRONT_DOOR.read_text(encoding="utf-8")
+
+    def const_str(name: str) -> str:
+        m = re.search(rf'const {name} = "([^"]+)";', src)
+        if not m:
+            sys.exit(f"missing const {name} in front-door.tsx")
+        return m.group(1)
+
+    def const_lines(name: str) -> str:
+        m = re.search(rf"const {name} = \[(.*?)\];", src, re.DOTALL)
+        if not m:
+            sys.exit(f"missing const {name} in front-door.tsx")
+        return " ".join(re.findall(r'"([^"]+)"', m.group(1)))
+
+    return [
+        (const_lines("GREETING_LINES"), const_lines("GREETING_LINES"), const_str("KEEPER_VOICE")),
+        (const_lines("SEALED_LINES"), const_lines("SEALED_LINES"), const_str("SEALED_VOICE")),
+    ]
 
 
 def norm(word: str) -> str:
@@ -90,6 +118,8 @@ def main() -> None:
     if not lines:
         sys.exit("No text/preText/voice blocks found in lib/tour.tsx")
     print(f"{len(lines)} voiced tour lines found in tour.tsx")
+    lines += gate_lines()
+    print("+ 2 gate lines from front-door.tsx")
 
     from faster_whisper import WhisperModel
 

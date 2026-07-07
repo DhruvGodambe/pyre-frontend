@@ -36,6 +36,7 @@ import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor } from "@/lib/sfx";
+import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 
 /* Pre-launch the gate stands SEALED and the EMBERKEEPER stands before it:
    the designer EXACT character art (AI-matted cutout, zero repainting),
@@ -46,8 +47,14 @@ const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
 
 /* The keeper's voice for this scene. NOTE: free-tier ElevenLabs test clip in
    the gitignored voice-previews folder, so production simply stays silent
-   (the play() catch swallows the 404) until the licensed voice replaces it. */
+   (the play() catch swallows the 404) until the licensed voice replaces it.
+   When a clip OR its lines change, re-run scripts/align-voice.py so the
+   karaoke timing below stays letter-exact. */
 const KEEPER_VOICE = "/voice-previews/mystic-callum-gate.mp3";
+const GREETING_LINES = [
+  "Welcome, stranger. The gate is currently closed. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
+  "You might want to study the Ember Codex while you wait.",
+];
 
 /* His answer to a hand on the sealed door (same voice, same recipe as the
    gate clip; regenerate via ElevenLabs if the lines change). */
@@ -56,42 +63,116 @@ const SEALED_LINES = [
   "Patience, stranger. This gate stays sealed until the first flame rises.",
   "Study the Ember Codex, and be ready when the doors open.",
 ];
-const SEALED_TEXT_LEN = SEALED_LINES.join("\n").length;
 
-/* The keeper's lines, typed out like the tour's narration and shown through
-   the KeeperBox's fixed 3-line window (the box never grows with the script;
-   earlier lines slide up teleprompter-style). Clicking the box (forceDone)
-   lands everything at once. */
+/* How far (seconds) the revealed text runs ahead of the voice, same lead as
+   the tour narration: a touch of early reads as in-sync, trailing as broken. */
+const VOICE_LEAD = 0.12;
+
+/* The keeper's lines through the KeeperBox's fixed 3-line window (the box
+   never grows with the script; earlier lines slide up teleprompter-style).
+   The reveal is paced against the CLIP'S OWN PLAYHEAD with the word
+   timestamps from scripts/align-voice.py, the same letter-exact karaoke as
+   the tour narration: the text waits for the voice and never runs ahead of
+   it. With no usable clip (missing in production, autoplay refused, ended
+   early) it falls back to a reading-pace typewriter. Clicking the box
+   (forceDone) lands everything at once. */
 function KeeperSpeech({
   lines,
+  voice,
+  audioRef,
   forceDone,
   onDone,
-  msPerChar = 22,
 }: {
   lines: string[];
+  /** the clip speaking this text; its playhead paces the reveal. */
+  voice: string;
+  /** receives the live Audio element so the caller can quiet a skip. */
+  audioRef: React.MutableRefObject<HTMLAudioElement | null>;
   forceDone: boolean;
   onDone: () => void;
-  /** typing pace; the caller stretches it to the voice clip's duration. */
-  msPerChar?: number;
 }) {
   const text = lines.join("\n");
   const total = text.length;
-  const [n, setN] = useState(0);
+  // The clip's playhead in seconds; null = nothing to pace against (fall back
+  // to the reading-pace counter).
+  const [playhead, setPlayhead] = useState<number | null>(0);
+  const [synth, setSynth] = useState(0);
+  const maxShownRef = useRef(0);
   const doneRef = useRef(false);
+
+  // Create and play the clip, following its playhead while it sounds (the
+  // tour narration's machinery). The light-the-pyre hold was the gesture, so
+  // playback is allowed; if a browser still refuses, the watchdog bails to
+  // the typewriter.
+  useEffect(() => {
+    const a = new Audio(asset(voice));
+    audioRef.current = a;
+    let raf = 0;
+    const follow = () => {
+      if (!a.paused && !a.ended) setPlayhead(a.currentTime);
+      raf = requestAnimationFrame(follow);
+    };
+    const bail = () => {
+      if (audioRef.current === a) setPlayhead(null);
+    };
+    a.addEventListener("ended", bail);
+    a.addEventListener("error", bail);
+    setPlayhead(0);
+    raf = requestAnimationFrame(follow);
+    void a.play().catch(bail);
+    const watchdog = window.setTimeout(() => {
+      if (a.paused || a.currentTime === 0) bail();
+    }, 2000);
+    return () => {
+      window.clearTimeout(watchdog);
+      cancelAnimationFrame(raf);
+      a.pause();
+      if (audioRef.current === a) audioRef.current = null;
+    };
+  }, [voice, audioRef]);
+
+  // Reading-pace fallback: only consulted while there is no voice pacing.
   useEffect(() => {
     const id = window.setInterval(() => {
-      setN((v) => (v >= total ? v : v + 1));
-    }, msPerChar);
+      setSynth((v) => (v >= total ? v : v + 1));
+    }, 24);
     return () => window.clearInterval(id);
-  }, [total, msPerChar]);
-  const shownTotal = forceDone ? total : n;
+  }, [total]);
+
+  // Letter-exact pacing against the clip's word timestamps. Lines join with
+  // "\n" and words split on space OR newline so the word count (and the
+  // one-separator-per-word character accounting) matches the timing table.
+  const words = text.split(/[ \n]/);
+  const timing = VOICE_TIMING[voice]?.find((t) => t.length === words.length);
+  let paced: number | null = null;
+  if (playhead !== null && timing) {
+    const t = playhead + VOICE_LEAD;
+    paced = 0;
+    for (let i = 0; i < words.length; i++) {
+      const [start, end] = timing[i];
+      if (t >= end) {
+        paced += words[i].length + 1; // the whole word and its separator
+      } else {
+        if (t > start) paced += Math.round((words[i].length * (t - start)) / (end - start));
+        break;
+      }
+    }
+    paced = Math.min(paced, total);
+  }
+  // Voice paces when it can; the reading-pace counter carries otherwise. The
+  // max() keeps the reveal monotonic when pacing sources swap mid-line.
+  const shown = forceDone
+    ? total
+    : Math.min(total, Math.max(paced ?? synth, maxShownRef.current));
+  maxShownRef.current = shown;
+
   useEffect(() => {
-    if (shownTotal >= total && !doneRef.current) {
+    if (shown >= total && !doneRef.current) {
       doneRef.current = true;
       onDone();
     }
-  }, [shownTotal, total, onDone]);
-  return <KeeperText text={text} shown={shownTotal} lines={3} />;
+  }, [shown, total, onDone]);
+  return <KeeperText text={text} shown={shown} lines={3} />;
 }
 
 export function FrontDoor() {
@@ -116,30 +197,11 @@ export function FrontDoor() {
   // the line; 0 = still on the greeting.
   const [sealedReply, setSealedReply] = useState(0);
   const [replyDone, setReplyDone] = useState(false);
-  const [voiceMs, setVoiceMs] = useState(22);
-  const [replyMs, setReplyMs] = useState(22);
+  // The live clips, assigned by each KeeperSpeech (which owns playback and
+  // paces its text against the clip's playhead); held here so a deliberate
+  // skip can quiet them.
   const keeperAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // His voice: plays when the box opens (the light-the-pyre hold was the
-  // gesture, so playback is allowed; if a browser still refuses, the words
-  // simply type in silence). The typewriter stretches to the clip's length.
-  const KEEPER_TEXT_LEN = 187; // combined line length, keeps pacing honest
-  useEffect(() => {
-    if (keeper !== "box") return;
-    const a = new Audio(asset(KEEPER_VOICE));
-    keeperAudioRef.current = a;
-    a.addEventListener("loadedmetadata", () => {
-      if (Number.isFinite(a.duration) && a.duration > 1) {
-        setVoiceMs(Math.max(16, Math.round((a.duration * 1000 * 0.94) / KEEPER_TEXT_LEN)));
-      }
-    });
-    a.play().catch(() => {});
-    return () => {
-      a.pause();
-      keeperAudioRef.current = null;
-    };
-  }, [keeper]);
 
   // Skipping the words also quiets the keeper. Only a deliberate skip cuts the
   // voice; when the typing simply finishes first (it is paced to land a beat
@@ -153,33 +215,15 @@ export function FrontDoor() {
 
   // A tap on the sealed gate plate: the keeper explains instead of the plate
   // silently ignoring it (tooltips never show on touch, so HE is the tooltip).
-  // Voiced with the same clip machinery as the greeting; a repeat tap restarts
-  // the clip from the top so he never talks over himself.
+  // The reply KeeperSpeech is keyed by this counter, so every tap remounts it:
+  // a fresh clip from the top (he never talks over himself) with the text
+  // paced to it. The greeting clip is quieted here in case its tail is still
+  // sounding when the reply begins.
   const sealedTap = () => {
     setReplyDone(false);
     setSealedReply((n) => n + 1);
     keeperAudioRef.current?.pause();
-    let a = replyAudioRef.current;
-    if (!a) {
-      a = new Audio(asset(SEALED_VOICE));
-      replyAudioRef.current = a;
-      a.addEventListener("loadedmetadata", () => {
-        if (Number.isFinite(a!.duration) && a!.duration > 1) {
-          setReplyMs(Math.max(16, Math.round((a!.duration * 1000 * 0.94) / SEALED_TEXT_LEN)));
-        }
-      });
-    }
-    a.currentTime = 0;
-    a.play().catch(() => {});
   };
-
-  // The reply clip dies with the scene, same as the greeting clip.
-  useEffect(() => {
-    return () => {
-      replyAudioRef.current?.pause();
-      replyAudioRef.current = null;
-    };
-  }, []);
 
   useEffect(() => {
     if (keeper !== "appear") return;
@@ -359,13 +403,11 @@ export function FrontDoor() {
               <div className="min-w-0 flex-1">
                 {sealedReply === 0 ? (
                   <KeeperSpeech
-                    lines={[
-                      "Welcome, stranger. The gate is currently closed. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
-                      "You might want to study the Ember Codex while you wait.",
-                    ]}
+                    lines={GREETING_LINES}
+                    voice={KEEPER_VOICE}
+                    audioRef={keeperAudioRef}
                     forceDone={spoken}
                     onDone={() => setSpoken(true)}
-                    msPerChar={voiceMs}
                   />
                 ) : (
                   /* His answer to a hand on the sealed door. Keyed by tap count
@@ -373,9 +415,10 @@ export function FrontDoor() {
                   <KeeperSpeech
                     key={sealedReply}
                     lines={SEALED_LINES}
+                    voice={SEALED_VOICE}
+                    audioRef={replyAudioRef}
                     forceDone={replyDone}
                     onDone={() => setReplyDone(true)}
-                    msPerChar={replyMs}
                   />
                 )}
               </div>
