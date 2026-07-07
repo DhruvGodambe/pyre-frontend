@@ -84,7 +84,10 @@ export function PlateButton({
 }) {
   const inner = (
     <span>
-      {locked && <GameIcon name="lock" size={20} className="mr-2 -mt-0.5" />}
+      {/* The padlock is only ~half the medallion art's height, so the icon
+          needs to run bigger than a normal glyph to read as a LOCK: the max
+          that fits each plate face (52px phone / 47px desktop). */}
+      {locked && <GameIcon name="lock" size={28} className="mr-2 -mt-0.5 h-7 w-7 sm:h-6 sm:w-6" />}
       {label}
     </span>
   );

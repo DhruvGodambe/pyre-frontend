@@ -385,20 +385,28 @@ export function FrontDoor() {
       )}
 
       {/* X lives quietly on the scene's corner (never inside the keeper's
-          speech): muted until hovered, the standard footer-corner placement. */}
+          speech): the standard footer-corner placement. The plate art is dark,
+          so it gets full opacity + a faint ember rim to separate it from the
+          equally dark backdrop; hover/focus cross-fades to the lit variant. */}
       <a
         href={X_PROFILE_URL}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Follow @pyre_protocol on X"
         title="@pyre_protocol"
-        className="absolute bottom-12 right-5 z-10 block h-8 w-8 opacity-55 hover:opacity-100 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+        className="group absolute bottom-12 right-5 z-10 block h-9 w-9 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
       >
         <img
           src={asset("/buttons/x_normal.webp")}
           alt=""
           draggable={false}
-          className="block h-8 w-8 select-none"
+          className="block h-9 w-9 select-none drop-shadow-[0_0_6px_rgba(255,150,70,0.45)]"
+        />
+        <img
+          src={asset("/buttons/x_hover.webp")}
+          alt=""
+          draggable={false}
+          className="absolute inset-0 h-9 w-9 select-none opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
         />
       </a>
 

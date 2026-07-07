@@ -111,7 +111,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The periphery contracts",
         paragraphs: [
-          "Four contracts around the hook own the protocol's state:",
+          "In all, thirteen contracts make up the protocol: the hook, the facets behind it, and four periphery contracts. Those four own the protocol's state:",
         ],
         bullets: [
           "PyreToken (ERC-20): the $PYRE token. Enforces the 1,000,000,000 hard cap and implements epoch decay on liquid balances.",
