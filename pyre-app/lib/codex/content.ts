@@ -14,6 +14,7 @@ import type { BuildingId } from "@/components/buildings";
 
 /** Illuminated plates the reader can render inside a section (components/codex-diagrams.tsx). */
 export type CodexDiagramId =
+  | "acolyte-portrait"
   | "great-map"
   | "decay-curve"
   | "tier-ladder"
@@ -53,7 +54,7 @@ export const CODEX: CodexChapter[] = [
     sections: [
       {
         paragraphs: [
-          "Pyre Protocol is a token economy deployed on Ethereum and built directly on Uniswap v4. It combines three mechanisms: a hard-capped token with epoch-based decay on idle balances, single-sided staking that accrues yield denominated in $ETH, and a burn-to-mint NFT, the Acolyte, whose tier acts as a multiplier on staking yield.",
+          "Pyre Protocol is a token economy built directly on Uniswap v4. It combines three mechanisms: a hard-capped token with epoch-based decay on idle balances, single-sided staking that accrues yield denominated in $ETH, and a burn-to-mint NFT, the Acolyte, whose tier acts as a multiplier on staking yield.",
           "The design premise is simple to state: every liquid $PYRE balance carries a holding cost, applied per epoch, while committed balances do not. Holders choose between two forms of commitment. Staking exempts a balance from decay and earns a pro rata share of $ETH yield. Burning permanently removes supply and mints or upgrades an Acolyte, raising the multiplier on everything the stake earns. The two mechanisms are designed to be combined.",
           "The Ember Codex documents each subsystem in its own chapter, and each subsystem is drawn as a building in the kingdom: the Bonfire is supply and decay, the Forge is staking and burning, the Black Market is the Acolyte. Read the chapters in order for the full specification, or open the chapter behind any building.",
         ],
@@ -303,6 +304,9 @@ export const CODEX: CodexChapter[] = [
           "The Acolyte is Pyre's ERC-721. It is minted by burning, it records the wallet's cumulative burn weight on-chain, and its tier multiplies staking yield. A wallet holds at most one Acolyte, and the token is freely transferable.",
           "An Acolyte is not a claim on anything external. It is the on-chain record of the burn itself, and the staking contract reads it directly when computing effective weight. Its value derives from the supply permanently removed to create it and the multiplier that removal earned.",
         ],
+      },
+      {
+        diagram: "acolyte-portrait",
       },
       {
         heading: "The four tiers",

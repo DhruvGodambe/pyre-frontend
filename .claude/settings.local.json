@@ -246,7 +246,10 @@
       "Bash(python -c \"import json;d=json.load\\(open\\('C:/Users/USER/.claude/plugins/installed_plugins.json'\\)\\);print\\(json.dumps\\(d,indent=1\\)\\)\")",
       "Bash(claude plugin *)",
       "Bash(curl -s -L -b pyre_designer_auth=b4b2114008ad5252086e8a085de5852e98f9d4c0fc07e087649ca8549a5dc681 -o /tmp/root.html -w 'code=%{http_code} size=%{size_download}\\\\n' https://designer.pyreprotocol.com/)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(vercel --version)",
+      "Bash(NODE_PATH=./node_modules node *)"
     ]
   }
 }

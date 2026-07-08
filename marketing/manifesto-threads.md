@@ -200,7 +200,7 @@ No mint function we can press later. No hidden admin key over the supply. No "pa
 The rules that bind you bind the people who wrote them, equally.
 
 **3/**
-PYRE runs on Ethereum, on immutable contracts, with a Uniswap v4 hook doing the work out in the open.
+PYRE runs on immutable contracts, with a Uniswap v4 hook doing the work out in the open.
 
 Once it ships, the decay, the yield, the burn: all of it runs on rails nobody can yank. Us included. Us especially.
 

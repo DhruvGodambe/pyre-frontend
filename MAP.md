@@ -130,7 +130,7 @@ flowchart TD
 | Parameter | Value |
 |---|---|
 | Token name | Pyre / $PYRE |
-| Chain | Ethereum mainnet |
+| Chain | **OPEN — Ethereum mainnet vs Arbitrum (Robinhood chain)** |
 | Supply cap | 1,000,000,000 (1B) |
 | Minting | Hook-only, no pre-mine |
 | Team allocation | 0% |

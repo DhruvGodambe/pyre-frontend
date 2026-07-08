@@ -357,6 +357,10 @@ export function FrontDoor() {
           style={{ opacity: entering ? 0 : 1 }}
         >
           <KeeperBox
+            /* The gate persona is THE ASHWARDEN, the threshold guard, not the
+               village's Emberkeeper (who guides inside the kingdom). Distinct
+               name, distinct voice. */
+            name="The Ashwarden"
             className="animate-entry w-full max-w-2xl shadow-panel cursor-pointer"
             onClick={skipSpeech}
             actions={

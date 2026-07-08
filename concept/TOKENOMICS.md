@@ -10,7 +10,7 @@
 |---|---|
 | Name | Pyre |
 | Ticker | $PYRE |
-| Chain | Ethereum mainnet |
+| Chain | **OPEN — Ethereum mainnet vs Arbitrum (Robinhood chain)** |
 | Standard | ERC-20 (hook-minted) |
 | Hook | Uniswap V4 (ETH/$PYRE pair) |
 | Supply cap | 1,000,000,000 (1B) |
@@ -271,4 +271,4 @@ As halvings progress, the floor rate of 0.01%/hr creates an extremely slow termi
 - [x] Staker visual identity: **None — staking is financial only**
 - [x] Team allocation: **0%**
 - [x] Seed LP: **permanently locked** (V4: position NFT locked, not "LP tokens to address(0)")
-- [x] Chain: **Ethereum mainnet**
+- [ ] Chain: **OPEN — Ethereum mainnet vs Arbitrum (Robinhood chain)**

@@ -259,4 +259,4 @@ Unlike Olympus DAO's (3,3) which was enforced only by narrative, PYRE's (3,3) is
 | NFT art rendering | **OPEN — static-per-stage vs on-chain generative SVG. Evolves in place by burn weight either way.** |
 | Team allocation | 0% |
 | Seed LP | Permanently locked (V4: position NFT locked) |
-| Chain | Ethereum mainnet |
+| Chain | **OPEN — Ethereum mainnet vs Arbitrum (Robinhood chain)** |

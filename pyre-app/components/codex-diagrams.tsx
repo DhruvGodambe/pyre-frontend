@@ -298,6 +298,33 @@ function AscendRitePlate() {
   );
 }
 
+/* --------------------------------------------- Portrait: the Acolyte */
+
+/* Not a numbered plate: an illuminated portrait inset. Rendered narrower than
+   the diagram plates so it reads as a portrait, not a banner. The collection's
+   per-tier art is still in production, hence the caption's disclaimer. */
+function AcolytePortrait() {
+  return (
+    <figure className="my-1 mx-auto w-full max-w-[300px]">
+      <div className="relative w-full select-none rounded-[3px] shadow-[0_2px_12px_rgba(60,30,5,0.28)]">
+        <img
+          src={asset("/world/acolytes/acolyte-fire-hand.webp")}
+          alt="An Acolyte: a hooded figure in ember-traced robes, a flame conjured above his open hand."
+          draggable={false}
+          className="w-full h-auto rounded-[3px]"
+        />
+      </div>
+      <figcaption
+        className="mt-2 text-center text-xs italic leading-relaxed"
+        style={{ color: INK_SOFT }}
+      >
+        An Acolyte of the Pyre. The collection is still being forged: the final designs may differ
+        from the piece shown here.
+      </figcaption>
+    </figure>
+  );
+}
+
 /* ------------------------------------------------- Plate: the decay curve */
 
 /* Idle decay rate over time: 0.45%/epoch at start, halving every 2,000 epochs
@@ -372,6 +399,7 @@ function DecayCurveDiagram() {
 /* ---------------------------------------------------------------- export */
 
 export function CodexDiagram({ id }: { id: CodexDiagramId }) {
+  if (id === "acolyte-portrait") return <AcolytePortrait />;
   if (id === "great-map") return <GreatMapPlate />;
   if (id === "decay-curve") return <DecayCurveDiagram />;
   if (id === "tier-ladder") return <TierLadderPlate />;
