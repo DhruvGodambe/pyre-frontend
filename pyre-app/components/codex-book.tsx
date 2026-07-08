@@ -15,6 +15,7 @@
    parchment, dark quiet chrome floating in the same darkness. */
 
 import type { ReactNode } from "react";
+import { track } from "@vercel/analytics";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import { CODEX } from "@/lib/codex/content";
 import { asset } from "@/lib/config";
@@ -102,7 +103,10 @@ export function CodexBook({
               return (
                 <li key={c.id} className="shrink-0 md:shrink">
                   <button
-                    onClick={() => onChapter(c.id)}
+                    onClick={() => {
+                      track("codex_chapter", { chapter: c.id });
+                      onChapter(c.id);
+                    }}
                     className={`w-full flex items-center gap-2.5 text-left rounded-md px-3 py-2 transition-colors ${
                       active
                         ? "bg-brand/10 border border-[#9c7844]/60"

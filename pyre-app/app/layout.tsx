@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
+import { Analytics } from "@vercel/analytics/next";
 
 // Display font wired through the token --font-cormorant (see globals.css).
 // Swap this for the designer's chosen display font when it arrives.
@@ -26,6 +27,9 @@ export default function RootLayout({
     <html lang="en" className={cormorant.variable}>
       <body>
         <Providers>{children}</Providers>
+        {/* Vercel Web Analytics: page views + custom events (cookieless).
+            Collects only after Web Analytics is enabled on the Vercel project. */}
+        <Analytics />
       </body>
     </html>
   );

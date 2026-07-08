@@ -36,6 +36,8 @@ import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor } from "@/lib/sfx";
+import { captureReferral } from "@/lib/quests/client";
+import { track } from "@vercel/analytics";
 import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 
 /* Pre-launch the gate stands SEALED and the EMBERKEEPER stands before it:
@@ -180,6 +182,19 @@ export function FrontDoor() {
   const identity = useIdentity();
   const gate = BUILDING_BY_ID.gate;
 
+  // A friend arriving via someone's ?ref=CODE link lands HERE (share links
+  // point at the public front door, and pre-launch the kingdom is sealed), so
+  // the referral is recorded at this threshold, not just in the AppShell.
+  // Recording twice is harmless: the store only keeps the first referrer.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("ref");
+    if (!code) return;
+    captureReferral(code);
+    url.searchParams.delete("ref");
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
   // Until we've settled whether this is a returning visitor, an opaque curtain
   // covers everything, so a returning user never sees a flash of film/gate before
   // being sent in, and a fresh visitor never sees the gate before the film.
@@ -220,6 +235,7 @@ export function FrontDoor() {
   // paced to it. The greeting clip is quieted here in case its tail is still
   // sounding when the reply begins.
   const sealedTap = () => {
+    track("gate_sealed_tap");
     setReplyDone(false);
     setSealedReply((n) => n + 1);
     keeperAudioRef.current?.pause();
@@ -286,7 +302,12 @@ export function FrontDoor() {
     >
       {/* The cinematic film plays over everything on first arrival, then clears
           and the Emberkeeper arrives at the threshold. */}
-      <PyreIntro onDone={() => setKeeper("appear")} />
+      <PyreIntro
+        onDone={() => {
+          track("film_done");
+          setKeeper("appear");
+        }}
+      />
 
       {/* The gate, full-screen, settling in on arrival then pushing THROUGH as a
           team member steps into the world. */}
@@ -389,7 +410,10 @@ export function FrontDoor() {
                   label="Read the Codex"
                   href="/codex"
                   newTab
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    track("codex_open", { source: "front_door" });
+                  }}
                 />
               </div>
             }
@@ -439,6 +463,7 @@ export function FrontDoor() {
         href={X_PROFILE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => track("x_profile_click", { source: "front_door" })}
         aria-label="Follow @pyre_protocol on X"
         title="@pyre_protocol"
         className="group absolute bottom-12 right-5 z-10 block h-9 w-9 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"

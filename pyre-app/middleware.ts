@@ -8,6 +8,15 @@ import { authToken, AUTH_COOKIE } from "./lib/auth";
    the film and read the docs without a password while the kingdom stays team-only.
    Served at app.pyreprotocol.com; the login route sets the auth cookie there. */
 export async function middleware(request: NextRequest) {
+  // The referral endpoint stays PUBLIC: share links point at the front door
+  // ("/?ref=CODE"), which pre-launch is all a visitor can reach, so recording
+  // the arrival must not require the team cookie. Safe to expose: a bare
+  // arrival only stores a session row; Embers are credited only once the
+  // referred friend completes a rite or submits a wallet (see leaderboard).
+  if (request.nextUrl.pathname === "/api/quests/referral") {
+    return NextResponse.next();
+  }
+
   const password = process.env.DESIGNER_PASSWORD;
   if (!password) {
     return new NextResponse("DESIGNER_PASSWORD is not configured.", { status: 503 });
