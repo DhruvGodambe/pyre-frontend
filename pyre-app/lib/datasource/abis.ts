@@ -63,6 +63,8 @@ export const PYRE_STAKING_ABI = [
 export const IMMOLATED_GATE_ABI = [
   { type: "function", name: "immolate", stateMutability: "nonpayable", inputs: [], outputs: [] },
   { type: "function", name: "isImmolated", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "bool" }] },
+  // The extra $PYRE the rite burns via burnFrom (needs an ERC-20 allowance to the gate).
+  { type: "function", name: "ADDITIONAL_BURN", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
 /* --- Acolyte (CONTRACTS.nft): the reads needed to gate the Ascend rite -------
@@ -81,6 +83,45 @@ export const ACOLYTE_ABI = [
   { type: "function", name: "nftStageMultiplier", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "lpBurners", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "bool" }] },
   { type: "function", name: "pendingBurn", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+] as const;
+
+/* --- PyreHookDiamond (CONTRACTS.hook): fee getters + the LP-burn rite -------
+   Called AT THE DIAMOND address (only cut-in selectors resolve; facet constants
+   don't). getCurrent{Buy,Sell}FeeBps = the live hook fee for that side (launch
+   decay included), so the swap quote's fee breakdown can be exact.
+   burnLpPosition(tokenId) takes a Uniswap v4 POSITION NFT: it checks the
+   position is in our pool, moves the NFT to the dead address (needs an ERC-721
+   approval to the diamond first) and flags the wallet as an LP burner. */
+export const DIAMOND_ABI = [
+  { type: "function", name: "getCurrentBuyFeeBps", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "getCurrentSellFeeBps", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "burnLpPosition", stateMutability: "nonpayable", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [] },
+  { type: "function", name: "getTotalLpBurns", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+] as const;
+
+/* --- Uniswap v4 PositionManager (V4.positionManager) ------------------------
+   Just enough ERC-721 + v4 surface to find the user's LP position in OUR pool
+   and hand it to the diamond's burnLpPosition. */
+export const POSITION_MANAGER_ABI = [
+  { type: "function", name: "ownerOf", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
+  { type: "function", name: "getApproved", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
+  { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
+  {
+    type: "function",
+    name: "getPoolAndPositionInfo",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [
+      { name: "poolKey", type: "tuple", components: [
+        { name: "currency0", type: "address" },
+        { name: "currency1", type: "address" },
+        { name: "fee", type: "uint24" },
+        { name: "tickSpacing", type: "int24" },
+        { name: "hooks", type: "address" },
+      ]},
+      { name: "info", type: "uint256" },
+    ],
+  },
 ] as const;
 
 /* --- StateView (gas-free pool reads: spot price + active liquidity) -------- */

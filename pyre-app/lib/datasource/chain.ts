@@ -1,21 +1,20 @@
 /* ============================================================================
-   PYRE, ChainDataSource (STUB, fill in at contract handoff)
+   PYRE, ChainDataSource (LIVE, wired against the deployed Sepolia contracts)
    ----------------------------------------------------------------------------
-   This is where the real on-chain reads/writes go once the developer ships the
-   contract ABIs + addresses. Each method maps 1:1 to a contract call:
+   Every DataSource method is implemented on-chain. Three kinds of source:
 
-     getProtocolStats()      → PyreToken.scalingFactor / totalSupply, etc.
-                               pendingYieldPoolEth = ETH gathered into the reward
-                               pool but not yet distributed. Expose a view on the
-                               distributor/hook (undistributed balance = the
-                               pool's ETH balance minus already-allocated), and
-                               read it here.
-     getAcolyte(addr)        → PyreNFT.tokenOf / currentStage / immolatedWeight
-     getStakingPosition(addr)→ PyreStaking.positions / pendingRewards / drips
-     stake/unstake/burn...   → write calls via wagmi/viem
+     • Direct views/writes on PyreToken / PyreStaking / the Acolyte NFT /
+       ImmolatedGate / the hook diamond (wagmi readContract / writeContract).
+     • The EVENT LOG layer (./events.ts) for everything the contracts have no
+       getter for: activity feeds, per-user history, leaderboards, total burned,
+       total staked, Acolyte count, all-time $ETH distributed, 24h volume.
+     • The Black Market reads return EMPTY until a marketplace carries the
+       collection (no marketplace exists on the testnet); the panel's designed
+       empty state covers it.
 
-   Because it implements the same DataSource interface as MockDataSource, the
-   panels and hooks do not change at all when this goes live. Wire wagmi here.
+   Writes self-heal the network: every write first asks the wallet to switch to
+   the configured chain (ensureChain), so a wallet parked on mainnet gets a
+   switch prompt instead of a raw chain-mismatch error.
 
    ────────────────────────────────────────────────────────────────────────────
    THE GRAND EXCHANGE, Uniswap v4 swap wiring — IMPLEMENTED + Sepolia-verified
@@ -43,11 +42,12 @@
      swap           → IUniswapV4Router04.swap{ExactTokensForTokens|TokensForExact
                       Tokens}; buys send ETH as msg.value, sells need the approval.
 
-   STILL APPROXIMATE (display only, flagged for the dev): the ETH/USD price is a
-   keyless spot feed w/ constant fallback; the fee BREAKDOWN's hook-vs-launch
-   split needs the hook's FeeLogicFacet getter (the TOTAL fee is measured from the
-   quote, but we can't isolate the launch portion yet). Neither affects the amounts
-   you actually trade. */
+   STILL APPROXIMATE (display only): the ETH/USD price is a keyless spot feed
+   w/ constant fallback (swap for Chainlink before mainnet). The hook fee bps
+   now come straight from the diamond (getCurrent{Buy,Sell}FeeBps); the LAUNCH
+   portion is derived as (current − 500), because the schedule's final bps
+   (DEFAULT_FINAL_*_FEE_BPS = 500) has no on-chain getter. Neither affects the
+   amounts you actually trade. */
 
 import type {
   Address,
@@ -74,16 +74,19 @@ import {
   completeQuestTask as completeQuestTaskApi,
   submitWallet as submitWalletApi,
 } from "../quests/client";
-import { maxUint256, type Hex } from "viem";
+import { maxUint256, parseAbiItem, type Hex } from "viem";
 import {
   readContract,
   simulateContract,
   writeContract,
   waitForTransactionReceipt,
   getBalance,
+  getAccount,
+  getPublicClient,
+  switchChain,
 } from "wagmi/actions";
 import { wagmiConfig } from "../wagmi";
-import { CHAIN_ID, CONTRACTS, POOL, SWAP_ROUTER, TOKENS, V4 } from "../config";
+import { CHAIN_ID, CONTRACTS, DEPLOY_ANCHOR, POOL, SWAP_ROUTER, TOKENS, V4 } from "../config";
 import { toNumber } from "../format";
 import {
   ERC20_ABI,
@@ -94,11 +97,28 @@ import {
   ACOLYTE_ABI,
   PYRE_TOKEN_ABI,
   PYRE_STAKING_ABI,
+  DIAMOND_ABI,
+  POSITION_MANAGER_ABI,
   getPoolKey,
   getPoolId,
   type PoolKey,
 } from "./abis";
-import { WAD, IMMOLATED_YIELD_BOOST, STAGES, stageFromWeight } from "../constants";
+import {
+  getChainActivity,
+  getChainHistory,
+  getChainLeaderboard,
+  getChainTopBurners,
+  getChainAggregates,
+} from "./events";
+import {
+  WAD,
+  IMMOLATED_YIELD_BOOST,
+  STAGES,
+  stageFromWeight,
+  SUPPLY_CAP,
+  HALVING_INTERVAL_EPOCHS,
+  bonfireState,
+} from "../constants";
 
 /* ---- Grand Exchange helpers ------------------------------------------------ */
 
@@ -165,15 +185,64 @@ function errMsg(e: unknown): string {
   return "Transaction failed.";
 }
 
-const NOT_WIRED = () =>
-  Promise.reject(
-    new Error(
-      "ChainDataSource is not wired yet. Set NEXT_PUBLIC_USE_MOCK=true, or implement this against the deployed contracts."
-    )
-  );
-
 export class ChainDataSource implements DataSource {
-  getProtocolStats(): Promise<ProtocolStats> { return NOT_WIRED(); }
+  /** protocolStartTime is immutable; cache it after the first read. */
+  private startTime: bigint | null = null;
+  private async getStartTime(token: Address): Promise<bigint> {
+    if (this.startTime === null) {
+      this.startTime = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "protocolStartTime", args: [] });
+    }
+    return this.startTime;
+  }
+
+  /** Ask the wallet to switch to the configured chain before any write, so a
+      wallet parked on another network gets a switch prompt, not a raw
+      chain-mismatch error. Reads never need this (public transport is pinned). */
+  private async ensureChain(): Promise<void> {
+    const account = getAccount(wagmiConfig);
+    if (account.isConnected && account.chainId !== CHAIN) {
+      await switchChain(wagmiConfig, { chainId: CHAIN });
+    }
+  }
+
+  // The Observatory's global stats. Direct views where they exist (supply,
+  // decay clock, scaling factor); everything the contracts have no getter for
+  // (burned, staked, Acolyte count, distributed $ETH, volume) comes from the
+  // event-log layer. pendingYieldPoolEth = PyreStaking's ETH balance: the hook
+  // pushes the yield share there and it sits until claimed.
+  async getProtocolStats(): Promise<ProtocolStats> {
+    const token = CONTRACTS.token;
+    const staking = CONTRACTS.staking;
+    if (!token) throw new Error("Token address not configured.");
+    const [totalSupply, epoch, decayIdx, startTime, agg, poolBal] = await Promise.all([
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "totalSupply", args: [] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "currentEpoch", args: [] }),
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "globalDecayIndex", args: [] }),
+      this.getStartTime(token),
+      getChainAggregates(),
+      staking ? getBalance(wagmiConfig, { address: staking, chainId: CHAIN }) : Promise.resolve({ value: 0n }),
+    ]);
+    const decayBps = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "decayRateBps", args: [epoch] });
+    const halving = BigInt(HALVING_INTERVAL_EPOCHS);
+    const supply = toNumber(totalSupply);
+    return {
+      totalSupply,
+      totalBurned: agg.totalBurned,
+      supplyCap: SUPPLY_CAP,
+      decayRatePerHour: Number(decayBps) / 10_000,
+      era: Number(epoch / halving),
+      epochsUntilHalving: HALVING_INTERVAL_EPOCHS - Number(epoch % halving),
+      nextEpochAt: Number(startTime + (epoch + 1n) * 3600n) * 1000,
+      scalingFactor: toNumber(decayIdx), // WAD-scaled index, starts at 1.0
+      stakingRatio: supply > 0 ? clamp(toNumber(agg.totalStaked) / supply, 0, 1) : 0,
+      activeAcolytes: agg.activeAcolytes,
+      totalEthDistributed: agg.totalEthDistributed,
+      pendingYieldPoolEth: poolBal.value,
+      volume24h: agg.volume24h,
+      bonfire: bonfireState(agg.totalBurned),
+      burnRateSeries: agg.burnRateSeries,
+    };
+  }
 
   // The Forge's Acolyte: the burn NFT. tokenId 0 = none yet, in which case the
   // burn accrued toward the 10k EMBER mint lives in pendingBurn (so the panel can
@@ -270,10 +339,11 @@ export class ChainDataSource implements DataSource {
       ? await readContract(wagmiConfig, { chainId: CHAIN, address: nft, abi: ACOLYTE_ABI, functionName: "acolyteCumulativeBurn", args: [tokenId] })
       : 0n;
 
-    // Eligible = own an Acolyte burned STRICTLY past Pyre (token + LP burns both
-    // accumulate here). This gates the UI; immolate() enforces the real rule on
-    // chain. Once the v2 Immolate contract change lands, the two agree.
-    const eligible = tokenId > 0n && weight > pyreThreshold;
+    // Eligible = own an Acolyte that REACHED Pyre (token + LP burns both
+    // accumulate here), matching the deployed gate's stage check. The rite then
+    // burns its own extra cost via burnFrom (see ascendImmolated); immolate()
+    // enforces the real rule on chain either way.
+    const eligible = tokenId > 0n && weight >= pyreThreshold;
 
     return {
       isMember,
@@ -287,27 +357,70 @@ export class ChainDataSource implements DataSource {
       isLP: lpBonus > WAD,
     };
   }
-  getUserHistory(_a: Address): Promise<ActivityEvent[]> { return NOT_WIRED(); }
-  getLeaderboard(): Promise<LeaderboardEntry[]> { return NOT_WIRED(); }
-  getTopBurners(): Promise<LeaderboardEntry[]> { return NOT_WIRED(); }
-  getActivityFeed(): Promise<ActivityEvent[]> { return NOT_WIRED(); }
-  getAnnouncements(): Promise<Announcement[]> { return NOT_WIRED(); }
-  // Black Market = a branded window over OpenSea/Blur. getMarketListings →
-  // their listings API filtered by the PyreNFT collection + trait (stage/LP/
-  // immolated) + sort; getMarketActivity → their events API (sale/listing/
-  // offer/delisting) for the same collection. Both map the filter 1:1.
-  getMarketListings(_f?: MarketFilter): Promise<MarketListing[]> { return NOT_WIRED(); }
-  getMarketActivity(_f?: MarketFilter): Promise<MarketActivityEvent[]> { return NOT_WIRED(); }
+  // Feeds, history and leaderboards are pure event-log derivations (./events.ts).
+  getUserHistory(address: Address): Promise<ActivityEvent[]> { return getChainHistory(address); }
+  getLeaderboard(): Promise<LeaderboardEntry[]> { return getChainLeaderboard(); }
+  getTopBurners(): Promise<LeaderboardEntry[]> { return getChainTopBurners(); }
+  getActivityFeed(): Promise<ActivityEvent[]> { return getChainActivity(); }
+
+  // The Bonfire's announcements, computed from the live decay clock so they are
+  // always true without anyone editing copy: which era burns now, and when the
+  // decay next halves.
+  async getAnnouncements(): Promise<Announcement[]> {
+    const token = CONTRACTS.token;
+    if (!token) return [];
+    const [epoch, startTime] = await Promise.all([
+      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "currentEpoch", args: [] }),
+      this.getStartTime(token),
+    ]);
+    const decayBps = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "decayRateBps", args: [epoch] });
+    const halving = BigInt(HALVING_INTERVAL_EPOCHS);
+    const era = Number(epoch / halving);
+    const epochsLeft = HALVING_INTERVAL_EPOCHS - Number(epoch % halving);
+    const days = Math.max(1, Math.round(epochsLeft / 24));
+    const rate = Number(decayBps) / 100; // bps → %/hr
+    const nextRate = Math.max(0.01, rate / 2);
+    const halvingEpoch = ((era + 1) * HALVING_INTERVAL_EPOCHS).toLocaleString("en-US");
+    return [
+      {
+        id: "era",
+        title: `Era ${era} is live, the fire is lit`,
+        body: `Decay runs at ${rate}%/hr. Stake to preserve, burn to forge.`,
+        pinned: true,
+        at: Number(startTime) * 1000,
+      },
+      {
+        id: "halving",
+        title: `Next halving in ~${days} day${days === 1 ? "" : "s"}`,
+        body: `Decay halves to ${nextRate}%/hr at epoch ${halvingEpoch}.`,
+        pinned: false,
+        at: Date.now(),
+      },
+    ];
+  }
+
+  // Black Market = a branded window over OpenSea/Blur. No marketplace carries
+  // the collection yet (and none exists on the testnet), so both reads answer
+  // EMPTY and the panel's designed cold-market state shows. When the collection
+  // lists at launch: listings → the marketplace's listings API filtered by
+  // collection + trait (stage/LP/immolated) + sort; activity → its events API.
+  async getMarketListings(_f?: MarketFilter): Promise<MarketListing[]> { return []; }
+  async getMarketActivity(_f?: MarketFilter): Promise<MarketActivityEvent[]> { return []; }
   // --- The Grand Exchange (implemented; see the header) --------------------
   async getSwapQuote(p: SwapQuoteParams): Promise<SwapQuote> {
     const { key, poolId } = requirePool();
     const isBuy = p.direction === "buy";
     const zeroForOne = isBuy; // ETH(currency0) → PYRE(currency1)
 
-    const [slot0, liquidity, ethUsd] = await Promise.all([
+    const [slot0, liquidity, ethUsd, hookBps] = await Promise.all([
       readContract(wagmiConfig, { chainId: CHAIN, address: V4!.stateView, abi: STATE_VIEW_ABI, functionName: "getSlot0", args: [poolId] }),
       readContract(wagmiConfig, { chainId: CHAIN, address: V4!.stateView, abi: STATE_VIEW_ABI, functionName: "getLiquidity", args: [poolId] }),
       getEthUsd(),
+      // The live hook fee for this side (launch decay included), straight from
+      // the diamond. Falls back to the measured split if the read fails.
+      CONTRACTS.hook
+        ? readContract(wagmiConfig, { chainId: CHAIN, address: CONTRACTS.hook, abi: DIAMOND_ABI, functionName: isBuy ? "getCurrentBuyFeeBps" : "getCurrentSellFeeBps", args: [] }).catch(() => null)
+        : Promise.resolve(null),
     ]);
     const sqrtPriceX96 = slot0[0];
     const lpFeePips = Number(slot0[3]);
@@ -353,7 +466,11 @@ export class ChainDataSource implements DataSource {
     const feeFraction = ammNoFeeOut > 0 ? clamp((ammNoFeeOut - outHuman) / ammNoFeeOut, 0, 1) : 0;
     const lpFeeBps = Math.round(lpFeePips / 100);
     const totalFeeBps = Math.round(feeFraction * 10_000);
-    const hookFeeBps = Math.max(0, totalFeeBps - lpFeeBps);
+    // Hook fee: exact from the diamond when readable, else measured-minus-lp.
+    // The launch portion = whatever sits above the schedule's resting fee
+    // (DEFAULT_FINAL_*_FEE_BPS = 500; the final bps has no on-chain getter).
+    const hookFeeBps = hookBps !== null ? Number(hookBps) : Math.max(0, totalFeeBps - lpFeeBps);
+    const launchFeeBps = hookBps !== null ? Math.max(0, Number(hookBps) - 500) : 0;
 
     let warning: SwapQuote["warning"] = null;
     if (priceImpact >= HIGH_IMPACT) warning = { kind: "highPriceImpact", impact: priceImpact };
@@ -373,7 +490,7 @@ export class ChainDataSource implements DataSource {
       fee: {
         lpFeeBps,
         hookFeeBps,
-        launchFeeBps: 0, // folded into hookFeeBps until the FeeLogicFacet getter exists
+        launchFeeBps,
         totalFeeBps,
         feeAmount: scaleBy(amountIn, feeFraction),
         feeUsd: inHuman * feeFraction * inUsdRate,
@@ -477,10 +594,58 @@ export class ChainDataSource implements DataSource {
     // levels the tier. No separate mint or level-up step.
     return this.send(address, CONTRACTS.token, PYRE_TOKEN_ABI, "burn", [amount]);
   }
-  // LP burn is held: the deployed LpBurnFacet.burnLpPosition(tokenId) takes a V4
-  // position NFT id, not the (eth, pyre) pair this method passes, and the locker
-  // mechanic is still in flux. Wire once the dev's LP-burn design lands.
-  burnLP(_a: Address, _e: bigint, _p: bigint): Promise<TxResult> { return NOT_WIRED(); }
+  // LP burn, the deployed rite: LpBurnFacet.burnLpPosition(tokenId) consumes a
+  // Uniswap v4 POSITION NFT (verifies it sits in OUR pool, locks it at the dead
+  // address, flags the wallet as an LP burner). The panel's (eth, pyre) figures
+  // describe the position being offered; the contract takes the whole NFT, so
+  // this finds the caller's position in our pool, approves the diamond, and
+  // burns it. TODO(contract): revisit if the dev's locker redesign changes the
+  // entry point (see the afterRemoveLiquidity hookData path).
+  async burnLP(address: Address, _ethAmount: bigint, _pyreAmount: bigint): Promise<TxResult> {
+    const hook = CONTRACTS.hook;
+    if (!hook || !V4) return { ok: false, error: "Pool not configured: missing hook / position manager." };
+    try {
+      await this.ensureChain();
+      const pm = V4.positionManager;
+      const c = getPublicClient(wagmiConfig, { chainId: CHAIN });
+      if (!c) return { ok: false, error: "No RPC client for the configured chain." };
+      // Candidates: every position NFT ever sent to this wallet (the pool did
+      // not exist before our deploy, so the anchor bounds the scan).
+      const logs = await c.getLogs({
+        address: pm,
+        event: parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 indexed id)"),
+        args: { to: address },
+        fromBlock: DEPLOY_ANCHOR ? DEPLOY_ANCHOR.block : "earliest",
+      });
+      const ids = [...new Set(logs.map((l) => l.args.id!))];
+      let target: bigint | null = null;
+      for (const id of ids) {
+        try {
+          const owner = await readContract(wagmiConfig, { chainId: CHAIN, address: pm, abi: POSITION_MANAGER_ABI, functionName: "ownerOf", args: [id] });
+          if (owner.toLowerCase() !== address.toLowerCase()) continue; // moved on / already burned
+          const [key] = await readContract(wagmiConfig, { chainId: CHAIN, address: pm, abi: POSITION_MANAGER_ABI, functionName: "getPoolAndPositionInfo", args: [id] });
+          if (key.hooks.toLowerCase() === hook.toLowerCase()) { target = id; break; }
+        } catch {
+          /* burned/invalid id: skip */
+        }
+      }
+      if (target === null) {
+        return { ok: false, error: "No liquidity position in the Pyre pool was found in this wallet. Add liquidity to the pool first, then offer the position here." };
+      }
+      // The diamond pulls the NFT via transferFrom, so it needs the ERC-721 approval.
+      const approved = await readContract(wagmiConfig, { chainId: CHAIN, address: pm, abi: POSITION_MANAGER_ABI, functionName: "getApproved", args: [target] });
+      if (approved.toLowerCase() !== hook.toLowerCase()) {
+        const approveHash = await writeContract(wagmiConfig, { chainId: CHAIN, account: address, address: pm, abi: POSITION_MANAGER_ABI, functionName: "approve", args: [hook, target] });
+        const approveReceipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash: approveHash });
+        if (approveReceipt.status !== "success") return { ok: false, error: "Approving the position for the burn failed." };
+      }
+      const hash = await writeContract(wagmiConfig, { chainId: CHAIN, account: address, address: hook, abi: DIAMOND_ABI, functionName: "burnLpPosition", args: [target] });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+      return { ok: receipt.status === "success", hash };
+    } catch (e) {
+      return { ok: false, error: errMsg(e) };
+    }
+  }
   async claimStakingRewards(address: Address): Promise<TxResult> {
     return this.send(address, CONTRACTS.staking, PYRE_STAKING_ABI, "claimReward", []);
   }
@@ -495,6 +660,7 @@ export class ChainDataSource implements DataSource {
   ): Promise<TxResult> {
     if (!address) return { ok: false, error: "Contract address not configured." };
     try {
+      await this.ensureChain();
       const hash = await writeContract(wagmiConfig, {
         chainId: CHAIN,
         account,
@@ -510,13 +676,26 @@ export class ChainDataSource implements DataSource {
       return { ok: false, error: errMsg(e) };
     }
   }
-  // The Ascend rite: ImmolatedGate.immolate(). One-time claim once you've burned
-  // past Pyre (no args, no extra value). useAscendImmolated() calls this; the panel
-  // refetches the position keys on success and flips to the member state.
+  // The Ascend rite: ImmolatedGate.immolate(). One-time claim once you hold a
+  // Pyre-tier Acolyte. The rite burns an EXTRA ADDITIONAL_BURN of liquid $PYRE
+  // via burnFrom, so the gate needs an ERC-20 allowance first; this handles the
+  // approval inline when it's missing. useAscendImmolated() calls this; the
+  // panel refetches the position keys on success and flips to the member state.
   async ascendImmolated(address: Address): Promise<TxResult> {
     const gate = CONTRACTS.immolated;
-    if (!gate) return { ok: false, error: "Pool not configured: missing Immolated gate address." };
+    const token = CONTRACTS.token;
+    if (!gate || !token) return { ok: false, error: "Pool not configured: missing Immolated gate address." };
     try {
+      await this.ensureChain();
+      const [cost, allowance] = await Promise.all([
+        readContract(wagmiConfig, { chainId: CHAIN, address: gate, abi: IMMOLATED_GATE_ABI, functionName: "ADDITIONAL_BURN", args: [] }),
+        readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: ERC20_ABI, functionName: "allowance", args: [address, gate] }),
+      ]);
+      if (allowance < cost) {
+        const approveHash = await writeContract(wagmiConfig, { chainId: CHAIN, account: address, address: token, abi: ERC20_ABI, functionName: "approve", args: [gate, maxUint256] });
+        const approveReceipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash: approveHash });
+        if (approveReceipt.status !== "success") return { ok: false, error: "Approving the Ascend burn failed." };
+      }
       const hash = await writeContract(wagmiConfig, {
         chainId: CHAIN,
         account: address,
@@ -531,11 +710,17 @@ export class ChainDataSource implements DataSource {
       return { ok: false, error: errMsg(e) };
     }
   }
-  claimImmolatedYield(_a: Address): Promise<TxResult> { return NOT_WIRED(); }
+  // One shared pool: Immolated yield arrives through PyreStaking's stream (the
+  // +20% is baked into the member's weight), so the claim IS claimReward. Kept
+  // as its own method so the Hall can label the action.
+  async claimImmolatedYield(address: Address): Promise<TxResult> {
+    return this.send(address, CONTRACTS.staking, PYRE_STAKING_ABI, "claimReward", []);
+  }
   async approveToken(address: Address): Promise<TxResult> {
     const token = CONTRACTS.token;
     if (!token || !SWAP_ROUTER) return { ok: false, error: "Pool not configured: missing PYRE token / router address." };
     try {
+      await this.ensureChain();
       const hash = await writeContract(wagmiConfig, {
         chainId: CHAIN,
         account: address,
@@ -558,6 +743,7 @@ export class ChainDataSource implements DataSource {
     const zeroForOne = isBuy; // ETH(currency0) → PYRE(currency1)
     const deadline = BigInt(Math.floor(Date.now() / 1000) + Math.max(1, p.deadlineMinutes) * 60);
     try {
+      await this.ensureChain();
       let hash: Hex;
       if (p.kind === "exactIn") {
         // amount = exact input; limitAmount = min output (slippage floor).

@@ -19,7 +19,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import type { Address, WalletState } from "./types";
-import { REAL_WALLET } from "./config";
+import { CHAIN_ID, REAL_WALLET } from "./config";
 
 interface WalletContextValue extends WalletState {
   connect: () => void;
@@ -80,8 +80,11 @@ function RealWalletProvider({ children }: { children: React.ReactNode }) {
   const connect = useCallback(() => {
     const connector =
       connectors.find((c) => c.type === "injected") ?? connectors[0];
+    // chainId pins the connection to the configured chain: a wallet parked on
+    // another network gets a switch prompt as part of connecting.
     // Swallow the user-rejected / no-wallet errors: the UI just stays disconnected.
-    if (connector) void connectAsync({ connector }).catch(() => {});
+    if (connector)
+      void connectAsync({ connector, chainId: CHAIN_ID as 1 | 11155111 }).catch(() => {});
   }, [connectAsync, connectors]);
 
   const disconnect = useCallback(() => wagmiDisconnect(), [wagmiDisconnect]);

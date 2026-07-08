@@ -80,6 +80,23 @@ export const CONTRACTS: Record<
   hook: (process.env.NEXT_PUBLIC_PYRE_HOOK as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.hook : null),
 };
 
+/* Where on-chain history starts: the block that carried the whole deployment
+   (all five contracts + facets landed in one block on Sepolia) and its
+   timestamp. The event layer (lib/datasource/events.ts) scans logs from here
+   and interpolates block→time between this anchor and the chain head, so feeds
+   and charts need no per-block RPC lookups. For mainnet, supply both via env at
+   launch; without an anchor the event layer serves empty history rather than
+   scanning from genesis. */
+export const DEPLOY_ANCHOR: { block: bigint; tsMs: number } | null =
+  process.env.NEXT_PUBLIC_DEPLOY_BLOCK && process.env.NEXT_PUBLIC_DEPLOY_TS
+    ? {
+        block: BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK),
+        tsMs: Number(process.env.NEXT_PUBLIC_DEPLOY_TS) * 1000,
+      }
+    : onSepolia
+      ? { block: 11103396n, tsMs: 1781982147_000 }
+      : null;
+
 /* The protocol trades through a custom V4 router (IUniswapV4Router04), NOT the
    canonical Universal Router. Sepolia deploy uses the vanity router below; set
    NEXT_PUBLIC_SWAP_ROUTER for other chains. */
@@ -164,10 +181,11 @@ export const DYNAMIC_FEE_FLAG = 0x800000;
     fee/tickSpacing/hooks are confirmed at deploy time. */
 export const POOL = {
   // Uniswap v4 fee param of the deployed PYRE↔ETH pool (3000 = 0.30%), matching
-  // the contracts repo deploy default (PYRE_POOL_FEE=3000). NOTE: the app's
-  // display constants (POOL_FEE_BPS/HOOK_FEE_BPS) still describe the OLD 1%+4%
-  // model and the real hook schedule is buy 10%→5% / sell 23%→5% over 12h —
-  // reconcile fee display when wiring getSwapQuote.
+  // the contracts repo deploy default (PYRE_POOL_FEE=3000). The live hook fee
+  // (buy 10%→5% / sell 23%→5%, linear over the launch window) is read from the
+  // diamond's getCurrent{Buy,Sell}FeeBps in getSwapQuote, so the chain-mode fee
+  // display is exact. The old POOL_FEE_BPS/HOOK_FEE_BPS constants only feed the
+  // mock's demo quotes.
   feeTier: 3000,
   tickSpacing: 60,
   isDynamicFee: false,
