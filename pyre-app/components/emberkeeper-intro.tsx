@@ -208,7 +208,7 @@ export function EmberkeeperIntro() {
     <>
     {/* Forced: the backdrop does NOT dismiss. The only exits are Skip / Enter. */}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/92 backdrop-blur-sm">
-      <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-panel bg-surface border border-surface-3/60 shadow-panel">
+      <div className="stone-panel w-full max-w-lg max-h-[92vh] overflow-y-auto">
         {/* Top bar, endowed progress + a muted, deliberately un-inviting skip. */}
         <div className="flex items-center gap-3 px-5 pt-4">
           <div className="flex-1">
@@ -305,7 +305,7 @@ export function EmberkeeperIntro() {
         skipping is the quiet secondary choice. */}
     {confirmSkip && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm">
-        <div className="w-full max-w-sm rounded-panel bg-surface border border-surface-3/60 shadow-panel p-6 text-center space-y-3 animate-entry">
+        <div className="stone-panel w-full max-w-sm p-6 text-center space-y-3 animate-entry">
           <h3 className="font-display text-2xl text-brand">Skip the introduction?</h3>
           <p className="text-text-2 text-sm leading-relaxed">
             You&rsquo;ll miss your <span className="text-brand">first quest</span>, which

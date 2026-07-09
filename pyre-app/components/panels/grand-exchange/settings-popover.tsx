@@ -5,6 +5,7 @@
    persist via useSwapSettings (localStorage). */
 
 import type { SwapSettings } from "@/lib/types";
+import { SegmentedControl } from "@/components/ui/primitives";
 
 export function SettingsPopover({
   settings,
@@ -24,10 +25,10 @@ export function SettingsPopover({
   const lowSlippage = settings.slippageMode === "custom" && settings.slippageBps < 10;
 
   return (
-    <div className="absolute right-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-surface-3 bg-surface shadow-panel p-3 space-y-3">
+    <div className="absolute right-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-frame/60 bg-surface shadow-panel p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-text">Settings</span>
-        <button onClick={onClose} className="text-text-3 hover:text-text text-sm">
+        <span className="font-display text-base text-text">Settings</span>
+        <button onClick={onClose} aria-label="Close settings" className="text-text-3 hover:text-brand text-sm">
           ✕
         </button>
       </div>
@@ -36,20 +37,16 @@ export function SettingsPopover({
       <div className="space-y-1.5">
         <span className="text-text-3 text-xs uppercase tracking-wider">Max slippage</span>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md bg-surface-2 p-0.5 text-xs">
-            {(["auto", "custom"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setSlippageMode(m)}
-                className={`rounded-sm px-2.5 py-1 capitalize ${
-                  settings.slippageMode === m ? "bg-brand text-bg" : "text-text-2"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-1 items-center gap-1 rounded-md bg-surface-2 border border-surface-3 px-2 py-1.5">
+          <SegmentedControl<SwapSettings["slippageMode"]>
+            ariaLabel="Slippage mode"
+            value={settings.slippageMode}
+            onChange={setSlippageMode}
+            options={[
+              { value: "auto", label: "Auto" },
+              { value: "custom", label: "Custom" },
+            ]}
+          />
+          <div className="forged-field flex flex-1 items-center gap-1 px-2.5 py-1.5">
             <input
               inputMode="decimal"
               value={settings.slippageMode === "custom" ? customPct : "0.5"}
@@ -62,7 +59,7 @@ export function SettingsPopover({
               }}
               className="tabular w-full bg-transparent text-right outline-none text-text disabled:text-text-3"
             />
-            <span className="text-text-3 text-sm">%</span>
+            <span className="text-brand-soft/80 text-sm">%</span>
           </div>
         </div>
         {highSlippage && (
@@ -76,7 +73,7 @@ export function SettingsPopover({
       {/* Deadline */}
       <div className="space-y-1.5">
         <span className="text-text-3 text-xs uppercase tracking-wider">Transaction deadline</span>
-        <div className="flex items-center gap-1 rounded-md bg-surface-2 border border-surface-3 px-2 py-1.5">
+        <div className="forged-field flex items-center gap-1 px-2.5 py-1.5">
           <input
             inputMode="numeric"
             value={settings.deadlineMinutes.toString()}

@@ -57,33 +57,33 @@ export function TavernPanel() {
   }, [pending, clearPending]);
 
   return (
-    <div ref={ref} className="space-y-8">
-      <p className="text-text-2 text-sm">
+    <div ref={ref} className="pt-1">
+      <p className="mx-auto mb-2 max-w-2xl text-center text-text-2 text-sm leading-relaxed">
         Earn <span className="text-brand">Points</span> before launch: complete
         quests, invite friends, and climb the leaderboard. What Points unlock is
         revealed closer to launch.
       </p>
 
-      {/* Three separate boxes. On desktop the tall Quests box takes the left two
-          thirds; Invite + Leaderboard stack down the right. On mobile they fall
-          into one column. No tabs, everything is visible at once. The wide gaps
-          are load-bearing: each forged name plate straddles its frame's top
-          edge, so panels need clearance above. */}
-      <div className="grid gap-8 items-start lg:grid-cols-3">
-        <Panel title="Quests" tagline="Complete tasks to earn Points" className="lg:col-span-2" frame="forged">
-          <QuestFunnel />
-        </Panel>
-        <div className="space-y-8">
-          <div ref={summonRef}>
-            <Panel title="Invite friends" tagline="Earn Points for every friend" frame="forged">
-              <SummonSection />
-            </Panel>
-          </div>
-          <div ref={standingRef}>
-            <Panel title="Leaderboard" tagline="Top point earners" frame="forged">
-              <QuestLeaderboard />
-            </Panel>
-          </div>
+      {/* A true three-column spread that fills the width: the Leaderboard sits on
+          the LEFT (under Return to Pyre), the tall Quests list takes the wide
+          CENTRE, and Invite friends sits on the RIGHT. All top-aligned to one grid.
+          On mobile they stack Quests → Invite → Leaderboard. Plate clearance is
+          handled by .keeper-frame's own margin (globals.css). */}
+      <div className="grid items-start gap-x-5 gap-y-4 lg:grid-cols-4">
+        <div ref={standingRef} className="order-3 lg:order-1">
+          <Panel title="Leaderboard" tagline="Top point earners" frame="forged">
+            <QuestLeaderboard />
+          </Panel>
+        </div>
+        <div className="order-1 lg:order-2 lg:col-span-2">
+          <Panel title="Quests" tagline="Complete tasks to earn Points" frame="forged">
+            <QuestFunnel />
+          </Panel>
+        </div>
+        <div ref={summonRef} className="order-2 lg:order-3">
+          <Panel title="Invite friends" tagline="Earn Points for every friend" frame="forged">
+            <SummonSection />
+          </Panel>
         </div>
       </div>
     </div>
@@ -578,7 +578,7 @@ function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => voi
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-panel bg-surface border border-surface-3/60 shadow-panel p-6 animate-entry"
+        className="stone-panel w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 animate-entry"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-start justify-between gap-3">

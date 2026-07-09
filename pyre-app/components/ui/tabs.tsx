@@ -22,16 +22,15 @@ export function Tabs({
   };
   return (
     <div>
-      <div role="tablist" className="flex gap-1 mb-4 rounded-md bg-surface-2 p-1">
+      <div role="tablist" className="seg mb-4 flex w-full">
         {tabs.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={active === t.id}
+            data-active={active === t.id}
             onClick={() => setActive(t.id)}
-            className={`flex-1 rounded-sm px-3 py-2.5 text-sm transition-colors duration-fast ${
-              active === t.id ? "bg-brand text-bg" : "text-text-2 hover:text-text"
-            }`}
+            className="seg-item"
           >
             {t.label}
           </button>

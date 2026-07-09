@@ -22,6 +22,10 @@ const BUTTONS = {
   return: ["/world/ui/return_normal.webp", "/world/ui/return_hover.webp", 1254, 419],
   trade: ["/world/ui/trade_normal.webp", "/world/ui/trade_hover.webp", 1342, 173],
   support: ["/world/ui/support_normal.webp", "/world/ui/support_hover.webp", 626, 227],
+  // THE GRAND EXCHANGE, the designer's ornate swap tools: the gilded up/down
+  // direction flip (single art, no hover variant) and the brass settings gear.
+  swapicon: ["/world/ui/swap_icon.webp", "/world/ui/swap_icon.webp", 583, 568],
+  settings: ["/world/ui/settings_normal.png", "/world/ui/settings_hover.png", 199, 193],
   // Designer action buttons (baked-in text). Pending state is shown by the
   // overlay below, not by changing the label. burn = primary Burn $PYRE.
   burn: ["/world/ui/burn_normal.png", "/world/ui/burn_hover.png", 1075, 203],
@@ -47,9 +51,20 @@ const BUTTONS = {
   continue: ["/world/ui/continue_normal.png", "/world/ui/continue_hover.png", 545, 171],
   back: ["/world/ui/back_normal.png", "/world/ui/back_hover.png", 239, 106],
   replaytour: ["/world/ui/replaytour_normal.png", "/world/ui/replaytour_hover.png", 593, 166],
+  // THE EMBER CODEX, the persistent tome button (book glyph + "The Codex"),
+  // same engraved frame family as Replay tour.
+  codex: ["/world/ui/codex_button_normal.png", "/world/ui/codex_button_hover.png", 593, 166],
   skiptour: ["/world/ui/skiptour_normal.png", "/world/ui/skiptour_hover.png", 593, 166],
   skipintro: ["/world/ui/skipintro_normal.png", "/world/ui/skipintro_hover.png", 593, 166],
   question: ["/world/ui/question_normal.png", "/world/ui/question_hover.png", 256, 232],
+  // THE BLACK MARKET, tab labels (Listings / Recent activity / Your Acolyte),
+  // the two variant filter chips, and the "Sell on the Black Market" link out.
+  listings: ["/world/ui/listings_normal.png", "/world/ui/listings_hover.png", 307, 149],
+  recentactive: ["/world/ui/recentactive_normal.png", "/world/ui/recentactive_hover.png", 307, 149],
+  youracolyte: ["/world/ui/youracolyte_normal.png", "/world/ui/youracolyte_hover.png", 307, 149],
+  lpvariant: ["/world/ui/lpvariant_normal.png", "/world/ui/lpvariant_hover.png", 381, 149],
+  immolatedvariant: ["/world/ui/immolated_normal.png", "/world/ui/immolated_hover.png", 381, 149],
+  sellblackmarket: ["/world/ui/sell_blackmarket_button_normal.png", "/world/ui/sell_blackmarket_button_hover.png", 670, 177],
 } as const;
 
 export type ImageButtonName = keyof typeof BUTTONS;
@@ -105,6 +120,8 @@ export function ImageButton({
   width = 220,
   disabled = false,
   pending = false,
+  selected = false,
+  dim = false,
   className = "",
 }: {
   name: ImageButtonName;
@@ -116,6 +133,10 @@ export function ImageButton({
   disabled?: boolean;
   /** in-flight: dim the art and show a spinner over it (the baked text can't change). */
   pending?: boolean;
+  /** part of a group (tabs / toggles): keep the art lit to mark the current choice. */
+  selected?: boolean;
+  /** fade back when another item in the group is the active one. */
+  dim?: boolean;
   className?: string;
 }) {
   const [hover, setHover] = useState(false);
@@ -126,15 +147,18 @@ export function ImageButton({
       onClick={onClick}
       disabled={inactive}
       aria-label={label}
+      aria-pressed={selected || undefined}
       aria-busy={pending}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
       style={{ width }}
-      className={`relative inline-block select-none transition-transform duration-fast active:scale-[0.97] hover:scale-[1.03] disabled:opacity-50 disabled:pointer-events-none focus:outline-none ${className}`}
+      className={`relative inline-block select-none transition-[transform,opacity] duration-fast active:scale-[0.97] hover:scale-[1.03] disabled:opacity-50 disabled:pointer-events-none focus:outline-none ${
+        dim && !hover ? "opacity-55 hover:opacity-100" : ""
+      } ${className}`}
     >
-      <ImageArt name={name} width="100%" hover={hover} inactive={inactive} pending={pending} />
+      <ImageArt name={name} width="100%" hover={hover || selected} inactive={inactive} pending={pending} />
     </button>
   );
 }

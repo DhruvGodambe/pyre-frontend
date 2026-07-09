@@ -16,10 +16,11 @@
    the intro), so the interiors render real content instead of a connect wall.
    ========================================================================== */
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { BuildingId } from "@/components/buildings";
 import { usePreview } from "@/lib/preview";
 import { useNavigation } from "@/lib/navigation";
+import { preloadAudio } from "@/lib/audio-preload";
 
 export type TourPhase = "outside" | "inside";
 
@@ -294,6 +295,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     setActive(false);
     navigate({ building: "tavern", tab: "rites" });
   }, [navigate]);
+
+  // Once the tour starts, warm every narration clip in the background so each
+  // beat's voice is cache-hot and plays the moment it's reached, instead of the
+  // per-beat fetch that can trip the 2s watchdog into the silent typewriter.
+  useEffect(() => {
+    if (active) preloadAudio(beats.map((b) => b.voice).filter((v): v is string => !!v));
+  }, [active, beats]);
 
   const start = useCallback(() => {
     setIndex(0);

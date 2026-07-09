@@ -17,12 +17,13 @@
 import { useEffect, useState } from "react";
 import { useMarketListings, useMarketActivity, useAcolyte } from "@/lib/hooks";
 import { useNavigation } from "@/lib/navigation";
-import { Panel, Badge, Stat } from "@/components/ui/primitives";
-import { StateView, EmptyState } from "@/components/ui/state";
+import { Panel, Badge, Stat, Chip, Select } from "@/components/ui/primitives";
+import { StateView, EmptyState, Skeleton } from "@/components/ui/state";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
-import { Tabs } from "@/components/ui/tabs";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
+import { ImageButton, ImageArt, type ImageButtonName } from "@/components/ui/image-button";
+import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { formatEth, formatAgo, shortAddress, formatToken } from "@/lib/format";
 import { STAGES, acolyteName, type Stage } from "@/lib/constants";
 import type { MarketFilter, MarketSort } from "@/lib/datasource";
@@ -32,15 +33,6 @@ import type { Acolyte, MarketActivityKind } from "@/lib/types";
    contract), so listing your own Acolyte links out to the marketplace, where
    the trade actually settles. */
 const MARKETPLACE_URL = "https://opensea.io/";
-
-/* Tier accent colours, same tokens the Acolyte art uses, so the filter chips and
-   the artwork read as one system once the designer's palette lands. */
-const STAGE_COLOR: Record<Stage, string> = {
-  1: "var(--color-stage-ember)",
-  2: "var(--color-stage-flame)",
-  3: "var(--color-stage-forge)",
-  4: "var(--color-stage-pyre)",
-};
 
 const TIERS: Stage[] = [1, 2, 3, 4];
 
@@ -79,30 +71,51 @@ export function BlackMarketPanel() {
     clearPending();
   }, [pending, clearPending]);
 
-  const tabs = [
-    {
-      id: "listings",
-      label: "Listings",
-      content: <ListingsTab filter={filter} setFilter={setFilter} filterActive={filterActive} />,
-    },
-    {
-      id: "activity",
-      label: "Recent activity",
-      content: <ActivityTab filter={filter} filterActive={filterActive} />,
-    },
-    {
-      id: "yours",
-      label: "Your Acolyte",
-      content: <YourAcolyteTab />,
-    },
+  const TABS: { id: string; label: string; art: ImageButtonName }[] = [
+    { id: "listings", label: "Listings", art: "listings" },
+    { id: "activity", label: "Recent activity", art: "recentactive" },
+    { id: "yours", label: "Your Acolyte", art: "youracolyte" },
   ];
 
   return (
-    <Panel title="The Black Market" tagline="Buy & sell Acolytes">
+    <Panel title="The Black Market" tagline="Buy & sell Acolytes" frame="forged">
+      {/* Designer image tabs (baked-in labels), centered and capped so they don't
+          balloon in the wide panel. Active stays lit; the rest fade and light on
+          hover. This whole header stays put while the grid scrolls below it. */}
+      <div role="tablist" className="mx-auto mb-4 grid max-w-lg grid-cols-3 gap-2">
+        {TABS.map((t) => {
+          const on = active === t.id;
+          return (
+            <div key={t.id} className="flex flex-col items-center">
+              <ImageButton
+                name={t.art}
+                label={t.label}
+                width="100%"
+                dim={!on}
+                onClick={() => setActive(t.id)}
+              />
+              {/* The designer marks the open tab with a lit gold rule under the
+                  plate (not a red glow), so the ornate plate art stays intact. */}
+              <span
+                aria-hidden
+                className={`mt-1 h-[3px] w-3/5 rounded-full bg-gradient-to-r from-transparent via-brand to-transparent transition-opacity duration-fast ${
+                  on ? "opacity-100 shadow-[0_0_8px_rgba(240,169,59,0.6)]" : "opacity-0"
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+
       {/* The tier/variant filter drives the market tabs, not your own single
           Acolyte, so hide it on the "Your Acolyte" tab. */}
       {active !== "yours" && <FilterBar filter={filter} setFilter={setFilter} />}
-      <Tabs tabs={tabs} active={active} onChange={setActive} />
+
+      {active === "listings" && (
+        <ListingsTab filter={filter} setFilter={setFilter} filterActive={filterActive} />
+      )}
+      {active === "activity" && <ActivityTab filter={filter} filterActive={filterActive} />}
+      {active === "yours" && <YourAcolyteTab />}
     </Panel>
   );
 }
@@ -120,39 +133,40 @@ function FilterBar({
     setFilter({ ...filter, [key]: !filter[key] });
 
   return (
-    <div className="mb-4 space-y-2">
-      {/* Tier (Acolyte stage) */}
-      <div>
+    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-lg border border-frame/30 bg-black/25 px-3 py-2.5">
+      {/* Tier (Acolyte stage). Each chip carries its tier crest so the filter and
+          the artwork read as one family. */}
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-text-3 text-[10px] uppercase tracking-widest">Tier</span>
-        <div className="flex flex-wrap gap-2 mt-1.5">
-          <Chip active={!filter.stage} onClick={() => setTier(undefined)}>
-            All tiers
+        <Chip active={!filter.stage} onClick={() => setTier(undefined)}>
+          All
+        </Chip>
+        {TIERS.map((s) => (
+          <Chip
+            key={s}
+            active={filter.stage === s}
+            ariaLabel={`Filter: ${tierLabel(s)} tier`}
+            onClick={() => setTier(filter.stage === s ? undefined : s)}
+          >
+            <GameIcon name={tierCrest(s)} size={16} />
+            {tierLabel(s)}
+            <span className="text-[10px] opacity-70">{STAGES[s].multiplier}×</span>
           </Chip>
-          {TIERS.map((s) => (
-            <Chip
-              key={s}
-              active={filter.stage === s}
-              color={STAGE_COLOR[s]}
-              onClick={() => setTier(filter.stage === s ? undefined : s)}
-            >
-              {tierLabel(s)}
-              <span className="ml-1 text-[10px] opacity-70">{STAGES[s].multiplier}×</span>
-            </Chip>
-          ))}
-        </div>
+        ))}
       </div>
 
-      {/* Variant traits (combine with any tier) */}
-      <div>
+      <span className="hidden h-6 w-px bg-frame/30 sm:block" aria-hidden />
+
+      {/* Variant traits (combine with any tier). Same forged chip family as the
+          tiers, so the whole bar reads as one control (matching the mockup). */}
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-text-3 text-[10px] uppercase tracking-widest">Variant</span>
-        <div className="flex flex-wrap gap-2 mt-1.5">
-          <Chip active={!!filter.lpOnly} onClick={() => toggle("lpOnly")}>
-            LP variant
-          </Chip>
-          <Chip active={!!filter.immolatedOnly} onClick={() => toggle("immolatedOnly")}>
-            Immolated
-          </Chip>
-        </div>
+        <Chip active={!!filter.lpOnly} onClick={() => toggle("lpOnly")}>
+          LP variant
+        </Chip>
+        <Chip active={!!filter.immolatedOnly} onClick={() => toggle("immolatedOnly")}>
+          Immolated
+        </Chip>
       </div>
     </div>
   );
@@ -171,7 +185,7 @@ function ListingsTab({
   const listings = useMarketListings(filter);
 
   return (
-    <StateView query={listings}>
+    <StateView query={listings} loading={<MarketGridSkeleton />}>
       {(rows) =>
         rows.length === 0 ? (
           filterActive ? (
@@ -199,35 +213,67 @@ function ListingsTab({
           )
         ) : (
           <div>
-            <div className="flex items-center justify-between mb-3 text-xs">
+            {/* Collection stats bar (floor / listed) — the "market pulse" every NFT
+                marketplace opens with, computed from the live listings. */}
+            <MarketStats rows={rows} />
+
+            <div className="mb-2.5 flex items-center justify-between text-xs">
               <span className="text-text-3">
                 {rows.length} {rows.length === 1 ? "Acolyte" : "Acolytes"} listed
               </span>
               <SortSelect filter={filter} setFilter={setFilter} />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {rows.map((l) => {
-                const acolyte = acolyteFromMarket(l);
-                return (
-                  <a
-                    key={l.tokenId}
-                    href={l.externalUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-md bg-surface-2 p-2 hover:bg-surface-3 transition-colors duration-fast"
-                  >
-                    <AcolyteArt acolyte={acolyte} size={120} />
-                    <div className="flex items-center justify-between mt-2">
-                      <Badge tone="brand">{tierLabel(l.stage)}</Badge>
-                      <span className="tabular text-text text-sm">{formatEth(l.priceEth)}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1 text-[10px] text-text-3">
-                      <span>{l.multiplier}× yield</span>
-                      <span>{formatAgo(l.listedAt)}</span>
-                    </div>
-                  </a>
-                );
-              })}
+
+            {/* The grid scrolls inside its own bounded area, so the header + filters
+                stay pinned and the panel keeps to one screen (no shrink-to-fit). */}
+            <div className="market-scroll max-h-[52vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {rows.map((l) => {
+                  const acolyte = acolyteFromMarket(l);
+                  return (
+                    <a
+                      key={l.tokenId}
+                      href={l.externalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group relative overflow-hidden rounded-lg border border-frame/35 bg-gradient-to-b from-surface-2/25 to-black/40 shadow-[inset_0_1px_0_rgba(255,214,150,0.05)] transition-all duration-fast hover:border-brand/70 hover:shadow-[inset_0_1px_0_rgba(255,214,150,0.08),0_0_18px_-6px_rgba(240,169,59,0.55)]"
+                    >
+                      {/* Art tile with the tier + variant badges overlaid on it.
+                          `bare` art: the card owns the badges, so the art skips its
+                          own to avoid doubling them. */}
+                      <div className="relative grid aspect-square place-items-center bg-gradient-to-b from-black/10 to-black/40">
+                        <AcolyteArt acolyte={acolyte} size={168} bare />
+                        <span className="absolute left-1.5 top-1.5">
+                          <Badge tone="brand">{tierLabel(l.stage)}</Badge>
+                        </span>
+                        {(l.isLP || l.isImmolated) && (
+                          <span className="absolute right-1.5 top-1.5 flex gap-1">
+                            {l.isLP && <Badge tone="brand">LP</Badge>}
+                            {l.isImmolated && <Badge tone="danger">Immolated</Badge>}
+                          </span>
+                        )}
+                        {/* Hover "buy" affordance, marketplace convention. */}
+                        <span className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full bg-brand/90 py-1.5 text-center text-xs font-medium text-bg transition-transform duration-fast group-hover:translate-y-0">
+                          Buy on the market →
+                        </span>
+                      </div>
+                      {/* Price is the loudest thing on the card; id + yield + age support it. */}
+                      <div className="space-y-0.5 px-2.5 py-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="tabular text-base font-semibold text-text">
+                            {formatEth(l.priceEth)}
+                          </span>
+                          <span className="tabular text-[10px] text-text-3">#{l.tokenId}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-text-3">
+                          <span>{l.multiplier}× yield</span>
+                          <span>{formatAgo(l.listedAt)}</span>
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )
@@ -236,8 +282,8 @@ function ListingsTab({
   );
 }
 
-/* The sort control is a plain native <select> for now (the designer styles the
-   real control later); it writes `sort` onto the shared filter. */
+/* Sort: the themed Select (a forged trigger + carved popover), so it keeps the
+   theme where a native <select> would punch an OS-grey hole through the panel. */
 function SortSelect({
   filter,
   setFilter,
@@ -246,20 +292,43 @@ function SortSelect({
   setFilter: (f: MarketFilter) => void;
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-text-3">
+    <div className="flex items-center gap-1.5 text-text-3">
       <span>Sort</span>
-      <select
+      <Select<MarketSort>
+        ariaLabel="Sort listings"
         value={filter.sort ?? "price-asc"}
-        onChange={(e) => setFilter({ ...filter, sort: e.target.value as MarketSort })}
-        className="rounded-sm bg-surface-2 border border-surface-3 px-2 py-1 text-text-2 text-xs outline-none focus:border-brand/60"
-      >
-        {SORTS.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
+        options={SORTS.map((s) => ({ value: s.id, label: s.label }))}
+        onChange={(sort) => setFilter({ ...filter, sort })}
+      />
+    </div>
+  );
+}
+
+/* Loading grid: carved tiles that pulse while the listings load, so the market
+   opens as a filling hall, not a flash of empty space. */
+function MarketGridSkeleton() {
+  return (
+    <div>
+      <div className="mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden rounded-lg border border-frame/25 bg-black/25">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="px-3 py-2.5 text-center">
+            <Skeleton className="mx-auto h-2.5 w-10" />
+            <Skeleton className="mx-auto mt-1.5 h-4 w-12" />
+          </div>
         ))}
-      </select>
-    </label>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="overflow-hidden rounded-lg border border-frame/25 bg-black/30">
+            <Skeleton className="aspect-square w-full !rounded-none" />
+            <div className="space-y-1.5 px-2.5 py-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-2.5 w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -380,9 +449,11 @@ function YourAcolyteTab() {
                   href={MARKETPLACE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="block w-full rounded-md bg-brand text-bg px-4 py-2.5 text-center text-sm font-medium transition-colors duration-fast hover:bg-brand-deep"
+                  aria-label="Sell on the Black Market (opens OpenSea)"
+                  className="group block"
                 >
-                  List for sale on OpenSea →
+                  <ImageArt name="sellblackmarket" width="100%" className="group-hover:hidden" />
+                  <ImageArt name="sellblackmarket" width="100%" hover className="hidden group-hover:block" />
                 </a>
               </div>
             </div>
@@ -418,33 +489,31 @@ function acolyteFromMarket(m: {
   };
 }
 
-/* --- Filter / sort chip -------------------------------------------------- */
-function Chip({
-  active,
-  color,
-  onClick,
-  children,
+/* --- Collection stats: the market pulse (floor / listed / best yield) -----
+   Computed from the live listings so it's always honest, no separate feed. The
+   opening glance every NFT marketplace gives you before you scroll the grid. */
+function MarketStats({
+  rows,
 }: {
-  active: boolean;
-  color?: string;
-  onClick: () => void;
-  children: React.ReactNode;
+  rows: { priceEth: bigint; multiplier: number }[];
 }) {
+  if (rows.length === 0) return null;
+  const floor = rows.reduce((m, r) => (r.priceEth < m ? r.priceEth : m), rows[0].priceEth);
+  const topYield = rows.reduce((m, r) => Math.max(m, r.multiplier), 0);
+  const cells: { label: string; value: string }[] = [
+    { label: "Floor", value: formatEth(floor) },
+    { label: "Listed", value: String(rows.length) },
+    { label: "Best yield", value: `${topYield}×` },
+  ];
   return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center rounded-sm px-2.5 py-1 text-xs transition-colors duration-fast ${
-        active ? "bg-brand text-bg" : "bg-surface-2 text-text-2 hover:text-text"
-      }`}
-    >
-      {color && !active && (
-        <span
-          className="mr-1.5 h-2 w-2 rounded-full"
-          style={{ background: color }}
-          aria-hidden
-        />
-      )}
-      {children}
-    </button>
+    <div className="mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden rounded-lg border border-frame/25 bg-black/25">
+      {cells.map((c) => (
+        <div key={c.label} className="px-3 py-2 text-center">
+          <div className="text-text-3 text-[10px] uppercase tracking-widest">{c.label}</div>
+          <div className="tabular text-brand text-sm mt-0.5">{c.value}</div>
+        </div>
+      ))}
+    </div>
   );
 }
+

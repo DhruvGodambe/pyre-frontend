@@ -31,7 +31,7 @@ import {
   useBurnLP,
 } from "@/lib/hooks";
 import { useNavigation } from "@/lib/navigation";
-import { Stat, Field, ProgressBar, Badge, Button } from "@/components/ui/primitives";
+import { Panel, Stat, Field, ProgressBar, Badge, Button, SegmentedControl } from "@/components/ui/primitives";
 import { StateView } from "@/components/ui/state";
 import { TxButton, TxImageButton } from "@/components/ui/tx-button";
 import { NavCta } from "@/components/ui/nav-cta";
@@ -119,23 +119,23 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
   }, [a.exists, a.stage, a.isImmolated, a]);
 
   return (
-    <div className="w-full space-y-3">
-      {/* Header + the Emberkeeper's one-line guidance, folded into one compact row
-          so the whole panel stays inside a single screen (the interior never
-          scrolls, it scales down to fit, so height is the enemy of legibility). */}
-      <div className="flex items-baseline justify-between gap-4">
-        <div>
-          <h2 className="font-display text-2xl text-text leading-none">The Forge</h2>
-          <p className="text-text-3 text-xs mt-1 uppercase tracking-widest">Forge your Acolyte</p>
-        </div>
-        <p className="hidden max-w-md text-right text-xs italic text-text-2 sm:block">
-          <span className="text-brand not-italic">Emberkeeper:</span> &ldquo;{floorLine(a, p)}&rdquo;
+    <Panel
+      title="The Forge"
+      tagline="Forge your Acolyte"
+      frame="forged"
+      className="w-full"
+      action={
+        <p className="hidden max-w-md items-center gap-2 text-right text-xs italic text-text-2 sm:flex">
+          <span className="not-italic text-brand shrink-0">Emberkeeper</span>
+          <span aria-hidden className="text-text-3">·</span>
+          <span>&ldquo;{floorLine(a, p)}&rdquo;</span>
         </p>
-      </div>
-
-      {/* THE ACOLYTE, a horizontal status banner across the top: art + the tier
-          ladder + progress. Your standing at a glance. */}
-      <AcolyteBanner a={a} />
+      }
+    >
+      <div className="space-y-3">
+        {/* THE ACOLYTE, a horizontal status banner across the top: art + the tier
+            ladder + progress. Your standing at a glance. */}
+        <AcolyteBanner a={a} />
 
       {/* STAKE (left) and BURN (right), the two actions side by side. Burn stays
           locked (visible but ghosted) until you've staked. */}
@@ -164,6 +164,8 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
         >
           <BurnRitual p={p} a={a} path={path} setPath={setPath} />
         </Step>
+      </div>
+
       </div>
 
       {/* The cinematic (scaffold). Portaled full-screen; see forge-reveal.tsx. */}
@@ -201,7 +203,7 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
           </div>,
           document.body
         )}
-    </div>
+    </Panel>
   );
 }
 
@@ -281,7 +283,7 @@ function compactPyre(n: number): string {
 /* A shared "you have no $PYRE" nudge. */
 function BuyNudge({ message }: { message: string }) {
   return (
-    <div className="rounded-md bg-surface-2 border border-surface-3/60 p-3 space-y-2">
+    <div className="forged-card p-3 space-y-2">
       <p className="text-text-2 text-sm">{message}</p>
       <NavCta to="exchange">Buy $PYRE</NavCta>
     </div>
@@ -331,11 +333,7 @@ function AmountControls({
 
 function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-sm border border-surface-3 bg-surface-2 px-2 py-1 text-[11px] text-text-2 transition-colors duration-fast hover:border-brand/60 hover:text-brand"
-    >
+    <button type="button" onClick={onClick} className="chip !px-2.5 text-[11px]">
       {children}
     </button>
   );
@@ -349,7 +347,7 @@ function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => v
    drawn at 420×124. Cap their width so they render near natural size and centered
    (never upscaled to fill the whole column, which made them huge), and shrink
    together on narrow screens. */
-const ACTION_BTN_W = "min(100%, 360px)";
+const ACTION_BTN_W = "min(100%, 230px)";
 
 /* Burn → forge/level the Acolyte. */
 function BurnRitual({
@@ -403,7 +401,7 @@ function BurnRitual({
             <p className="text-danger text-[11px]">An LP burn must pair $ETH with your $PYRE. Enter an $ETH amount.</p>
           )}
           {lp && (
-            <div className="rounded-md bg-surface-2 px-3 py-2 text-[11px] text-text-3 space-y-1">
+            <div className="forged-card px-3 py-2 text-[11px] text-text-3 space-y-1">
               <p>
                 <span className="text-brand">2× the $ETH yield</span> of a plain-burn Acolyte of
                 the same tier.
@@ -463,12 +461,7 @@ function PathChooser({
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-text-3">
-        <span className="text-brand" aria-hidden>
-          ◆
-        </span>
-        Choose your path
-      </div>
+      <div className="eyebrow">Choose your path</div>
       <div className="grid grid-cols-2 gap-2">
         <PathCard
           selected={path === "tokens"}
@@ -584,9 +577,9 @@ function Step({
   return (
     <section
       id={id}
-      className={`scroll-mt-24 overflow-hidden rounded-panel border transition-colors duration-fast ${
-        flash ? "border-brand ring-2 ring-brand/50" : "border-surface-3"
-      } ${locked ? "bg-surface-2/20" : "bg-surface"}`}
+      className={`forged-card scroll-mt-24 overflow-hidden !rounded-panel transition-shadow duration-fast ${
+        flash ? "forged-card--lit" : ""
+      } ${locked ? "opacity-90" : ""}`}
     >
       <div className="flex items-center gap-3 px-4 py-3">
         <StepBadge index={index} locked={locked} done={done} />
@@ -594,8 +587,10 @@ function Step({
           <div className={`font-display text-lg ${locked ? "text-text-3" : "text-text"}`}>{title}</div>
           {sub && <div className="truncate text-[11px] uppercase tracking-widest text-text-3">{sub}</div>}
         </div>
+        {done && !locked && <Badge tone="success">Done</Badge>}
       </div>
-      <div className="border-t border-surface-3/50 px-4 py-3">
+      <hr className="ember-hairline" />
+      <div className="px-4 py-3">
         {locked ? (
           <LockedPreview hint={lockHint} action={lockAction}>
             {preview ?? children}
@@ -640,7 +635,7 @@ function LockedPreview({ hint, action, children }: { hint?: string; action?: Rea
         {children}
       </div>
       <div className="absolute inset-0 grid place-items-center p-2">
-        <div className="flex flex-col items-center gap-2 rounded-md border border-surface-3 bg-surface/90 px-4 py-3 text-center shadow-panel backdrop-blur-sm">
+        <div className="stone-panel flex flex-col items-center gap-2 px-4 py-3 text-center">
           {hint && (
             <div className="flex items-center gap-1.5 text-xs text-text-2">
               <GameIcon name="lock" size={14} alt="" />
@@ -670,7 +665,7 @@ function AcolyteBanner({ a }: { a: Acolyte }) {
         ? `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre, the 3× tier`
         : `Burn $PYRE to forge your Acolyte · Ember at ${compactPyre(toNumber(STAGES[1].threshold))} burned`;
   return (
-    <section className="relative overflow-hidden rounded-panel border border-surface-3 bg-surface p-4 shadow-panel">
+    <section className="forged-card relative overflow-hidden !rounded-panel p-4">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
@@ -757,20 +752,16 @@ function StakeRitual({ p }: { p: StakingPosition }) {
     <div className="relative space-y-3">
       {/* Stake / Unstake toggle, only when there's a stake to pull from. */}
       {hasStaked && (
-        <div className="flex gap-1 rounded-md bg-surface-2 p-1 text-sm">
-          <button
-            onClick={() => pick("stake")}
-            className={`flex-1 rounded-sm py-1.5 ${!unstaking ? "bg-brand text-bg" : "text-text-2"}`}
-          >
-            Stake
-          </button>
-          <button
-            onClick={() => pick("unstake")}
-            className={`flex-1 rounded-sm py-1.5 ${unstaking ? "bg-brand text-bg" : "text-text-2"}`}
-          >
-            Unstake
-          </button>
-        </div>
+        <SegmentedControl
+          value={mode}
+          onChange={pick}
+          ariaLabel="Stake or unstake"
+          className="w-full"
+          options={[
+            { value: "stake", label: "Stake" },
+            { value: "unstake", label: "Unstake" },
+          ]}
+        />
       )}
 
       <p className="text-text-3 text-xs">

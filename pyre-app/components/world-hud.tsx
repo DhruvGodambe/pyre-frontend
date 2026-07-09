@@ -310,9 +310,9 @@ export function WorldLedger() {
   const seed = (mode === "wallet" ? address : username) ?? "stranger";
   const initial = (username ?? address ?? "?").replace(/^0x/i, "").charAt(0).toUpperCase();
   return (
-    <div className="w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-surface-3/60 bg-surface/90 shadow-panel backdrop-blur">
+    <div className="stone-panel w-72 max-w-[calc(100vw-2rem)] overflow-hidden p-3.5">
       {/* Identity + disconnect. The Acolyte NFT is the avatar once forged. */}
-      <div className="flex items-center gap-2.5 border-b border-surface-3/50 px-3 py-2.5">
+      <div className="flex items-center gap-2.5 border-b border-frame/25 pb-2.5">
         {a?.exists ? (
           <AcolyteAvatar acolyte={a} size={36} />
         ) : (
@@ -340,8 +340,8 @@ export function WorldLedger() {
         )}
       </div>
       {/* The reminders */}
-      <div className="px-2 py-1.5">
-        <div className="px-2.5 pb-1 pt-1 font-display text-sm text-brand">Your progress</div>
+      <div className="pt-2">
+        <div className="pb-1 font-display text-sm text-brand">Your progress</div>
         <LedgerBody />
       </div>
     </div>

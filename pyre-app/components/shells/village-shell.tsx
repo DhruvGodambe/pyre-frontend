@@ -16,8 +16,10 @@ import Image from "next/image";
 import { BUILDINGS, BUILDING_BY_ID, type BuildingId } from "@/components/buildings";
 import { WorldLedger } from "@/components/world-hud";
 import { ImageButton } from "@/components/ui/image-button";
+import { Button } from "@/components/ui/primitives";
+import { MuteButton } from "@/components/ui/mute-button";
 import { BuildingPanel } from "@/components/ui/sealed-preview";
-import { CodexButton, CodexRiteLink } from "@/components/codex";
+import { CodexButton } from "@/components/codex";
 import { GameIcon } from "@/components/ui/game-icon";
 import { useLocks, type LockState } from "@/lib/unlocks";
 import { GateLanding } from "@/components/gate-landing";
@@ -596,15 +598,16 @@ export function VillageShell() {
           (outside beats) and steps inside the interiors (inside beats) above. */}
       {tour.active && tour.beat && <TourNarration />}
 
-      {/* Bottom-right dock: the Codex sits beside Replay tour (mock-only), kept
-          clear of the mute / ? toggles in the corner so nothing overlaps. Hidden
-          only during the tour. */}
+      {/* Bottom-right corner dock: Codex + Replay tour (mock-only) + Mute, in one
+          right-aligned row, all matched in height so they share a baseline.
+          Tucked into the corner; hidden only during the tour. */}
       {awake && !tour.active && (
-        <div className="fixed bottom-3 right-32 z-40 flex items-center gap-2">
-          <CodexButton />
+        <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2.5">
+          <CodexButton width={124} />
           {USE_MOCK && (
-            <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={150} />
+            <ImageButton name="replaytour" label="Replay tour" onClick={tour.start} width={124} />
           )}
+          <MuteButton width={40} />
         </div>
       )}
     </main>
@@ -643,7 +646,7 @@ function Overlay({
 function DoorPreview({ id, onEnter }: { id: BuildingId; onEnter: () => void }) {
   const b = BUILDING_BY_ID[id];
   return (
-    <div className="rounded-panel bg-surface border border-surface-3/60 shadow-panel overflow-hidden text-center">
+    <div className="stone-panel overflow-hidden text-center">
       <div
         className="relative h-52 flex items-end justify-center border-b border-surface-3/60"
         style={{ background: "radial-gradient(circle at 50% 75%, #2a2014, var(--color-surface) 78%)" }}
@@ -911,13 +914,11 @@ export function LockedExterior({
             <p className="text-text-2 text-sm mt-3 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
           )}
           {lock.cta && (
-            <button
-              onClick={goUnlock}
-              disabled={connecting}
-              className="mt-5 rounded-md bg-brand text-bg px-5 py-2.5 text-sm font-medium hover:bg-brand-deep transition-colors disabled:opacity-60"
-            >
-              {lock.cta.connect && connecting ? "Connecting…" : `${lock.cta.label} →`}
-            </button>
+            <div className="mt-5 flex justify-center">
+              <Button onClick={goUnlock} disabled={connecting}>
+                {lock.cta.connect && connecting ? "Connecting…" : `${lock.cta.label} →`}
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -984,16 +985,6 @@ export function InteriorView({ id, onBack }: { id: BuildingId; onBack: () => voi
         </div>
       )}
 
-      {/* Contextual docs: open the Codex straight to this building's chapter. */}
-      {!locked && (
-        <div className="fixed top-4 right-4 z-10">
-          <CodexRiteLink
-            building={id}
-            className="rounded-md bg-surface-2/90 border border-surface-3/60 px-3 py-2 backdrop-blur shadow-panel"
-          />
-        </div>
-      )}
-
       <FitToViewport wide={b.wide}>
         {/* Locked during the tour: the panel is a backdrop to the narration, not
             interactive, so its CTAs can't pull the visitor off the tour. */}
@@ -1037,7 +1028,7 @@ function FitToViewport({ wide, children }: { wide?: boolean; children: React.Rea
     <div ref={outerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-4">
       <div
         ref={innerRef}
-        className={`w-full ${wide ? "max-w-6xl" : "max-w-lg"} animate-entry`}
+        className={`w-full ${wide ? "max-w-[92rem]" : "max-w-lg"} animate-entry`}
         style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "center" }}
       >
         {children}

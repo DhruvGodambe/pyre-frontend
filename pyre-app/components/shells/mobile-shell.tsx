@@ -23,6 +23,7 @@ import { useTour } from "@/lib/tour";
 import { WorldRiteProgress, WorldProfile } from "@/components/world-hud";
 import { TourNarration } from "@/components/tour-ui";
 import { ImageButton } from "@/components/ui/image-button";
+import { MuteButton } from "@/components/ui/mute-button";
 import { CodexButton } from "@/components/codex";
 import { InteriorView, ExteriorScene, LockedExterior, MAP_RATIO, WORLD_THEME } from "@/components/shells/village-shell";
 import { useLocks } from "@/lib/unlocks";
@@ -243,7 +244,11 @@ export function MobileShell() {
 
       {/* The Ember Codex: always reachable (bottom-left), so the docs aren't buried
           in the tour or the gate. Hidden during the tour and while inside a panel. */}
-      {isSet && !tour.active && !inside && <CodexButton className="fixed bottom-3 left-3 z-40" />}
+      {isSet && !tour.active && !inside && <CodexButton className="fixed bottom-3 left-3 z-40" width={120} />}
+
+      {/* Mute toggle: bottom-left beside the Codex, shown whenever the world is
+          awake (music may be playing even inside a building). */}
+      {isSet && !tour.active && <MuteButton className="fixed bottom-3 left-32 z-40" width={38} />}
 
       {/* Entry gate: whenever there's no identity, cover the village with the
           connect-or-guest fork (sits under the first-visit intro at z-50). */}

@@ -14,9 +14,14 @@ const ACOLYTE_IMG = "/world/acolytes/acolyte.png";
 export function AcolyteArt({
   acolyte,
   size = 200,
+  bare = false,
 }: {
   acolyte: Acolyte;
   size?: number;
+  /** Suppress the built-in LP/Immolated/#id overlays. Use where the surrounding
+      card already renders its own badges (e.g. the Black Market grid), so they
+      don't show twice. */
+  bare?: boolean;
 }) {
   if (acolyte.svg) {
     return (
@@ -30,7 +35,14 @@ export function AcolyteArt({
   return (
     <div
       className="relative rounded-lg overflow-hidden border border-surface-3"
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        // Warm ember placeholder behind the lazy-loaded art, so a tile reads as a
+        // dim forge niche while the image paints in, never a black void.
+        background:
+          "radial-gradient(circle at 50% 62%, color-mix(in srgb, var(--color-stage-ember) 22%, transparent), var(--color-surface) 76%)",
+      }}
     >
       <Image
         src={asset(ACOLYTE_IMG)}
@@ -46,13 +58,17 @@ export function AcolyteArt({
           style={{ background: "linear-gradient(135deg, transparent, var(--color-brand-soft)22)" }}
         />
       )}
-      <div className="absolute bottom-2 left-2 flex gap-1">
-        {acolyte.isLP && <Badge tone="brand">LP</Badge>}
-        {acolyte.isImmolated && <Badge tone="danger">Immolated</Badge>}
-      </div>
-      <span className="absolute top-2 right-2 text-text-3 text-[10px] tabular bg-bg/55 rounded px-1">
-        #{acolyte.tokenId}
-      </span>
+      {!bare && (
+        <>
+          <div className="absolute bottom-2 left-2 flex gap-1">
+            {acolyte.isLP && <Badge tone="brand">LP</Badge>}
+            {acolyte.isImmolated && <Badge tone="danger">Immolated</Badge>}
+          </div>
+          <span className="absolute top-2 right-2 text-text-3 text-[10px] tabular bg-bg/55 rounded px-1">
+            #{acolyte.tokenId}
+          </span>
+        </>
+      )}
     </div>
   );
 }

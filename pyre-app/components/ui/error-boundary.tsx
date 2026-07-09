@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.props.fallback !== undefined) return this.props.fallback;
 
     return (
-      <div className="rounded-panel border border-surface-3/60 bg-surface px-5 py-6 text-center shadow-panel">
+      <div className="stone-panel px-5 py-6 text-center">
         <p className="text-text-2 text-sm">
           {this.props.label ? `${this.props.label} hit a snag.` : "Something went wrong here."}
         </p>

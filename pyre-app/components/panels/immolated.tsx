@@ -44,7 +44,7 @@ function HallOfFame({ rows, you }: { rows: HallRow[]; you?: { rank: number; weig
             <li
               key={r.rank}
               className={`flex items-center gap-2.5 rounded-md px-3 py-2 ${
-                isYou ? "bg-brand/10 border border-brand/40" : "bg-surface-2"
+                isYou ? "bg-brand/10 border border-brand/40" : "forged-card"
               }`}
             >
               {tile ? (
@@ -85,16 +85,11 @@ function HallOfFame({ rows, you }: { rows: HallRow[]; you?: { rank: number; weig
   );
 }
 
-/* The Hall of Fame block, shown in every state (it's the prestige board). */
-function HallFame({ you }: { you?: { rank: number; weight: bigint } }) {
+/* The Hall of Fame board body (fills the right-hand panel). The Panel's own
+   forged name plate carries the title, so this is just the ranked list. */
+function HallFameBody({ you }: { you?: { rank: number; weight: bigint } }) {
   const board = useLeaderboard();
-  return (
-    <div className="pt-3 border-t border-surface-3/60">
-      <h3 className="font-display text-lg text-brand">Hall of Fame</h3>
-      <p className="text-text-3 text-xs mb-3">The kingdom&rsquo;s greatest burners.</p>
-      <StateView query={board}>{(rows) => <HallOfFame rows={rows} you={you} />}</StateView>
-    </div>
-  );
+  return <StateView query={board}>{(rows) => <HallOfFame rows={rows} you={you} />}</StateView>;
 }
 
 export function ImmolatedPanel() {
@@ -105,94 +100,121 @@ export function ImmolatedPanel() {
   // isn't enough: the wallet must still hold that much to spend now.
   const liquid = stakePos.data?.liquidBalance ?? 0n;
   const canAffordAscend = liquid >= IMMOLATED_ASCEND_COST;
+  const mp = pos.data;
+  const you =
+    mp?.isMember && mp.rank != null ? { rank: mp.rank, weight: mp.weight } : undefined;
 
+  // Two panels side by side across the wide interior: your standing / the rite on
+  // the left, the Hall of Fame board on the right (always shown, it's the prestige
+  // board). Stacks to one column on mobile.
   return (
-    <Panel title="Hall of the Immolated" tagline="The highest prestige in the kingdom">
-      <RequireWallet message="Connect to see if you've reached the Immolated.">
-        <StateView query={pos}>
-          {(p) =>
-            p.isMember ? (
-              /* MEMBER: you've ascended. Your standing + the Hall of Fame. */
-              <div className="space-y-5">
-                <div className="rounded-panel border border-brand/40 bg-brand/10 px-4 py-4 text-center">
-                  <p className="text-text-3 text-[11px] uppercase tracking-widest">You are</p>
-                  <p className="font-display text-3xl text-brand leading-tight">
-                    {p.isLP ? "LP Immolated" : "Immolated"}
-                  </p>
-                  <p className="text-text-2 text-xs mt-1">
-                    The rarest Acolyte, the strongest pull on the yield.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Stat
-                    label="Yield boost"
-                    value={`+${Math.round((p.yieldBoost - 1) * 100)}%`}
-                    accent
-                  />
-                  <Stat label="Your rank" value={p.rank != null ? `#${p.rank}` : "—"} />
-                  <Stat label="Your burn weight" value={formatToken(p.weight)} />
-                  <Stat label="Effective pool weight" value={formatToken(p.boostedWeight)} />
-                </div>
-                <p className="text-text-3 text-[11px] leading-relaxed">
-                  Your +20% boost lifts your share of the yield pool: you pull on it with your
-                  effective weight, not your raw burn weight.
-                </p>
-                <HallFame you={p.rank != null ? { rank: p.rank, weight: p.weight } : undefined} />
-              </div>
-            ) : p.eligible ? (
-              /* ELIGIBLE: reached Pyre (top tier), ready for the Ascend rite here. */
-              <div className="space-y-5">
-                <div
-                  id="immolated-action"
-                  className="rounded-panel border border-brand/40 bg-gradient-to-b from-brand/15 to-surface/40 px-5 py-6 text-center scroll-mt-24"
-                >
-                  <h3 className="font-display text-2xl text-brand">You&rsquo;ve reached Pyre</h3>
-                  <p className="text-text-2 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
-                    You&rsquo;re at the top tier. Take the Ascend rite here in the Hall, which burns{" "}
-                    <span className="text-brand">
-                      {formatToken(IMMOLATED_ASCEND_COST)} $PYRE
-                      {p.isLP ? " plus the equivalent $ETH" : ""}
-                    </span>
-                    , to become {p.isLP ? "LP Immolated" : "Immolated"}, the highest prestige in the
-                    kingdom, and claim a permanent
-                    <span className="text-brand"> +20% boost</span> to your share of the yield pool.
-                  </p>
-                  <div className="mt-4 flex flex-col items-center gap-1.5">
-                    <TxButton
-                      tx={ascend}
-                      onClick={() => ascend.mutate()}
-                      pendingLabel="Ascending…"
-                      disabled={!canAffordAscend}
-                    >
-                      Take the Ascend rite
-                    </TxButton>
-                    {!canAffordAscend && (
-                      <p className="text-danger text-[11px]">
-                        Need {formatToken(IMMOLATED_ASCEND_COST)} $PYRE to ascend, you hold{" "}
-                        {formatToken(liquid)}.
+    <div className="grid gap-6 pt-4 lg:grid-cols-5 lg:items-start">
+      {/* LEFT (3/5): your standing, the Ascend rite, or how to become eligible. */}
+      <div className="lg:col-span-3">
+        <Panel title="Hall of the Immolated" tagline="The highest prestige in the kingdom" frame="forged">
+          <RequireWallet message="Connect to see if you've reached the Immolated.">
+            <StateView query={pos}>
+              {(p) =>
+                p.isMember ? (
+                  /* MEMBER: you've ascended. Your standing. */
+                  <div className="space-y-5">
+                    <div className="forged-card forged-card--lit px-4 py-6 text-center">
+                      <div className="flex justify-center">
+                        <GameIcon name="immolated" size={64} alt="" className="drop-shadow-[0_2px_12px_rgba(240,169,59,0.4)]" />
+                      </div>
+                      <p className="text-text-3 text-[11px] uppercase tracking-widest mt-2">You are</p>
+                      <p className="font-display text-4xl text-brand leading-tight">
+                        {p.isLP ? "LP Immolated" : "Immolated"}
                       </p>
-                    )}
+                      <p className="text-text-2 text-xs mt-1">
+                        The rarest Acolyte, the strongest pull on the yield.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="forged-card px-4 py-3.5">
+                        <Stat
+                          label="Yield boost"
+                          value={`+${Math.round((p.yieldBoost - 1) * 100)}%`}
+                          accent
+                        />
+                      </div>
+                      <div className="forged-card px-4 py-3.5">
+                        <Stat label="Your rank" value={p.rank != null ? `#${p.rank}` : "—"} />
+                      </div>
+                      <div className="forged-card px-4 py-3.5">
+                        <Stat label="Your burn weight" value={formatToken(p.weight)} />
+                      </div>
+                      <div className="forged-card px-4 py-3.5">
+                        <Stat label="Effective pool weight" value={formatToken(p.boostedWeight)} />
+                      </div>
+                    </div>
+                    <p className="text-text-3 text-[11px] leading-relaxed">
+                      Your +20% boost lifts your share of the yield pool: you pull on it with your
+                      effective weight, not your raw burn weight.
+                    </p>
                   </div>
-                </div>
-                <HallFame />
-              </div>
-            ) : (
-              /* NOT ELIGIBLE: reach Pyre (the top tier) at the Forge first. */
-              <div className="space-y-5">
-                <EmptyState
-                  icon="⌖"
-                  title="Not yet"
-                  message="The Immolated is the kingdom's highest prestige, not a tier. Reach Pyre, the top Acolyte tier, by burning at the Forge (normal or LP), then return here to take the Ascend rite: burn 100K $PYRE to ascend and claim a permanent +20% boost to your yield share."
-                />
-                <div className="flex justify-center">
-                  <NavCta to="forge">Burn at the Forge →</NavCta>
-                </div>
-                <HallFame />
-              </div>
-            )
-          }
-        </StateView>
-      </RequireWallet>
-    </Panel>
+                ) : p.eligible ? (
+                  /* ELIGIBLE: reached Pyre (top tier), ready for the Ascend rite here. */
+                  <div
+                    id="immolated-action"
+                    className="forged-card forged-card--lit px-5 py-8 text-center scroll-mt-24"
+                  >
+                    <div className="flex justify-center mb-2">
+                      <GameIcon name="immolated" size={56} alt="" className="drop-shadow-[0_2px_12px_rgba(240,169,59,0.4)]" />
+                    </div>
+                    <h3 className="font-display text-3xl text-brand">You&rsquo;ve reached Pyre</h3>
+                    <p className="text-text-2 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                      You&rsquo;re at the top tier. Take the Ascend rite here in the Hall, which burns{" "}
+                      <span className="text-brand">
+                        {formatToken(IMMOLATED_ASCEND_COST)} $PYRE
+                        {p.isLP ? " plus the equivalent $ETH" : ""}
+                      </span>
+                      , to become {p.isLP ? "LP Immolated" : "Immolated"}, the highest prestige in the
+                      kingdom, and claim a permanent
+                      <span className="text-brand"> +20% boost</span> to your share of the yield pool.
+                    </p>
+                    <div className="mt-5 flex flex-col items-center gap-1.5">
+                      <TxButton
+                        tx={ascend}
+                        onClick={() => ascend.mutate()}
+                        pendingLabel="Ascending…"
+                        disabled={!canAffordAscend}
+                      >
+                        Take the Ascend rite
+                      </TxButton>
+                      {!canAffordAscend && (
+                        <p className="text-danger text-[11px]">
+                          Need {formatToken(IMMOLATED_ASCEND_COST)} $PYRE to ascend, you hold{" "}
+                          {formatToken(liquid)}.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* NOT ELIGIBLE: reach Pyre (the top tier) at the Forge first. */
+                  <div className="space-y-5 py-4">
+                    <EmptyState
+                      icon={<GameIcon name="immolated" size={64} alt="" className="opacity-40 grayscale" />}
+                      title="Not yet"
+                      message="The Immolated is the kingdom's highest prestige, not a tier. Reach Pyre, the top Acolyte tier, by burning at the Forge (normal or LP), then return here to take the Ascend rite: burn 100K $PYRE to ascend and claim a permanent +20% boost to your yield share."
+                    />
+                    <div className="flex justify-center">
+                      <NavCta to="forge" className="w-auto">Burn at the Forge →</NavCta>
+                    </div>
+                  </div>
+                )
+              }
+            </StateView>
+          </RequireWallet>
+        </Panel>
+      </div>
+
+      {/* RIGHT (2/5): the Hall of Fame board, always shown. */}
+      <div className="lg:col-span-2">
+        <Panel title="Hall of Fame" tagline="The kingdom's greatest burners" frame="forged">
+          <HallFameBody you={you} />
+        </Panel>
+      </div>
+    </div>
   );
 }

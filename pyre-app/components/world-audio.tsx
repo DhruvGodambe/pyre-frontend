@@ -7,14 +7,17 @@
    fade out). Reusing a single element keeps the browser's autoplay permission
    warm and avoids the play() churn that made music play only sometimes.
 
-   Two effects: one keyed on `src` (load/play/stop, with an autoplay-retry that
-   is properly torn down), and a separate one for `muted` so toggling mute never
-   re-runs play() or restarts the fade. */
+   Renders NO UI: it's just the audio element. The mute TOGGLE lives in the
+   corner dock (the shells, beside Codex + Replay tour) via <MuteButton />; both
+   read the same shared mute state from useMute(). Two effects: one keyed on
+   `src` (load/play/stop, with an autoplay-retry that is properly torn down),
+   and a separate one for `muted` so toggling mute never re-runs play() or
+   restarts the fade. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { asset } from "@/lib/config";
+import { useMute } from "@/lib/mute";
 
-const MUTE_KEY = "pyre_world_muted";
 const VOLUME = 0.45;
 
 export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; volume?: number }) {
@@ -26,12 +29,7 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
   // playback, it just fades to the new level.
   const volRef = useRef(volume);
   volRef.current = volume;
-  const [muted, setMuted] = useState(false);
-
-  // Restore the shared mute choice once.
-  useEffect(() => {
-    setMuted(typeof localStorage !== "undefined" && localStorage.getItem(MUTE_KEY) === "1");
-  }, []);
+  const { muted } = useMute();
 
   // Smoothly ramp the element's volume to a target. Shared by the load/play
   // effect and the live-volume effect; stable so neither re-runs on the other.
@@ -136,28 +134,6 @@ export function BuildingAudio({ src, volume = VOLUME }: { src: string | null; vo
     []
   );
 
-  const toggle = () =>
-    setMuted((m) => {
-      const next = !m;
-      try {
-        localStorage.setItem(MUTE_KEY, next ? "1" : "0");
-      } catch {
-        /* private mode / disabled storage: keep it in memory */
-      }
-      return next;
-    });
-
-  // No control when nothing is playing.
-  if (!src) return null;
-
-  return (
-    <button
-      onClick={toggle}
-      title={muted ? "Unmute music" : "Mute music"}
-      aria-label={muted ? "Unmute music" : "Mute music"}
-      className="fixed bottom-3 right-16 z-40 rounded-full bg-surface-2/95 border border-surface-3 text-text-3 text-sm px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:text-brand transition-colors"
-    >
-      {muted ? "🔇" : "🔊"}
-    </button>
-  );
+  // Audio only, no UI. The mute toggle is <MuteButton /> in the corner dock.
+  return null;
 }

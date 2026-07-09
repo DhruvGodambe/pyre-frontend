@@ -17,7 +17,8 @@ import {
   useActivityFeed,
 } from "@/lib/hooks";
 import { useSwapSettings } from "@/lib/swap-settings";
-import { Panel, Button } from "@/components/ui/primitives";
+import { Panel, Button, SegmentedControl } from "@/components/ui/primitives";
+import { ImageArt } from "@/components/ui/image-button";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { TokenRow, fmtTokenAmount } from "./grand-exchange/token-row";
 import { SwapDetails } from "./grand-exchange/swap-details";
@@ -29,6 +30,18 @@ import type { SwapDirection, SwapKind } from "@/lib/types";
 import type { SwapParams } from "@/lib/datasource";
 
 const ETH_GAS_RESERVE = 0.01; // leave a little ETH for gas on "Max" (buy side)
+
+/* The refresh glyph (no bespoke art for it); stroke = currentColor so it
+   inherits the button's text color + hover. The direction flip and settings
+   gear now use the designer's ornate swap_icon / settings art instead. */
+function IconRefresh({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+      <path d="M21 3v6h-6" />
+    </svg>
+  );
+}
 
 export function GrandExchangePanel() {
   const [direction, setDirection] = useState<SwapDirection>("buy");
@@ -147,6 +160,7 @@ export function GrandExchangePanel() {
     <Panel
       title="The Grand Exchange"
       tagline="Buy & sell $PYRE"
+      frame="forged"
       action={
         pool.data && (
           <div className="text-right text-xs text-text-3 tabular">
@@ -160,38 +174,34 @@ export function GrandExchangePanel() {
         <div id="exchange-swap" className="space-y-3 scroll-mt-24">
           {/* Direction + tools */}
           <div className="flex items-center justify-between">
-            <div className="flex gap-1 rounded-md bg-surface-2 p-1 text-sm">
-              {(["buy", "sell"] as const).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => {
-                    setDirection(d);
-                    setKind("exactIn");
-                  }}
-                  className={`rounded-sm px-4 py-1.5 capitalize ${
-                    direction === d ? "bg-brand text-bg" : "text-text-2"
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-            <div className="relative flex items-center gap-1">
+            <SegmentedControl<SwapDirection>
+              ariaLabel="Buy or sell $PYRE"
+              value={direction}
+              onChange={(d) => {
+                setDirection(d);
+                setKind("exactIn");
+              }}
+              options={[
+                { value: "buy", label: "Buy" },
+                { value: "sell", label: "Sell" },
+              ]}
+            />
+            <div className="relative flex items-center gap-1.5">
               <button
                 onClick={() => quote.refetch()}
                 title="Refresh price"
-                className={`grid h-8 w-8 place-items-center rounded-md text-text-3 hover:text-text ${
-                  quote.isFetching ? "animate-spin" : ""
-                }`}
+                aria-label="Refresh price"
+                className="grid h-8 w-8 place-items-center rounded-md text-text-3 hover:text-brand hover:bg-surface-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
               >
-                ↻
+                <IconRefresh className={quote.isFetching ? "animate-spin" : ""} />
               </button>
               <button
                 onClick={() => setShowSettings((v) => !v)}
                 title="Settings"
-                className="grid h-8 w-8 place-items-center rounded-md text-text-3 hover:text-text"
+                aria-label="Swap settings"
+                className="grid h-8 w-8 place-items-center rounded-md transition-transform hover:scale-110 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
               >
-                ⚙
+                <ImageArt name="settings" width={20} hover={showSettings} />
               </button>
               {showSettings && (
                 <SettingsPopover
@@ -224,9 +234,14 @@ export function GrandExchangePanel() {
               <button
                 onClick={flip}
                 title="Switch direction"
-                className="absolute -my-3 grid h-8 w-8 place-items-center rounded-md border border-surface-3 bg-surface text-text-2 hover:text-brand"
+                aria-label="Switch direction"
+                className="group absolute -my-3 grid h-10 w-10 place-items-center rounded-full bg-bg ring-1 ring-frame/50 transition-transform duration-base ease-warm hover:scale-110 hover:ring-brand/60 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               >
-                ⇅
+                <ImageArt
+                  name="swapicon"
+                  width={32}
+                  className="transition-transform duration-base ease-warm group-hover:rotate-180"
+                />
               </button>
             </div>
             <TokenRow
@@ -295,14 +310,15 @@ function RecentSwaps() {
   const swaps = (feed.data ?? []).filter((e) => e.kind === "swap").slice(0, 5);
   if (swaps.length === 0) return null;
   return (
-    <div className="border-t border-surface-3 pt-3">
-      <span className="text-text-3 text-[10px] uppercase tracking-wider">Recent swaps</span>
-      <ul className="mt-1 space-y-1">
+    <div className="space-y-2 pt-1">
+      <hr className="ember-hairline" />
+      <span className="eyebrow">Recent swaps</span>
+      <ul className="forged-card divide-y divide-surface-3/50 overflow-hidden">
         {swaps.map((s) => (
-          <li key={s.id} className="flex items-center justify-between text-xs text-text-2">
-            <span className="tabular">{shortAddress(s.address)}</span>
-            <span>{s.note}</span>
-            <span className="text-text-3">{formatAgo(s.at)}</span>
+          <li key={s.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-text-2">
+            <span className="tabular shrink-0">{shortAddress(s.address)}</span>
+            <span className="truncate">{s.note}</span>
+            <span className="text-text-3 shrink-0">{formatAgo(s.at)}</span>
           </li>
         ))}
       </ul>

@@ -24,66 +24,70 @@ export function ObservatoryPanel() {
   const stats = useProtocolStats();
 
   return (
-    <Panel title="The Observatory" tagline="Live protocol stats">
+    <Panel title="The Observatory" tagline="Live protocol stats" frame="forged">
       <StateView query={stats}>
         {(s) => (
-          <div className="space-y-5">
-            {/* Rebase countdown, the live pulse */}
-            <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
-              <div>
-                <span className="text-text-3 text-xs uppercase tracking-wider">
-                  Next decay tick
-                </span>
-                <div className="tabular text-2xl text-brand">
-                  <Countdown to={s.nextEpochAt} />
+          /* Two columns across the wide interior: the live readings on the left
+             (the two headline readouts + the reading grid), the trends on the
+             right (halving countdown + the burn-rate chart, given room to
+             breathe). Stacks to one column on mobile. */
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-stretch">
+            {/* LEFT: the readings */}
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="forged-card forged-card--lit flex flex-col justify-between gap-2 px-4 py-3.5">
+                  <span className="eyebrow">Next decay tick</span>
+                  <div className="tabular text-3xl text-brand leading-none">
+                    <Countdown to={s.nextEpochAt} />
+                  </div>
+                  <Badge tone="brand">
+                    {formatPercent(s.decayRatePerHour)} / hr · Era {s.era}
+                  </Badge>
+                </div>
+                <div className="forged-card flex flex-col justify-between gap-2 px-4 py-3.5">
+                  <span className="eyebrow">Reward pool</span>
+                  <div className="tabular text-3xl text-brand leading-none">
+                    {formatEth(s.pendingYieldPoolEth, 2)}
+                  </div>
+                  <Badge>{formatEth(s.totalEthDistributed, 0)} all-time</Badge>
                 </div>
               </div>
-              <Badge tone="brand">
-                {formatPercent(s.decayRatePerHour)} / hr · Era {s.era}
-              </Badge>
+
+              <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3">
+                {[
+                  <Stat key="s" label="Supply remaining" value={formatToken(s.totalSupply)} />,
+                  <Stat key="b" label="Burned all-time" value={formatToken(s.totalBurned)} accent />,
+                  <Stat key="r" label="Staking ratio" value={formatPercent(s.stakingRatio)} />,
+                  <Stat key="a" label="Active Acolytes" value={s.activeAcolytes.toLocaleString()} />,
+                  <Stat key="sc" label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />,
+                  <Stat key="d" label="$ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />,
+                ].map((tile, i) => (
+                  <div key={i} className="forged-card flex items-center px-4 py-3.5">
+                    {tile}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Reward pool, $ETH gathered from fees and waiting for the next
-                distribution to stakers + Acolytes. */}
-            <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
-              <div>
-                <span className="text-text-3 text-xs uppercase tracking-wider">
-                  Reward pool · awaiting distribution
-                </span>
-                <div className="tabular text-2xl text-brand">
-                  {formatEth(s.pendingYieldPoolEth, 2)}
+            {/* RIGHT: the trends */}
+            <div className="flex flex-col gap-4">
+              <div className="forged-card px-4 py-4">
+                <ProgressBar
+                  value={1 - s.epochsUntilHalving / 2000}
+                  label={`${s.epochsUntilHalving.toLocaleString()} epochs until the next halving`}
+                />
+              </div>
+              <div className="forged-card flex flex-1 flex-col px-4 py-4">
+                <div className="mb-3 flex items-baseline justify-between">
+                  <span className="eyebrow">Burn rate · 48h</span>
+                  <span className="text-text-2 text-xs tabular">
+                    24h vol {formatEth(s.volume24h, 0)}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <Sparkline data={s.burnRateSeries} />
                 </div>
               </div>
-              <Badge>{formatEth(s.totalEthDistributed, 0)} paid all-time</Badge>
-            </div>
-
-            {/* Stat grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <Stat label="Supply remaining" value={formatToken(s.totalSupply)} />
-              <Stat label="Burned all-time" value={formatToken(s.totalBurned)} accent />
-              <Stat label="Staking ratio" value={formatPercent(s.stakingRatio)} />
-              <Stat label="Active Acolytes" value={s.activeAcolytes.toLocaleString()} />
-              <Stat label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />
-              <Stat label="$ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />
-            </div>
-
-            {/* Era countdown */}
-            <ProgressBar
-              value={1 - s.epochsUntilHalving / 2000}
-              label={`${s.epochsUntilHalving.toLocaleString()} epochs until the next halving`}
-            />
-
-            {/* Burn-rate chart */}
-            <div>
-              <div className="flex items-baseline justify-between mb-1">
-                <span className="text-text-3 text-xs uppercase tracking-wider">
-                  Burn rate · 48h
-                </span>
-                <span className="text-text-2 text-xs tabular">
-                  24h vol {formatEth(s.volume24h, 0)}
-                </span>
-              </div>
-              <Sparkline data={s.burnRateSeries} />
             </div>
           </div>
         )}

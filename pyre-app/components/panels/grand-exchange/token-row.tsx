@@ -16,19 +16,23 @@ export function fmtTokenAmount(token: TokenInfo, amount: bigint): string {
     : formatToken(amount, { maxFrac: 2, compact: false });
 }
 
+/* The token marker. A two-token pool has nothing to pick, so this is a plain
+   gold-lettered plate (matching the designer's swap mockup), not a dropdown-
+   looking chip: no false "change token" affordance. A small ember crest sits
+   with $PYRE; $ETH shows the lambda mark. */
 function TokenChip({ token }: { token: TokenInfo }) {
   const isPyre = token.symbol === "PYRE";
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 pl-1 pr-2.5 py-1">
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-frame/55 bg-black/25 pl-1.5 pr-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,214,150,0.06)]">
       <span
-        className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${
-          isPyre ? "bg-brand text-bg" : "bg-surface text-text"
-        }`}
+        className="grid h-5 w-5 place-items-center rounded-full text-[12px] font-bold text-brand"
         aria-hidden
       >
         {isPyre ? "🜂" : "Ξ"}
       </span>
-      <span className="text-sm font-medium text-text">{token.symbol}</span>
+      <span className="font-display text-base font-semibold tracking-wide text-brand-soft">
+        {token.symbol}
+      </span>
     </span>
   );
 }
@@ -59,21 +63,27 @@ export function TokenRow({
   insufficient?: boolean;
 }) {
   return (
-    <div className="rounded-md bg-surface-2 border border-surface-3 px-3 py-3">
+    <div className={`forged-field px-3.5 py-3 ${insufficient ? "forged-field--danger" : ""}`}>
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-3 uppercase tracking-wider">{label}</span>
         {balance !== undefined && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className={insufficient ? "text-danger" : "text-text-3"}>
               Balance {fmtTokenAmount(token, balance)}
             </span>
             {onHalf && (
-              <button onClick={onHalf} className="text-brand hover:underline">
+              <button
+                onClick={onHalf}
+                className="rounded-sm px-1.5 py-0.5 text-[11px] text-brand transition-colors hover:bg-brand/12"
+              >
                 50%
               </button>
             )}
             {onMax && (
-              <button onClick={onMax} className="text-brand hover:underline">
+              <button
+                onClick={onMax}
+                className="rounded-sm px-1.5 py-0.5 text-[11px] font-medium text-brand transition-colors hover:bg-brand/12"
+              >
                 Max
               </button>
             )}

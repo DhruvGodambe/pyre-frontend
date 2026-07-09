@@ -305,7 +305,7 @@ export function TourNarration() {
         onClick={() => setConfirmSkip(false)}
       >
         <div
-          className="w-full max-w-sm rounded-panel bg-surface border border-surface-3/60 shadow-panel p-5 text-center animate-entry"
+          className="stone-panel w-full max-w-sm p-5 text-center animate-entry"
           onClick={(e) => e.stopPropagation()}
         >
           <h3 className="font-display text-2xl text-brand">Skip the tour?</h3>

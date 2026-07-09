@@ -13,6 +13,7 @@ import { useEffect, useRef } from "react";
 import { useIdentity } from "@/lib/identity";
 import { useWallet } from "@/lib/wallet";
 import { EntryFork } from "@/components/ui/entry-fork";
+import { GameIcon } from "@/components/ui/game-icon";
 import { shortAddress } from "@/lib/format";
 
 export function GatePanel({ onEntered }: { onEntered?: () => void }) {
@@ -41,8 +42,8 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
     return (
       <div className="py-10 px-6 space-y-4 w-[min(92vw,24rem)]">
         <div className="text-center space-y-3">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand/10 ring-1 ring-brand/30">
-            <span className="text-2xl" aria-hidden>✦</span>
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/10 ring-1 ring-brand/30 shadow-[0_0_28px_-6px_rgba(240,169,59,0.6)]">
+            <GameIcon name={mode === "wallet" ? "wallet" : "guest"} size={30} alt="" />
           </span>
           <h2 className="font-display text-3xl text-brand">You&rsquo;re in</h2>
           <p className="text-text-2 text-sm max-w-xs mx-auto">
@@ -56,21 +57,29 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
           <button
             onClick={connectWallet}
             disabled={connecting}
-            className="w-full text-left rounded-md bg-brand text-bg px-4 py-3 hover:bg-brand-deep transition-colors disabled:opacity-60"
+            className="group/row flex w-full items-center gap-3.5 rounded-lg bg-gradient-to-b from-brand to-brand-deep px-4 py-3 text-left text-bg shadow-[0_6px_20px_-8px_rgba(240,169,59,0.7)] transition-all duration-fast hover:brightness-110 disabled:opacity-60 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
-            <div className="text-sm font-medium">
-              {connecting ? "Connecting…" : "Connect a wallet"}
-            </div>
-            <div className="text-bg/70 text-xs">
-              Add your address now instead of submitting it at the end.
-            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-bg/15">
+              <GameIcon name="wallet" size={26} alt="" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium leading-tight">
+                {connecting ? "Connecting…" : "Connect a wallet"}
+              </span>
+              <span className="block text-bg/70 text-xs mt-0.5">
+                Add your address now instead of submitting it at the end.
+              </span>
+            </span>
+            <span className="ml-auto shrink-0 text-lg text-bg/70 transition-transform duration-fast group-hover/row:translate-x-0.5" aria-hidden>
+              →
+            </span>
           </button>
         )}
 
         <div className="flex items-center justify-center gap-4 pt-1">
           <button
             onClick={() => onEntered?.()}
-            className="rounded-md bg-surface-2 text-text border border-surface-3 px-5 py-2.5 text-sm hover:bg-surface-3 transition-colors"
+            className="rounded-md bg-surface-2 text-text border border-surface-3 px-5 py-2.5 text-sm hover:bg-surface-3 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             Back to the app
           </button>
@@ -79,7 +88,7 @@ export function GatePanel({ onEntered }: { onEntered?: () => void }) {
               reset();
               onEntered?.();
             }}
-            className="text-text-3 text-xs hover:text-danger transition-colors"
+            className="rounded-md text-text-3 text-xs px-2 py-1 hover:text-danger transition-colors outline-none focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             {mode === "wallet" ? "Disconnect" : "Leave"}
           </button>

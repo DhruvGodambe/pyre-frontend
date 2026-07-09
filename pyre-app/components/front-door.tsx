@@ -35,7 +35,8 @@ import { KeeperBox, KeeperText, PlateButton } from "@/components/ui/keeper-box";
 import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
-import { playDoor } from "@/lib/sfx";
+import { playDoor, preloadSfx } from "@/lib/sfx";
+import { preloadAudio } from "@/lib/audio-preload";
 import { captureReferral } from "@/lib/quests/client";
 import { track } from "@vercel/analytics";
 import { VOICE_TIMING } from "@/lib/tour-voice-timing";
@@ -193,6 +194,14 @@ export function FrontDoor() {
     captureReferral(code);
     url.searchParams.delete("ref");
     window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  // Warm the audio the visitor is seconds from hearing: the keeper's gate lines
+  // (so the voice plays instantly and never trips the 2s watchdog into the silent
+  // typewriter) and the world SFX (so the first door/zoom click doesn't lag).
+  useEffect(() => {
+    preloadAudio([KEEPER_VOICE, SEALED_VOICE]);
+    preloadSfx();
   }, []);
 
   // Until we've settled whether this is a returning visitor, an opaque curtain

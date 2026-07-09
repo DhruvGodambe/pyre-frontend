@@ -10,6 +10,7 @@
    so muting the world silences effects too. */
 
 import { asset } from "./config";
+import { preloadAudio } from "./audio-preload";
 
 // Same key the music mute button uses (see components/world-audio.tsx).
 const MUTE_KEY = "pyre_world_muted";
@@ -52,6 +53,15 @@ function playOneShot(src: string, volume = SFX_VOLUME) {
   } catch {
     /* no Audio support: silently skip */
   }
+}
+
+/** Warm the SFX that fire on the very next interactions (door on Enter, zoom on
+    a building click, the stake flourish), so the first play is cache-hot instead
+    of downloading mid-click. Call once the world is about to be interactive. The
+    forge stings are intentionally left out until the designer delivers them (they
+    404 today and would just noise the console). Idempotent. */
+export function preloadSfx() {
+  preloadAudio([...DOOR_OPEN, "/world/audio/sfx/zoom.wav", "/world/audio/sfx/stake-ward.mp3"]);
 }
 
 /** Door sound for a building, the SAME on enter and leave (keyed by building id). */

@@ -7,7 +7,9 @@
    Deliberately rough now: this is the skeleton, not the final paint.
    ========================================================================== */
 
-import type { CSSProperties, ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { asset } from "@/lib/config";
 
 /* Carved frame skins for the framed Panel. A thick textured border (wood grain
@@ -100,6 +102,11 @@ export function Panel({
   // the language the visitor already met at the gate and in the tour. The title
   // moves ONTO the plate; the tagline stays inside as the first line.
   if (frame === "forged") {
+    // IDENTICAL to the tour panel (KeeperBox): the keeper-frame border-image draws
+    // the ornate lava-corner iron frame AND fills its own charred/ember interior,
+    // so every building panel reads as the exact same forged panel the visitor met
+    // on the guided tour. No extra stone overlay (that made building panels differ
+    // from the tour panel).
     return (
       <section className={`keeper-frame ${className}`}>
         {title && (
@@ -191,13 +198,23 @@ export function Stat({
 }
 
 /* --- Button ------------------------------------------------------------- */
+/* Four reusable variants sharing one shape + one focus ring, so every panel's
+   plain (non-diegetic) actions read as one family:
+     • primary   , the molten fill, the single most important action on a screen
+     • secondary , a warm-tinted brand action, second-tier but still "ours"
+     • ghost     , a quiet neutral action (Cancel, toggles, back)
+     • danger    , destructive / loss (unstake loss, reject). "destructive" alias.
+   The ornate baked-art actions the designer drew (Burn, Stake…) use ImageButton
+   instead; this family covers everything else. */
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "destructive";
 type ButtonProps = {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "ghost" | "danger";
+  variant?: ButtonVariant;
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
+  "aria-label"?: string;
 };
 
 export function Button({
@@ -207,18 +224,43 @@ export function Button({
   disabled,
   type = "button",
   className = "",
+  "aria-label": ariaLabel,
 }: ButtonProps) {
-  const styles: Record<string, string> = {
-    primary: "bg-brand text-bg hover:bg-brand-deep",
-    ghost: "bg-surface-2 text-text hover:bg-surface-3 border border-surface-3",
-    danger: "bg-danger/15 text-danger hover:bg-danger/25 border border-danger/40",
+  // PRIMARY is the forged plate: the designer's blanked ornate plate as a
+  // border-image (globals: .forged-btn), so any live label rides gilded stone
+  // at any width. The label is wrapped so it sits above the plate art.
+  if (variant === "primary") {
+    return (
+      <button
+        type={type}
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={`forged-btn ${className}`}
+      >
+        <span>{children}</span>
+      </button>
+    );
+  }
+  // Second-tier actions keep the pill shape but wear the carved bronze rim, so
+  // they read as the same metal family without competing with the plate.
+  const styles: Record<Exclude<ButtonVariant, "primary">, string> = {
+    secondary:
+      "border border-frame/60 bg-gradient-to-b from-surface-2 to-surface text-brand-soft shadow-[inset_0_1px_0_rgba(255,214,150,0.06)] hover:border-frame-strong hover:text-brand",
+    ghost:
+      "border border-surface-3 bg-surface-2/70 text-text hover:bg-surface-3 hover:border-frame/50",
+    danger:
+      "border border-danger/45 bg-danger/12 text-danger hover:bg-danger/22 hover:border-danger/70",
+    destructive:
+      "border border-danger/45 bg-danger/12 text-danger hover:bg-danger/22 hover:border-danger/70",
   };
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md px-4 py-2.5 text-sm font-medium transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed ${styles[variant]} ${className}`}
+      aria-label={ariaLabel}
+      className={`rounded-md px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,transform,box-shadow] duration-fast disabled:opacity-40 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${styles[variant]} ${className}`}
     >
       {children}
     </button>
@@ -229,12 +271,12 @@ export function Button({
 export function ProgressBar({ value, label }: { value: number; label?: string }) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {label && <span className="text-text-3 text-xs">{label}</span>}
-      <div className="h-2 rounded-full bg-surface-3 overflow-hidden">
+      <div className="pyre-bar">
         <div
-          className="h-full bg-brand rounded-full transition-all duration-base ease-warm"
-          style={{ width: `${pct}%` }}
+          className="pyre-bar-fill"
+          style={{ width: pct <= 0 ? 0 : `calc(${pct}% - 6px)` }}
         />
       </div>
     </div>
@@ -262,6 +304,175 @@ export function Badge({
   );
 }
 
+/* --- SegmentedControl: forged toggle / tabs ----------------------------
+   The themed replacement for the plain amber-pill rows (Buy·Sell, Stake·
+   Unstake, Auto·Custom). Recessed track, the active segment lifts to warm-lit
+   stone. Controlled. */
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+  className = "",
+}: {
+  options: { value: T; label: ReactNode }[];
+  value: T;
+  onChange: (v: T) => void;
+  ariaLabel?: string;
+  className?: string;
+}) {
+  return (
+    <div role="tablist" aria-label={ariaLabel} className={`seg ${className}`}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="tab"
+          aria-selected={value === o.value}
+          data-active={value === o.value}
+          onClick={() => onChange(o.value)}
+          className="seg-item capitalize"
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* --- Chip: forged filter / quick-pick pill -----------------------------
+   The gold-outlined stone chip (globals: .chip). One shared control for tier
+   filters, variant filters, and quick-fill picks, so a bar of them reads as
+   one family instead of mixed plain + ornate. */
+export function Chip({
+  active = false,
+  onClick,
+  children,
+  ariaLabel,
+  className = "",
+}: {
+  active?: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+  ariaLabel?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      data-active={active}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={`chip ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* --- Select: themed dropdown (replaces native <select>) ----------------
+   A forged-well trigger + a carved popover list. Closes on click-outside /
+   Escape. Keeps the theme where a native <select> would punch an OS-grey hole
+   through it (the Black Market Sort control). */
+export function Select<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+  className = "",
+  align = "right",
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  ariaLabel?: string;
+  className?: string;
+  align?: "left" | "right";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = options.find((o) => o.value === value);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        onClick={() => setOpen((v) => !v)}
+        className="forged-field flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-2 hover:text-text outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
+      >
+        <span className="truncate">{current?.label}</span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+          className={`shrink-0 text-brand transition-transform duration-fast ${open ? "rotate-180" : ""}`}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label={ariaLabel}
+          className={`absolute z-30 mt-1.5 min-w-[11rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-frame/60 bg-surface py-1 shadow-panel ${
+            align === "right" ? "right-0" : "left-0"
+          }`}
+        >
+          {options.map((o) => {
+            const sel = o.value === value;
+            return (
+              <li key={o.value} role="option" aria-selected={sel}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-xs transition-colors duration-fast ${
+                    sel ? "bg-brand/10 text-brand" : "text-text-2 hover:bg-surface-2 hover:text-text"
+                  }`}
+                >
+                  {o.label}
+                  {sel && (
+                    <span className="text-brand text-[8px]" aria-hidden>
+                      ◆
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /* --- Field: labelled amount input -------------------------------------- */
 export function Field({
   label,
@@ -279,15 +490,15 @@ export function Field({
   return (
     <label className="flex flex-col gap-1">
       {label && <span className="text-text-3 text-xs uppercase tracking-wider">{label}</span>}
-      <div className="flex items-center gap-2 rounded-md bg-surface-2 border border-surface-3 px-3 py-2.5 focus-within:border-brand/60">
+      <div className="forged-field flex items-center gap-2 px-3 py-2.5">
         <input
           inputMode="decimal"
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="tabular flex-1 bg-transparent outline-none text-text text-lg min-w-0"
+          className="tabular flex-1 bg-transparent outline-none text-text text-lg min-w-0 placeholder:text-text-3/60"
         />
-        {suffix && <span className="text-text-3 text-sm shrink-0">{suffix}</span>}
+        {suffix && <span className="text-brand-soft/80 text-sm font-medium shrink-0">{suffix}</span>}
       </div>
     </label>
   );

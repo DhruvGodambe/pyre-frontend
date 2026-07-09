@@ -13,6 +13,7 @@ import { formatToken, formatAgo, shortAddress } from "@/lib/format";
 import type { ActivityEvent } from "@/lib/types";
 import type { BonfireState } from "@/lib/constants";
 import { GameIcon } from "@/components/ui/game-icon";
+import { Badge } from "@/components/ui/primitives";
 
 /* The fire grows with the all-time burn total: the same flame token, larger as
    the bonfire climbs kindling → inferno. */
@@ -31,30 +32,36 @@ export function BonfirePanel() {
     <StateView query={stats}>
       {(s) => {
         const f = FLAME[s.bonfire];
+        // A glass plaque, not an opaque card: the painted bonfire scene glows
+        // through behind it, so the counter reads as carved into the fire-lit
+        // air rather than pasted over it.
         return (
-          <div className="rounded-panel bg-surface shadow-panel border border-surface-3/60 p-6 text-center relative overflow-hidden">
+          <div className="relative overflow-hidden rounded-panel border border-brand/25 bg-bg/45 p-6 text-center shadow-[0_16px_48px_-16px_rgba(0,0,0,0.85)] ring-1 ring-inset ring-white/5 backdrop-blur-md">
             <div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: "radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 60%)" }}
+              style={{ background: "radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-brand) 22%, transparent), transparent 62%)" }}
             />
-            <div className="flex justify-center animate-pulse" aria-hidden>
-              <GameIcon name="fireToken" size={f.size} />
-            </div>
-            <div className="font-display text-4xl text-brand tabular mt-2">
-              {formatToken(s.totalBurned)}
-            </div>
-            <div className="text-text-3 text-xs uppercase tracking-widest mt-1">
-              $PYRE burned all-time · {f.label}
-            </div>
+            <div className="relative">
+              <div className="flex justify-center animate-pulse" aria-hidden>
+                <GameIcon name="fireToken" size={f.size} className="drop-shadow-[0_4px_20px_rgba(240,169,59,0.45)]" />
+              </div>
+              <div className="font-display text-5xl text-brand tabular mt-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
+                {formatToken(s.totalBurned)}
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <span className="text-text-3 text-[11px] uppercase tracking-widest">$PYRE burned all-time</span>
+                <Badge tone="brand">{f.label}</Badge>
+              </div>
 
-            <div className="mt-4 h-6 overflow-hidden">
-              <StateView query={feed} loading={null}>
-                {(events) => <BurnTicker events={events} />}
-              </StateView>
-            </div>
+              <div className="mx-auto mt-4 flex h-8 max-w-sm items-center justify-center overflow-hidden rounded-md border border-surface-3/60 bg-bg/40 px-3">
+                <StateView query={feed} loading={null}>
+                  {(events) => <BurnTicker events={events} />}
+                </StateView>
+              </div>
 
-            <div className="mt-4 max-w-xs mx-auto">
-              <NavCta to="forge" tab="burn">Burn $PYRE</NavCta>
+              <div className="mt-4 max-w-xs mx-auto">
+                <NavCta to="forge" tab="burn">Burn $PYRE</NavCta>
+              </div>
             </div>
           </div>
         );

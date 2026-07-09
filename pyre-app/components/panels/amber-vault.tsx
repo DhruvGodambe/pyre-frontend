@@ -18,6 +18,7 @@ import { StateView } from "@/components/ui/state";
 import { RequireWallet } from "@/components/ui/wallet-gate";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
+import { GameIcon } from "@/components/ui/game-icon";
 import { STAGES, acolyteName } from "@/lib/constants";
 import {
   formatToken,
@@ -39,17 +40,22 @@ export function AmberVaultPanel() {
     : "decaying";
 
   return (
-    <Panel title="The Amber Vault" tagline="Your position & Acolyte">
+    <Panel title="The Amber Vault" tagline="Your position & Acolyte" frame="forged">
       <RequireWallet message="Connect to see your Pyre Acolyte and position.">
         <StateView query={acolyte}>
           {(a) =>
             !a.exists ? (
-              <AcolyteState
-                liquid={position.data?.liquidBalance ?? 0n}
-                burned={a.cumulativeBurnWeight}
-              />
+              <div className="mx-auto max-w-xl">
+                <AcolyteState
+                  liquid={position.data?.liquidBalance ?? 0n}
+                  burned={a.cumulativeBurnWeight}
+                />
+              </div>
             ) : (
-              <div className="space-y-5">
+              /* Two columns across the wide interior: your Acolyte + position on
+                 the left, your history on the right. Stacks on mobile. */
+              <div className="grid gap-6 lg:grid-cols-5 lg:items-start">
+                <div className="space-y-5 lg:col-span-3">
                 <div className="flex flex-col items-center text-center gap-4 sm:flex-row sm:items-center sm:text-left">
                   <AcolyteArt acolyte={a} size={140} />
                   <div className="space-y-2">
@@ -92,17 +98,28 @@ export function AmberVaultPanel() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4 pt-2 border-t border-surface-3/60">
-                        <Stat label="Liquid balance" value={formatToken(p.liquidBalance)} sub={decayLabel} />
-                        <Stat label="Staked (safe)" value={formatToken(p.stakedBalance)} />
-                        <Stat label="Pending $ETH" value={formatEth(p.pendingRewardsEth)} accent />
-                        {p.drip && (
-                          <Stat
-                            label="Drip returning"
-                            value={formatToken(p.drip.total)}
-                            sub="7-day exit in progress"
-                          />
-                        )}
+                      <div className="space-y-3">
+                        {/* Pending yield is the focal number: full-width lit tile. */}
+                        <div className="forged-card forged-card--lit px-4 py-3.5">
+                          <Stat label="Pending $ETH" value={formatEth(p.pendingRewardsEth)} accent />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="forged-card px-4 py-3.5">
+                            <Stat label="Liquid balance" value={formatToken(p.liquidBalance)} sub={decayLabel} />
+                          </div>
+                          <div className="forged-card px-4 py-3.5">
+                            <Stat label="Staked (safe)" value={formatToken(p.stakedBalance)} />
+                          </div>
+                          {p.drip && (
+                            <div className="forged-card col-span-2 px-4 py-3.5">
+                              <Stat
+                                label="Drip returning"
+                                value={formatToken(p.drip.total)}
+                                sub="7-day exit in progress"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Claim your staking yield. This is the home for it: the Vault is
@@ -121,22 +138,24 @@ export function AmberVaultPanel() {
                   )}
                 </StateView>
 
-                {/* Personal transaction history */}
-                <div className="pt-3 border-t border-surface-3/60">
-                  <h3 className="text-text-3 text-xs uppercase tracking-wider mb-2">Your history</h3>
+                </div>
+
+                {/* RIGHT: your history */}
+                <div className="space-y-2.5 lg:col-span-2">
+                  <h3 className="eyebrow">Your history</h3>
                   <StateView query={history} loading={null}>
                     {(events) =>
                       events.length === 0 ? (
                         <p className="text-text-3 text-xs">No activity yet.</p>
                       ) : (
-                        <ul className="space-y-1">
+                        <ul className="forged-card divide-y divide-surface-3/50 overflow-hidden">
                           {events.map((e) => (
-                            <li key={e.id} className="flex items-center justify-between text-sm">
+                            <li key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                               <span className="text-text-2">
                                 {e.note}
                                 {e.kind !== "claim" && ` · ${formatToken(e.amount)}`}
                               </span>
-                              <span className="text-text-3 text-xs tabular">{formatAgo(e.at)}</span>
+                              <span className="text-text-3 text-xs tabular shrink-0">{formatAgo(e.at)}</span>
                             </li>
                           ))}
                         </ul>
@@ -165,8 +184,8 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
   return (
     <div className="space-y-5 py-2">
       <div className="text-center space-y-2">
-        <div className="text-4xl text-text-3" aria-hidden>
-          🜂
+        <div className="flex justify-center">
+          <GameIcon name="ember" size={54} alt="" className="opacity-80 drop-shadow-[0_2px_8px_rgba(240,169,59,0.25)]" />
         </div>
         <h3 className="font-display text-2xl text-brand">You don&rsquo;t have an Acolyte yet</h3>
         <p className="text-text-2 text-sm max-w-sm mx-auto">
@@ -184,7 +203,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
       </div>
 
       {/* Where they stand */}
-      <div className="rounded-md bg-surface-2 border border-surface-3/60 p-4 space-y-3">
+      <div className="forged-card p-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-text-3">You hold</span>
           <span className="tabular text-text">{formatToken(liquid)} $PYRE</span>

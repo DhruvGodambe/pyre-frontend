@@ -7,43 +7,28 @@
      a Close button: a visitor mid-stake can consult the codex and drop back
      exactly where they were. Opened from anywhere via useCodex().
    - CodexButton: the persistent tome button placed in both shells, so the docs
-     are always one tap away, not buried in the tour or the gate.
-   - CodexRiteLink: the contextual "Read the rite" link shown inside a building,
-     opening the Codex straight to that building's chapter.
+     are always one tap away, not buried in the tour or the gate. Uses the
+     designer's engraved frame art (book glyph + "The Codex"), same family as
+     the Replay tour button beside it.
 
    Content + open/close state live in lib/codex/content.ts and lib/codex.tsx. */
 
 import { useEffect } from "react";
-import { type BuildingId } from "@/components/buildings";
 import { useCodex } from "@/lib/codex";
-import { BookGlyph, CodexBook } from "@/components/codex-book";
+import { CodexBook } from "@/components/codex-book";
+import { ImageButton } from "@/components/ui/image-button";
 
 /* The persistent entry button. Drop it in a shell with positioning via className. */
-export function CodexButton({ className = "" }: { className?: string }) {
+export function CodexButton({ className = "", width = 165 }: { className?: string; width?: number | string }) {
   const codex = useCodex();
   return (
-    <button
+    <ImageButton
+      name="codex"
+      label="Open the Ember Codex"
+      width={width}
       onClick={() => codex.open()}
-      aria-label="Open the Ember Codex"
-      className={`inline-flex items-center gap-2 rounded-full bg-surface-2/95 border border-brand/40 text-brand text-xs px-3 py-1.5 shadow-panel backdrop-blur hover:border-brand hover:bg-surface-2 transition-colors ${className}`}
-    >
-      <BookGlyph className="h-4 w-4" />
-      <span className="font-display tracking-wide">The Codex</span>
-    </button>
-  );
-}
-
-/* Contextual link for inside a building: opens the Codex to its chapter. */
-export function CodexRiteLink({ building, className = "" }: { building: BuildingId; className?: string }) {
-  const codex = useCodex();
-  return (
-    <button
-      onClick={() => codex.openBuilding(building)}
-      className={`inline-flex items-center gap-1.5 text-text-3 text-xs hover:text-brand transition-colors ${className}`}
-    >
-      <BookGlyph className="h-3.5 w-3.5" />
-      Read the rite
-    </button>
+      className={className}
+    />
   );
 }
 
