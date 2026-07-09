@@ -40,11 +40,11 @@ import { captureReferral } from "@/lib/quests/client";
 import { track } from "@vercel/analytics";
 import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 
-/* Pre-launch the gate stands SEALED and the EMBERKEEPER stands before it:
-   the designer EXACT character art (AI-matted cutout, zero repainting),
-   layered over the scene in image coordinates. He delivers the message from
-   the dialogue box once the film clears. At launch the original open-gate
-   art returns. */
+/* Pre-launch the gate stands SEALED and THE ASHWARDEN, the threshold guard,
+   stands before it: the designer EXACT character art (clean cutout, zero
+   repainting), layered over the scene in image coordinates. He delivers the
+   message from the dialogue box once the film clears. At launch the original
+   open-gate art returns. */
 const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
 
 /* The keeper's voice for this scene. NOTE: free-tier ElevenLabs test clip in
@@ -301,7 +301,7 @@ export function FrontDoor() {
       style={{ opacity: entering ? 0 : 1 }}
     >
       {/* The cinematic film plays over everything on first arrival, then clears
-          and the Emberkeeper arrives at the threshold. */}
+          and the Ashwarden arrives at the threshold. */}
       <PyreIntro
         onDone={() => {
           track("film_done");
@@ -327,7 +327,7 @@ export function FrontDoor() {
           sizes="100vw"
           className="object-cover select-none pointer-events-none"
         />
-        {/* The keeper himself: the designer's EXACT pixels (AI-matted cutout,
+        {/* The Ashwarden himself: the designer's EXACT pixels (clean cutout,
             zero repainting), standing left of the doors, cropped by the frame
             bottom. Positioned in image coordinates via the same cover-proxy
             geometry as the art, so he stands on the path at every viewport. */}
@@ -337,7 +337,7 @@ export function FrontDoor() {
                 talks through the box below. The Codex has its own plate. */}
             <div className="absolute bottom-[-1.5%] left-[30%] -translate-x-1/2 h-[57%]">
               <img
-                src={asset("/world/emberkeeper/keeper-crossed-cut.webp")}
+                src={asset("/world/ashwarden/ashwarden-cut.webp")}
                 alt=""
                 draggable={false}
                 className="keeper-idle h-full w-auto max-w-none select-none"
@@ -368,10 +368,10 @@ export function FrontDoor() {
         />
       </div>
 
-      {/* THE EMBERKEEPER stands at the gate, painted into the scene itself.
+      {/* THE ASHWARDEN stands at the gate, painted into the scene itself.
           Once the film clears (and after a beat so he is SEEN), he speaks
-          through the dialogue box, the same box, the same character, as the
-          guided tour in the village. */}
+          through the dialogue box, the same box chrome as the guided tour in
+          the village, but a distinct persona from the Emberkeeper. */}
       {keeper === "box" && (
         <div
           className="absolute inset-x-0 bottom-0 z-10 flex justify-center p-4 pb-[4vh] transition-opacity duration-300"
@@ -420,10 +420,10 @@ export function FrontDoor() {
           >
             <div className="flex gap-4 items-center">
               {/* His face up close: the wide shot already shows the figure at
-                  the gate, so the box carries the close-up (hood and burning
+                  the gate, so the box carries the close-up (helm and burning
                   eyes) instead of repeating him in miniature. */}
               <img
-                src={asset("/world/emberkeeper/crossed-face.webp")}
+                src={asset("/world/ashwarden/ashwarden-face.webp")}
                 alt=""
                 draggable={false}
                 className="h-20 w-20 sm:h-28 sm:w-28 shrink-0 rounded-md object-cover ring-1 ring-black/70 shadow-[0_2px_10px_rgba(0,0,0,0.6)] select-none"

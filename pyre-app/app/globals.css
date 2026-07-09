@@ -155,6 +155,13 @@ h1, h2, h3, h4 {
 @media (max-width: 640px) {
   .keeper-frame { --kf: 30px; }
 }
+/* Reserve clearance BELOW for the action plates that now straddle the bottom
+   edge (the mirror of margin-top's clearance for the name plate above), only
+   when the box actually carries actions, so plain framed panels are untouched. */
+.keeper-frame:has(.keeper-actions) { margin-bottom: 28px; }
+@media (max-width: 640px) {
+  .keeper-frame:has(.keeper-actions) { margin-bottom: 30px; }
+}
 /* The corner embers breathe: a soft warm bloom over the painted coals in the
    four corner plates, nothing else moves. Static under reduced motion. */
 @keyframes keeper-corners {
@@ -214,14 +221,22 @@ h1, h2, h3, h4 {
   position: absolute;
   left: 0;
   right: 0;
-  /* Top-anchored on the panel's bottom edge: if plates ever wrap, extra rows
-     grow DOWN past the frame, never up over the words. */
-  top: calc(100% - 2px);
+  /* Straddling the frame's bottom bar, a mirror of the name plate forged into
+     the top edge, so the plates read as PART of the frame instead of dangling
+     below it. translateY(50%) sits the row's centre on the outer bottom edge;
+     nowrap keeps the primary plate on the bar (our labels always fit) rather
+     than wrapping a row up over the words. */
+  bottom: calc(-1 * var(--kf));
+  transform: translateY(50%);
   z-index: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  /* Centred on the bottom bar, mirroring the centred name plate on the top
+     edge, so the plates sit as a balanced part of the frame. Held clear of the
+     molten corner plates by a floor inset. */
   justify-content: center;
+  padding: 0 calc(var(--kf) + 4px);
   gap: 12px;
   pointer-events: none;
 }
