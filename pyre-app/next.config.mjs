@@ -30,6 +30,8 @@ const nextConfig = {
       "@safe-global/safe-apps-sdk",
       "@safe-global/safe-apps-provider",
       "@walletconnect/ethereum-provider",
+      "@react-native-async-storage/async-storage",
+      "pino-pretty",
     ];
     config.resolve.fallback = {
       ...config.resolve.fallback,

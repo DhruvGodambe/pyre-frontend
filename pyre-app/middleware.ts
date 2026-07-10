@@ -40,6 +40,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Node.js runtime so DESIGNER_PASSWORD from .env.local is available (Edge only
+  // inlines NEXT_PUBLIC_* vars from .env files; Vercel dashboard vars work on Edge).
+  runtime: "nodejs",
   // Gate ONLY the kingdom and its quest APIs. Everything else, the public front
   // door "/", the Ember Codex "/codex", "/login", "/api/session", and all static
   // assets (world art/audio/video, fonts, token logos), stays open and cacheable.

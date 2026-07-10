@@ -9,17 +9,18 @@
      • MOCK  (default while mocking): pretend-connect after a short delay, no
        extension needed, so the pre-launch demo + guest flow work with zero
        setup.
-     • REAL  (USE_MOCK=false, or NEXT_PUBLIC_REAL_WALLET=true): wagmi, injected
-       (MetaMask/Rabby) + Coinbase. Requires <WagmiProvider> above (added in
-       lib/providers.tsx for the same condition).
+     • REAL  (USE_MOCK=false, or NEXT_PUBLIC_REAL_WALLET=true): wagmi + RainbowKit.
+       connect() opens the RainbowKit wallet picker; requires <WagmiProvider> and
+       <RainbowKitProvider> above (lib/providers.tsx).
 
    Panels never see the difference: they import useWallet() only.
    ========================================================================== */
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import type { Address, WalletState } from "./types";
-import { CHAIN_ID, REAL_WALLET } from "./config";
+import { REAL_WALLET } from "./config";
 
 interface WalletContextValue extends WalletState {
   connect: () => void;
@@ -60,38 +61,25 @@ function MockWalletProvider({ children }: { children: React.ReactNode }) {
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
-/* REAL: wagmi-backed. Maps wagmi's account/connect status onto our 3-state shape
-   and drives connect() through the injected connector (falling back to whatever
-   connector is available). Same shape as the mock, so nothing downstream changes. */
+/* REAL: wagmi-backed, connect opens the RainbowKit modal. */
 function RealWalletProvider({ children }: { children: React.ReactNode }) {
   const { address, status: accountStatus } = useAccount();
-  const { connectAsync, connectors, status: connectStatus } = useConnect();
+  const { openConnectModal } = useConnectModal();
   const { disconnect: wagmiDisconnect } = useDisconnect();
 
   const status: WalletState["status"] =
     accountStatus === "connected"
       ? "connected"
-      : accountStatus === "connecting" ||
-          accountStatus === "reconnecting" ||
-          connectStatus === "pending"
+      : accountStatus === "connecting" || accountStatus === "reconnecting"
         ? "connecting"
         : "disconnected";
 
   const connect = useCallback(() => {
-    const connector =
-      connectors.find((c) => c.type === "injected") ?? connectors[0];
-    // chainId pins the connection to the configured chain: a wallet parked on
-    // another network gets a switch prompt as part of connecting.
-    // Swallow the user-rejected / no-wallet errors: the UI just stays disconnected.
-    if (connector)
-      void connectAsync({ connector, chainId: CHAIN_ID as 1 | 11155111 }).catch(() => {});
-  }, [connectAsync, connectors]);
+    openConnectModal?.();
+  }, [openConnectModal]);
 
   const disconnect = useCallback(() => wagmiDisconnect(), [wagmiDisconnect]);
 
-  // Restoring a saved session (wagmi auto-reconnect on mount). We treat this as a
-  // distinct phase from a user-initiated "connecting", so the gate can hold off
-  // and a returning visitor never sees a connect prompt.
   const initializing = accountStatus === "reconnecting";
 
   const value = useMemo<WalletContextValue>(
