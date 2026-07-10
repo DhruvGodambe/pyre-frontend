@@ -70,19 +70,18 @@ Recommended internal anchors (finalize per partner, never in writing first):
 
 ## 4. Templates
 
+Templates are kept as plain text (no blockquote bars) so a copy-paste into a
+DM carries no stray formatting.
+
 ### A. First touch (X DM, short, personalize the first line)
 
-> Hey [name], your [thread/video] on [specific topic] was [one specific,
-> honest compliment].
->
-> We are building Pyre Protocol: a token economy on Uniswap v4 where supply
-> only falls. Idle balances decay and burn every hour, staking earns $ETH,
-> and burning forges an NFT that multiplies the yield up to 7.2×.
->
-> Everything is public: pyreprotocol.com/codex
->
-> Pre-launch we are partnering with a small set of voices, compensated in
-> allocation and position, not fiat. Want the brief?
+Hey [name], your [thread/video] on [specific topic] was [one specific, honest compliment].
+
+We are building Pyre Protocol, a token economy on Uniswap v4 where supply only falls. Idle balances decay and burn every hour, staking earns $ETH, and burning forges an NFT that multiplies the yield up to 7.2x.
+
+Everything is public: pyreprotocol.com/codex
+
+Pre-launch we are partnering with a small set of voices, compensated in allocation and position, not fiat. Want the brief?
 
 ### B. Partner brief (after a reply; attach the banner image)
 

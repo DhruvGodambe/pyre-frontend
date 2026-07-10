@@ -87,6 +87,7 @@ export function Panel({
   children,
   className = "",
   frame = false,
+  bg,
 }: {
   title?: string;
   tagline?: string;
@@ -96,6 +97,9 @@ export function Panel({
   /** Carved frame around a translucent interior. `true` = wood (default skin),
       or pick "wood" / "stone" explicitly. Opt-in, so only framed panels change. */
   frame?: boolean | FrameSkin;
+  /** Swap the panel's interior FILL without touching the frame. "stone" lays the
+      brick_bg texture over the forged frame's charred interior. Opt-in. */
+  bg?: "stone";
 }) {
   // The forged skin: the keeper box's blackened-iron chrome (same border-image
   // frame, same forged name plate riding the top edge), so the buildings speak
@@ -108,7 +112,7 @@ export function Panel({
     // on the guided tour. No extra stone overlay (that made building panels differ
     // from the tour panel).
     return (
-      <section className={`keeper-frame ${className}`}>
+      <section className={`keeper-frame ${bg === "stone" ? "keeper-frame--stone " : ""}${className}`}>
         {title && (
           <div className="keeper-plate">
             <span>{title}</span>
@@ -274,10 +278,12 @@ export function ProgressBar({ value, label }: { value: number; label?: string })
     <div className="flex flex-col gap-1.5">
       {label && <span className="text-text-3 text-xs">{label}</span>}
       <div className="pyre-bar">
-        <div
-          className="pyre-bar-fill"
-          style={{ width: pct <= 0 ? 0 : `calc(${pct}% - 6px)` }}
-        />
+        <div className="pyre-bar-trough">
+          <div
+            className="pyre-bar-fill"
+            style={{ width: pct <= 0 ? 0 : `${pct}%` }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -151,30 +151,52 @@ h1, h2, h3, h4 {
     0 18px 50px -18px rgba(0, 0, 0, 0.85);
 }
 
-/* --- Progress bar: the designer-style forged track + a molten fill ---------
-   The track is a Nano Banana bronze-rim capsule (progress_track.webp, matched to
-   our frames); the fill is a molten-ember bar that rises inside the rim. Used by
-   the ProgressBar primitive everywhere (tiers, quests, halving, invites). */
+/* --- Progress bar: ornate forged frame + molten fill -----------------------
+   The frame is a Nano Banana spiked-bronze bar with lit ember gems and a hollow
+   charred trough (bar_frame.webp, real alpha); the fill is molten liquid fire
+   (bar_fill.webp) that rises inside the trough, clipped to the fill %. The
+   trough insets below are measured from the art (left/right ~9.5%, top 12.9% /
+   bottom 13.7%), so the molten metal sits exactly in the recess. Used by the
+   ProgressBar primitive everywhere (tiers, quests, halving, invites). */
 .pyre-bar {
   position: relative;
-  height: 20px;
-  border-radius: 10px;
-  background: #0e0b07 center / 100% 100% no-repeat;
-  background-image: url("/world/ui/progress_track.webp");
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+  width: 100%; /* spans its container (the panel) */
+  aspect-ratio: 15 / 1; /* long, slim frame sprite (end-caps + stretched middle) */
+  background: url("/world/ui/bar_frame.webp") center / 100% 100% no-repeat;
+}
+/* The recessed channel the fill lives in (measured from the painted opening,
+   inner edge of the bronze rim). */
+.pyre-bar-trough {
+  position: absolute;
+  left: 6.4%;
+  right: 6.4%;
+  top: 26.4%;
+  bottom: 29.3%;
+  border-radius: 2px;
+  overflow: hidden;
 }
 .pyre-bar-fill {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ffe6ac 0%, #f4b24a 46%, #d07f22 100%);
+  inset: 0;
+  width: 0; /* set inline from the value */
+  /* Molten liquid-fire texture, scaled to the trough height and tiling along
+     its length so it reads continuous at any fill level. */
+  background: url("/world/ui/bar_fill.webp") left center / auto 100% repeat-x;
   box-shadow:
-    0 0 10px rgba(240, 169, 59, 0.5),
-    inset 0 1px 0 rgba(255, 246, 220, 0.7),
-    inset 0 -2px 5px rgba(150, 60, 10, 0.55);
+    0 0 7px rgba(255, 138, 46, 0.45),
+    inset 0 0 8px rgba(255, 226, 170, 0.35);
   transition: width var(--duration-base) var(--ease-warm);
+}
+/* A brighter hot lip at the advancing edge, so the fill front looks freshly lit. */
+.pyre-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  background: linear-gradient(90deg, transparent, rgba(255, 244, 214, 0.85));
+  border-radius: 999px;
 }
 
 /* A quiet ember hairline divider, warmer than a flat border. */
@@ -482,6 +504,53 @@ h1, h2, h3, h4 {
 }
 /* A framed panel that fills its grid row (equal-height side-by-side panels). */
 .keeper-frame.h-full { height: 100%; }
+/* Optional stone FILL for a forged panel (bg="stone"). Uses a HOLLOW version of
+   the frame art (keeper-frame-hollow.webp: the same iron rim + lava corners, but
+   the charred centre keyed to transparent) as the border-image WITHOUT `fill`,
+   and puts the designer's brick_bg charred-stone as the element's own background.
+   Because the frame centre is transparent, the stone shows through the ENTIRE
+   interior right up to the thin iron rim, edge-to-edge, no painted charred ring.
+   A dark multiply overlay keeps light text legible. */
+.keeper-frame--stone {
+  border-image: url("/world/ui/keeper-frame-hollow.webp") 165 / var(--kf) / 0 stretch;
+  /* Raw brick, NO dark gradient veil over it (the user wants the actual stone
+     visible, not a translucent darkening layer). */
+  background: url("/world/ui/brick_bg.webp") center / 360px repeat;
+}
+/* Ornamental content box: a thin gilded rim (a real 1px border, so the fill can
+   never bleed past it) holding a translucent fill, with a filigree flourish on
+   each corner. The reference look the user asked for; used inside stone panels. */
+.orn-box {
+  position: relative;
+  padding: 14px 18px;
+  border: 1px solid rgba(183, 138, 69, 0.5);
+  background:
+    url("/world/ui/orn-corner-tl.webp") top left / 26px no-repeat,
+    url("/world/ui/orn-corner-tr.webp") top right / 26px no-repeat,
+    url("/world/ui/orn-corner-bl.webp") bottom left / 26px no-repeat,
+    url("/world/ui/orn-corner-br.webp") bottom right / 26px no-repeat,
+    rgba(7, 4, 3, 0.5);
+  background-origin: border-box;
+  background-clip: border-box;
+}
+/* Bare-on-stone content: instead of drawing translucent boxes on the textured
+   stone (which bleed through and read as overlapping shapes), the lines that
+   matter get a slim ember accent bar on the left; everything else is separated
+   by hairline dividers (Tailwind border-frame/20). Used inside stone panels. */
+.stone-accent {
+  position: relative;
+  padding-left: 15px;
+}
+.stone-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ff8a2e, var(--color-brand-deep));
+}
 /* The corner embers breathe: a soft warm bloom over the painted coals in the
    four corner plates, nothing else moves. Static under reduced motion. */
 @keyframes keeper-corners {

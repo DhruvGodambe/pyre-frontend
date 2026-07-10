@@ -58,12 +58,6 @@ export function TavernPanel() {
 
   return (
     <div ref={ref} className="pt-1">
-      <p className="mx-auto mb-2 max-w-2xl text-center text-text-2 text-sm leading-relaxed">
-        Earn <span className="text-brand">Points</span> before launch: complete
-        quests, invite friends, and climb the leaderboard. What Points unlock is
-        revealed closer to launch.
-      </p>
-
       {/* A true three-column spread that fills the width: the Leaderboard sits on
           the LEFT (under Return to Pyre), the tall Quests list takes the wide
           CENTRE, and Invite friends sits on the RIGHT. All top-aligned to one grid.
@@ -71,17 +65,17 @@ export function TavernPanel() {
           handled by .keeper-frame's own margin (globals.css). */}
       <div className="grid items-start gap-x-5 gap-y-4 lg:grid-cols-4">
         <div ref={standingRef} className="order-3 lg:order-1">
-          <Panel title="Leaderboard" tagline="Top point earners" frame="forged">
+          <Panel title="Leaderboard" tagline="Top point earners" frame="forged" bg="stone">
             <QuestLeaderboard />
           </Panel>
         </div>
         <div className="order-1 lg:order-2 lg:col-span-2">
-          <Panel title="Quests" tagline="Complete tasks to earn Points" frame="forged">
+          <Panel title="Quests" tagline="Complete tasks to earn Points" frame="forged" bg="stone">
             <QuestFunnel />
           </Panel>
         </div>
         <div ref={summonRef} className="order-2 lg:order-3">
-          <Panel title="Invite friends" tagline="Earn Points for every friend" frame="forged">
+          <Panel title="Invite friends" tagline="Earn Points for every friend" frame="forged" bg="stone">
             <SummonSection />
           </Panel>
         </div>
@@ -148,18 +142,20 @@ function QuestFunnel() {
           return (
             <>
               {/* Rank + uncollected: the two nudges, stacked. */}
-              <StandingStrip lb={lb} unclaimed={unclaimed} allDone={allQuestsDone && submitted} />
+              <div className="orn-box">
+                <StandingStrip lb={lb} unclaimed={unclaimed} allDone={allQuestsDone && submitted} />
+              </div>
 
               {/* Ember total, ticks up on completion. */}
-              <div className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
+              <div className="orn-box flex items-center justify-between">
                 <span className="text-text-3 text-xs uppercase tracking-wider">Points earned</span>
                 <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg">
                   <GameIcon name="fireToken" size={18} /> <EmberCount value={totalEmbers} />
                 </span>
               </div>
 
-              {/* Progress, kept visible (the unfinished pulls you back). */}
-              <div className="space-y-1.5">
+              {/* Progress + the quest list, together in one box. */}
+              <div className="orn-box space-y-3">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-text-3 uppercase tracking-wider">Your quests</span>
                   <span className="tabular text-text-2">
@@ -167,27 +163,25 @@ function QuestFunnel() {
                   </span>
                 </div>
                 <ProgressBar value={total ? done / total : 0} />
+                <ol id="tavern-rites" className="scroll-mt-24">
+                  {quests.map((t, i) => (
+                    <QuestStep
+                      key={t.id}
+                      task={t}
+                      index={i}
+                      total={total}
+                      last={i === quests.length - 1}
+                      spotlight={t.id === nextId}
+                      onComplete={() => complete.mutate(t.id)}
+                      onStartTour={() => tour.start()}
+                      onOpenQuiz={() => setQuizOpen(true)}
+                    />
+                  ))}
+                </ol>
               </div>
 
-              {/* The quest list: connected steps, one spotlit. */}
-              <ol id="tavern-rites" className="scroll-mt-24">
-                {quests.map((t, i) => (
-                  <QuestStep
-                    key={t.id}
-                    task={t}
-                    index={i}
-                    total={total}
-                    last={i === quests.length - 1}
-                    spotlight={t.id === nextId}
-                    onComplete={() => complete.mutate(t.id)}
-                    onStartTour={() => tour.start()}
-                    onOpenQuiz={() => setQuizOpen(true)}
-                  />
-                ))}
-              </ol>
-
               {/* The last step: submit the wallet, only after every quest is done. */}
-              <div className="pt-3 border-t border-surface-3/60 space-y-2">
+              <div className="orn-box space-y-2">
                 <SubmissionArea
                   mode={mode}
                   address={address}
@@ -255,28 +249,30 @@ function QuestStep({
 
   return (
     <li className="flex gap-3">
-      {/* Left rail: step number + connecting line to the next step. */}
+      {/* Left rail: step marker + connecting line to the next step. Completed
+          steps show the gilded ember checkmark medallion. */}
       <div className="flex flex-col items-center">
-        <span
-          className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ${node} ${
-            spotlight ? "shadow-[0_0_0_4px_rgba(255,122,26,0.12)]" : ""
-          }`}
-        >
-          {task.done ? "✓" : locked ? <GameIcon name="lock" size={13} /> : index + 1}
-        </span>
+        {task.done ? (
+          <GameIcon name="check" size={24} className="mt-1 shrink-0" alt="Completed" />
+        ) : (
+          <span
+            className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ${node} ${
+              spotlight ? "shadow-[0_0_0_4px_rgba(255,122,26,0.12)]" : ""
+            }`}
+          >
+            {locked ? <GameIcon name="lock" size={13} /> : index + 1}
+          </span>
+        )}
         {!last && (
-          <span className={`w-px flex-1 my-1 ${task.done ? "bg-success/40" : "bg-surface-3"}`} />
+          <span className={`w-px flex-1 my-1 ${task.done ? "bg-frame-strong/40" : "bg-surface-3"}`} />
         )}
       </div>
 
-      {/* Body. Spotlight gets the framed, opened-up treatment. */}
+      {/* Body. Bare on the stone (no box); the left rail + step ring carry the
+          spotlight emphasis, so nothing floats over the texture. */}
       <div
-        className={`mb-2 flex-1 min-w-0 rounded-md px-3 py-2.5 transition-colors ${
-          spotlight
-            ? "border border-brand/40 bg-brand/[0.06]"
-            : task.done
-            ? "opacity-70"
-            : "bg-surface-2"
+        className={`mb-2 flex-1 min-w-0 px-1 py-1.5 transition-opacity ${
+          task.done ? "opacity-70" : ""
         }`}
       >
         <div className="flex items-center gap-2">
@@ -435,7 +431,7 @@ function ShareLink({
       onBlur={() => setHover(false)}
       className="inline-block transition-transform duration-fast hover:scale-[1.03] active:scale-[0.97]"
     >
-      <ImageArt name={art} width={width} hover={hover} />
+      <ImageArt name={art} size="md" hover={hover} />
     </a>
   );
 }
@@ -475,7 +471,7 @@ function CtaImageButton({
         <CtaPill spotlight={false}>{label} →</CtaPill>
       </button>
     );
-  return <ImageButton name={art} label={label} width={width} onClick={onClick} />;
+  return <ImageButton name={art} label={label} size="md" onClick={onClick} />;
 }
 
 function CtaImageLink({
@@ -513,7 +509,7 @@ function CtaImageLink({
       onBlur={() => setHover(false)}
       className="inline-block transition-transform duration-fast hover:scale-[1.03] active:scale-[0.97]"
     >
-      <ImageArt name={art} width={width} hover={hover} />
+      <ImageArt name={art} size="md" hover={hover} />
     </a>
   );
 }
@@ -671,7 +667,7 @@ function StandingStrip({
   const gap = above && you ? Math.max(0, above.embers - you.embers) : null;
 
   return (
-    <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
+    <div className="text-xs leading-relaxed text-text-2">
       {allDone ? (
         <span className="text-text-2">
           All quests done. Your Points are locked in, your reward arrives at launch.
@@ -755,7 +751,7 @@ function SubmissionArea({
 
   if (submitted) {
     return (
-      <div className="rounded-md border border-success/30 bg-success/[0.06] px-3 py-2.5 text-success text-sm">
+      <div className="text-success text-sm">
         ✓ Wallet submitted. Your reward will arrive here at launch.
       </div>
     );
@@ -815,7 +811,7 @@ function GateNote({
   required: number;
 }) {
   return (
-    <div className="rounded-md border border-brand/30 bg-brand/[0.06] px-3 py-2.5 text-xs leading-relaxed text-text-2">
+    <div className="text-xs leading-relaxed text-text-2">
       <GameIcon name="lock" size={13} className="mr-1" /> Complete every quest first. Finish{" "}
       <span className="text-brand">
         {remaining} more {remaining === 1 ? "quest" : "quests"}
@@ -895,23 +891,23 @@ function SummonSection() {
         </p>
       </div>
 
-      {/* Friends invited + Embers earned: the running tally. */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
-          <div className="text-text-3 text-[11px] uppercase tracking-wider">Friends invited</div>
-          <div className="tabular text-text text-2xl">{r.count}</div>
+      {/* Friends invited + Embers earned: the running tally, two label-value rows. */}
+      <div className="orn-box divide-y divide-frame/20">
+        <div className="flex items-center justify-between py-2">
+          <span className="text-text-3 text-xs uppercase tracking-wider">Friends invited</span>
+          <span className="tabular text-text text-lg">{r.count}</span>
         </div>
-        <div className="rounded-md bg-surface-2 px-3 py-2.5 border border-surface-3/60">
-          <div className="text-text-3 text-[11px] uppercase tracking-wider">Points from invites</div>
-          <div className="inline-flex items-center gap-1.5 tabular text-brand text-2xl"><GameIcon name="fireToken" size={22} /> {earned}</div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-text-3 text-xs uppercase tracking-wider">Points from invites</span>
+          <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg"><GameIcon name="fireToken" size={18} /> {earned}</span>
         </div>
       </div>
 
       {/* The milestone ladder: nodes light as you pass them; the next is the chase. */}
-      <div className="rounded-md bg-surface-2 p-4 border border-surface-3/60 space-y-3">
+      <div className="orn-box space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-text-3 text-[11px] uppercase tracking-wider">Your tier</span>
-          <span className="text-sm text-brand">{currentTitle ?? "None yet"}</span>
+          {currentTitle && <span className="text-sm text-brand">{currentTitle}</span>}
         </div>
         <ProgressBar value={trackPct} />
         <div className="flex justify-between">
@@ -947,7 +943,7 @@ function SummonSection() {
       </div>
 
       {/* The invite link + share. */}
-      <div className="space-y-2">
+      <div className="orn-box space-y-2">
         <span className="text-text-3 text-[11px] uppercase tracking-wider">Your invite link</span>
         <div className="flex items-center gap-2">
           <input
@@ -1008,13 +1004,13 @@ function QuestLeaderboard() {
             No Points earned yet. Be the first on the board.
           </div>
         ) : (
-          <div className="space-y-3">
-            <ol className="space-y-1">
+          <div className="orn-box space-y-3">
+            <ol className="divide-y divide-frame/20">
               {data.top.map((r) => (
                 <li
                   key={r.rank}
-                  className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm ${
-                    r.you ? "bg-brand/10 border border-brand/40" : "bg-surface-2"
+                  className={`flex items-center justify-between gap-2 py-2 text-sm ${
+                    r.you ? "stone-accent text-brand" : "px-1"
                   }`}
                 >
                   <span className="flex items-center gap-2 text-text-2 tabular truncate">
@@ -1041,8 +1037,8 @@ function QuestLeaderboard() {
                     ···
                   </div>
                 )}
-                <div className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm bg-brand/10 border border-brand/40">
-                  <span className="flex items-center gap-2 text-text-2 tabular">
+                <div className="flex items-center justify-between gap-2 stone-accent py-2 text-sm text-brand">
+                  <span className="flex items-center gap-2 tabular">
                     <RankMark rank={data.you.rank} you />
                     <span>You</span>
                   </span>

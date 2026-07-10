@@ -10,7 +10,7 @@
 
 import type { ReactNode } from "react";
 import { Button } from "./primitives";
-import { ImageButton, type ImageButtonName } from "./image-button";
+import { ImageButton, type ImageButtonName, type ButtonSize } from "./image-button";
 
 interface TxLike {
   isPending: boolean;
@@ -62,7 +62,7 @@ export function TxImageButton({
   label,
   onClick,
   disabled,
-  width = "100%",
+  size = "lg",
 }: {
   tx: TxLike;
   name: ImageButtonName;
@@ -70,7 +70,8 @@ export function TxImageButton({
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  width?: number | string;
+  /** consistent button height; primary actions default to "lg". */
+  size?: ButtonSize;
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -80,7 +81,7 @@ export function TxImageButton({
         onClick={onClick}
         disabled={disabled}
         pending={tx.isPending}
-        width={width}
+        size={size}
       />
       {tx.isError && (
         <p className="text-danger text-xs self-stretch">{tx.error?.message ?? "Transaction failed"}</p>

@@ -161,6 +161,7 @@ export function GrandExchangePanel() {
       title="The Grand Exchange"
       tagline="Buy & sell $PYRE"
       frame="forged"
+      bg="stone"
       action={
         pool.data && (
           <div className="text-right text-xs text-text-3 tabular">
@@ -313,7 +314,7 @@ function RecentSwaps() {
     <div className="space-y-2 pt-1">
       <hr className="ember-hairline" />
       <span className="eyebrow">Recent swaps</span>
-      <ul className="forged-card divide-y divide-surface-3/50 overflow-hidden">
+      <ul className="orn-box !p-0 divide-y divide-surface-3/50 overflow-hidden">
         {swaps.map((s) => (
           <li key={s.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-text-2">
             <span className="tabular shrink-0">{shortAddress(s.address)}</span>
