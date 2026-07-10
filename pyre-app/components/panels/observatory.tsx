@@ -24,7 +24,7 @@ export function ObservatoryPanel() {
   const stats = useProtocolStats();
 
   return (
-    <Panel title="The Observatory" tagline="Live protocol stats" frame="forged">
+    <Panel title="The Observatory" tagline="Live protocol stats" frame="forged" bg="stone">
       <StateView query={stats}>
         {(s) => (
           /* Two columns across the wide interior: the live readings on the left
@@ -35,7 +35,7 @@ export function ObservatoryPanel() {
             {/* LEFT: the readings */}
             <div className="flex flex-col gap-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="forged-card forged-card--lit flex flex-col justify-between gap-2 px-4 py-3.5">
+                <div className="orn-box flex flex-col justify-between gap-2">
                   <span className="eyebrow">Next decay tick</span>
                   <div className="tabular text-3xl text-brand leading-none">
                     <Countdown to={s.nextEpochAt} />
@@ -44,7 +44,7 @@ export function ObservatoryPanel() {
                     {formatPercent(s.decayRatePerHour)} / hr · Era {s.era}
                   </Badge>
                 </div>
-                <div className="forged-card flex flex-col justify-between gap-2 px-4 py-3.5">
+                <div className="orn-box flex flex-col justify-between gap-2">
                   <span className="eyebrow">Reward pool</span>
                   <div className="tabular text-3xl text-brand leading-none">
                     {formatEth(s.pendingYieldPoolEth, 2)}
@@ -62,7 +62,7 @@ export function ObservatoryPanel() {
                   <Stat key="sc" label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />,
                   <Stat key="d" label="$ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />,
                 ].map((tile, i) => (
-                  <div key={i} className="forged-card flex items-center px-4 py-3.5">
+                  <div key={i} className="orn-box flex items-center">
                     {tile}
                   </div>
                 ))}
@@ -71,13 +71,13 @@ export function ObservatoryPanel() {
 
             {/* RIGHT: the trends */}
             <div className="flex flex-col gap-4">
-              <div className="forged-card px-4 py-4">
+              <div className="orn-box">
                 <ProgressBar
                   value={1 - s.epochsUntilHalving / 2000}
                   label={`${s.epochsUntilHalving.toLocaleString()} epochs until the next halving`}
                 />
               </div>
-              <div className="forged-card flex flex-1 flex-col px-4 py-4">
+              <div className="orn-box flex flex-1 flex-col">
                 <div className="mb-3 flex items-baseline justify-between">
                   <span className="eyebrow">Burn rate · 48h</span>
                   <span className="text-text-2 text-xs tabular">

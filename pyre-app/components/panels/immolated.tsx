@@ -43,8 +43,8 @@ function HallOfFame({ rows, you }: { rows: HallRow[]; you?: { rank: number; weig
           return (
             <li
               key={r.rank}
-              className={`flex items-center gap-2.5 rounded-md px-3 py-2 ${
-                isYou ? "bg-brand/10 border border-brand/40" : "forged-card"
+              className={`flex items-center gap-2.5 ${
+                isYou ? "rounded-md px-3 py-2 bg-brand/10 border border-brand/40" : "orn-box"
               }`}
             >
               {tile ? (
@@ -111,14 +111,14 @@ export function ImmolatedPanel() {
     <div className="grid gap-6 pt-4 lg:grid-cols-5 lg:items-start">
       {/* LEFT (3/5): your standing, the Ascend rite, or how to become eligible. */}
       <div className="lg:col-span-3">
-        <Panel title="Hall of the Immolated" tagline="The highest prestige in the kingdom" frame="forged">
+        <Panel title="Hall of the Immolated" tagline="The highest prestige in the kingdom" frame="forged" bg="stone">
           <RequireWallet message="Connect to see if you've reached the Immolated.">
             <StateView query={pos}>
               {(p) =>
                 p.isMember ? (
                   /* MEMBER: you've ascended. Your standing. */
                   <div className="space-y-5">
-                    <div className="forged-card forged-card--lit px-4 py-6 text-center">
+                    <div className="orn-box text-center">
                       <div className="flex justify-center">
                         <GameIcon name="immolated" size={64} alt="" className="drop-shadow-[0_2px_12px_rgba(240,169,59,0.4)]" />
                       </div>
@@ -131,20 +131,20 @@ export function ImmolatedPanel() {
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="forged-card px-4 py-3.5">
+                      <div className="orn-box">
                         <Stat
                           label="Yield boost"
                           value={`+${Math.round((p.yieldBoost - 1) * 100)}%`}
                           accent
                         />
                       </div>
-                      <div className="forged-card px-4 py-3.5">
+                      <div className="orn-box">
                         <Stat label="Your rank" value={p.rank != null ? `#${p.rank}` : "—"} />
                       </div>
-                      <div className="forged-card px-4 py-3.5">
+                      <div className="orn-box">
                         <Stat label="Your burn weight" value={formatToken(p.weight)} />
                       </div>
-                      <div className="forged-card px-4 py-3.5">
+                      <div className="orn-box">
                         <Stat label="Effective pool weight" value={formatToken(p.boostedWeight)} />
                       </div>
                     </div>
@@ -157,7 +157,7 @@ export function ImmolatedPanel() {
                   /* ELIGIBLE: reached Pyre (top tier), ready for the Ascend rite here. */
                   <div
                     id="immolated-action"
-                    className="forged-card forged-card--lit px-5 py-8 text-center scroll-mt-24"
+                    className="orn-box text-center scroll-mt-24"
                   >
                     <div className="flex justify-center mb-2">
                       <GameIcon name="immolated" size={56} alt="" className="drop-shadow-[0_2px_12px_rgba(240,169,59,0.4)]" />
@@ -211,7 +211,7 @@ export function ImmolatedPanel() {
 
       {/* RIGHT (2/5): the Hall of Fame board, always shown. */}
       <div className="lg:col-span-2">
-        <Panel title="Hall of Fame" tagline="The kingdom's greatest burners" frame="forged">
+        <Panel title="Hall of Fame" tagline="The kingdom's greatest burners" frame="forged" bg="stone">
           <HallFameBody you={you} />
         </Panel>
       </div>

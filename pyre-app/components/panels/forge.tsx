@@ -123,6 +123,7 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
       title="The Forge"
       tagline="Forge your Acolyte"
       frame="forged"
+      bg="stone"
       className="w-full"
       action={
         <p className="hidden max-w-md items-center gap-2 text-right text-xs italic text-text-2 sm:flex">
@@ -343,11 +344,6 @@ function QuickBtn({ children, onClick }: { children: ReactNode; onClick: () => v
 /* The actions                                                              */
 /* ======================================================================== */
 
-/* The Forge's matched action buttons (stakepyre/unstake/burntokens/burnlp) are
-   drawn at 420×124. Cap their width so they render near natural size and centered
-   (never upscaled to fill the whole column, which made them huge), and shrink
-   together on narrow screens. */
-const ACTION_BTN_W = "min(100%, 230px)";
 
 /* Burn → forge/level the Acolyte. */
 function BurnRitual({
@@ -426,7 +422,7 @@ function BurnRitual({
               label="Burn LP (2×)"
               disabled={blocked}
               onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
-              width={ACTION_BTN_W}
+              size="lg"
             />
           ) : (
             <TxImageButton
@@ -435,7 +431,7 @@ function BurnRitual({
               label="Burn $PYRE"
               disabled={blocked}
               onClick={() => burn.mutate(amt)}
-              width={ACTION_BTN_W}
+              size="lg"
             />
           )}
         </>
@@ -577,8 +573,8 @@ function Step({
   return (
     <section
       id={id}
-      className={`forged-card scroll-mt-24 overflow-hidden !rounded-panel transition-shadow duration-fast ${
-        flash ? "forged-card--lit" : ""
+      className={`orn-box scroll-mt-24 overflow-hidden !p-0 transition-shadow duration-fast ${
+        flash ? "ring-1 ring-brand/50" : ""
       } ${locked ? "opacity-90" : ""}`}
     >
       <div className="flex items-center gap-3 px-4 py-3">
@@ -587,7 +583,6 @@ function Step({
           <div className={`font-display text-lg ${locked ? "text-text-3" : "text-text"}`}>{title}</div>
           {sub && <div className="truncate text-[11px] uppercase tracking-widest text-text-3">{sub}</div>}
         </div>
-        {done && !locked && <Badge tone="success">Done</Badge>}
       </div>
       <hr className="ember-hairline" />
       <div className="px-4 py-3">
@@ -610,12 +605,7 @@ function StepBadge({ index, locked, done }: { index: number; locked: boolean; do
         <GameIcon name="lock" size={13} alt="Locked" />
       </span>
     );
-  if (done)
-    return (
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand text-sm text-bg" aria-hidden>
-        ✓
-      </span>
-    );
+  if (done) return <GameIcon name="check" size={28} alt="Done" className="shrink-0" />;
   return (
     <span
       className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-brand/50 bg-brand/10 text-sm text-brand"
@@ -635,10 +625,10 @@ function LockedPreview({ hint, action, children }: { hint?: string; action?: Rea
         {children}
       </div>
       <div className="absolute inset-0 grid place-items-center p-2">
-        <div className="stone-panel flex flex-col items-center gap-2 px-4 py-3 text-center">
+        <div className="flex flex-col items-center gap-2.5 rounded-full border border-frame/45 bg-black/65 px-5 py-2.5 text-center shadow-[0_8px_24px_-8px_rgba(0,0,0,0.8)] backdrop-blur-sm">
           {hint && (
             <div className="flex items-center gap-1.5 text-xs text-text-2">
-              <GameIcon name="lock" size={14} alt="" />
+              <GameIcon name="lock" size={13} alt="" />
               {hint}
             </div>
           )}
@@ -665,7 +655,7 @@ function AcolyteBanner({ a }: { a: Acolyte }) {
         ? `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre, the 3× tier`
         : `Burn $PYRE to forge your Acolyte · Ember at ${compactPyre(toNumber(STAGES[1].threshold))} burned`;
   return (
-    <section className="forged-card relative overflow-hidden !rounded-panel p-4">
+    <section className="orn-box relative overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
@@ -791,7 +781,7 @@ function StakeRitual({ p }: { p: StakingPosition }) {
           label="Unstake · returns over 7 days"
           disabled={blocked}
           onClick={() => unstake.mutate(amt)}
-          width={ACTION_BTN_W}
+          size="lg"
         />
       ) : (
         <TxImageButton
@@ -800,7 +790,7 @@ function StakeRitual({ p }: { p: StakingPosition }) {
           label="Stake $PYRE"
           disabled={blocked}
           onClick={onStake}
-          width={ACTION_BTN_W}
+          size="lg"
         />
       )}
 

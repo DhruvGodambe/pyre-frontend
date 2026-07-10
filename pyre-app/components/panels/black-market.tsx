@@ -78,7 +78,7 @@ export function BlackMarketPanel() {
   ];
 
   return (
-    <Panel title="The Black Market" tagline="Buy & sell Acolytes" frame="forged">
+    <Panel title="The Black Market" tagline="Buy & sell Acolytes" frame="forged" bg="stone">
       {/* Designer image tabs (baked-in labels), centered and capped so they don't
           balloon in the wide panel. Active stays lit; the rest fade and light on
           hover. This whole header stays put while the grid scrolls below it. */}
@@ -133,7 +133,7 @@ function FilterBar({
     setFilter({ ...filter, [key]: !filter[key] });
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-lg border border-frame/30 bg-black/25 px-3 py-2.5">
+    <div className="orn-box mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
       {/* Tier (Acolyte stage). Each chip carries its tier crest so the filter and
           the artwork read as one family. */}
       <div className="flex flex-wrap items-center gap-2">
@@ -309,7 +309,7 @@ function SortSelect({
 function MarketGridSkeleton() {
   return (
     <div>
-      <div className="mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden rounded-lg border border-frame/25 bg-black/25">
+      <div className="orn-box !p-0 mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden">
         {[0, 1, 2].map((i) => (
           <div key={i} className="px-3 py-2.5 text-center">
             <Skeleton className="mx-auto h-2.5 w-10" />
@@ -440,7 +440,7 @@ function YourAcolyteTab() {
                 </div>
               </div>
 
-              <div className="rounded-md bg-surface-2 border border-surface-3/60 p-4 space-y-3">
+              <div className="orn-box space-y-3">
                 <p className="text-text-2 text-sm">
                   PYRE doesn&rsquo;t custody your Acolyte. Listing opens on OpenSea, where the sale
                   settles, and your listing then shows up in the Listings tab here.
@@ -506,7 +506,7 @@ function MarketStats({
     { label: "Best yield", value: `${topYield}×` },
   ];
   return (
-    <div className="mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden rounded-lg border border-frame/25 bg-black/25">
+    <div className="orn-box !p-0 mb-3 grid grid-cols-3 divide-x divide-frame/25 overflow-hidden">
       {cells.map((c) => (
         <div key={c.label} className="px-3 py-2 text-center">
           <div className="text-text-3 text-[10px] uppercase tracking-widest">{c.label}</div>

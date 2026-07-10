@@ -40,7 +40,7 @@ export function AmberVaultPanel() {
     : "decaying";
 
   return (
-    <Panel title="The Amber Vault" tagline="Your position & Acolyte" frame="forged">
+    <Panel title="The Amber Vault" tagline="Your position & Acolyte" frame="forged" bg="stone">
       <RequireWallet message="Connect to see your Pyre Acolyte and position.">
         <StateView query={acolyte}>
           {(a) =>
@@ -100,18 +100,18 @@ export function AmberVaultPanel() {
 
                       <div className="space-y-3">
                         {/* Pending yield is the focal number: full-width lit tile. */}
-                        <div className="forged-card forged-card--lit px-4 py-3.5">
+                        <div className="orn-box">
                           <Stat label="Pending $ETH" value={formatEth(p.pendingRewardsEth)} accent />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="forged-card px-4 py-3.5">
+                          <div className="orn-box">
                             <Stat label="Liquid balance" value={formatToken(p.liquidBalance)} sub={decayLabel} />
                           </div>
-                          <div className="forged-card px-4 py-3.5">
+                          <div className="orn-box">
                             <Stat label="Staked (safe)" value={formatToken(p.stakedBalance)} />
                           </div>
                           {p.drip && (
-                            <div className="forged-card col-span-2 px-4 py-3.5">
+                            <div className="orn-box col-span-2">
                               <Stat
                                 label="Drip returning"
                                 value={formatToken(p.drip.total)}
@@ -148,7 +148,7 @@ export function AmberVaultPanel() {
                       events.length === 0 ? (
                         <p className="text-text-3 text-xs">No activity yet.</p>
                       ) : (
-                        <ul className="forged-card divide-y divide-surface-3/50 overflow-hidden">
+                        <ul className="orn-box divide-y divide-surface-3/50 overflow-hidden">
                           {events.map((e) => (
                             <li key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                               <span className="text-text-2">
@@ -203,7 +203,7 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
       </div>
 
       {/* Where they stand */}
-      <div className="forged-card p-4 space-y-3">
+      <div className="orn-box space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-text-3">You hold</span>
           <span className="tabular text-text">{formatToken(liquid)} $PYRE</span>
@@ -235,13 +235,13 @@ function AcolyteState({ liquid, burned }: { liquid: bigint; burned: bigint }) {
 function Step({ n, label, done }: { n: number; label: string; done?: boolean }) {
   return (
     <div className={`flex flex-col items-center text-center gap-1.5 ${done ? "text-text-2" : "text-text-3"}`}>
-      <span
-        className={`grid h-7 w-7 place-items-center rounded-full border text-xs ${
-          done ? "border-success/50 text-success" : "border-surface-3"
-        }`}
-      >
-        {done ? "✓" : n}
-      </span>
+      {done ? (
+        <GameIcon name="check" size={26} className="shrink-0" />
+      ) : (
+        <span className="grid h-7 w-7 place-items-center rounded-full border border-surface-3 text-xs">
+          {n}
+        </span>
+      )}
       <span className="text-[10px] uppercase tracking-wide leading-tight">{label}</span>
     </div>
   );

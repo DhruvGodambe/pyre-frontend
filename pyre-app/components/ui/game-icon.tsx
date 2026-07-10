@@ -46,6 +46,7 @@ const ICONS = {
   quest: "/world/ui/icons/quest.png",
   reward: "/world/ui/icons/reward.png",
   time: "/world/ui/icons/time.png",
+  check: "/world/ui/icons/check.webp",
 } as const;
 
 export type GameIconName = keyof typeof ICONS;

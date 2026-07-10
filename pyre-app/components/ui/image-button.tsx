@@ -69,6 +69,12 @@ const BUTTONS = {
 
 export type ImageButtonName = keyof typeof BUTTONS;
 
+/* Consistent button HEIGHTS (the logical scale). Because each plate art has its
+   own aspect ratio, sizing by width made every button a different height; sizing
+   by height keeps them uniform and lets width follow the label naturally. */
+export type ButtonSize = "sm" | "md" | "lg";
+const SIZE_H: Record<ButtonSize, number> = { sm: 36, md: 46, lg: 56 };
+
 /* Presentational art only (no <button>): the normal/hover PNG pair with the
    hover swap + pending overlay baked in. Render this directly inside an <a> (a
    diegetic link CTA, e.g. Share on X) where a nested <button> would be invalid,
@@ -76,14 +82,18 @@ export type ImageButtonName = keyof typeof BUTTONS;
    `hover` so an anchor (group-hover) can light the art on its own. */
 export function ImageArt({
   name,
-  width = 220,
+  width,
+  size,
   hover = false,
   inactive = false,
   pending = false,
   className = "",
 }: {
   name: ImageButtonName;
+  /** rendered width (px or CSS length); height follows the art ratio. */
   width?: number | string;
+  /** consistent-height sizing (preferred): sm/md/lg. Width follows the art. */
+  size?: ButtonSize;
   hover?: boolean;
   inactive?: boolean;
   pending?: boolean;
@@ -91,15 +101,18 @@ export function ImageArt({
 }) {
   const [normal, hovered, w, h] = BUTTONS[name];
   const src = hover && !inactive ? hovered : normal;
+  // Height-based (size) keeps buttons uniform; width-based is the legacy fallback.
+  const style: React.CSSProperties = size ? { height: SIZE_H[size] } : { width: width ?? 220 };
+  const fit = size ? "h-full w-auto" : "w-full h-auto";
   return (
-    <span style={{ width }} className={`relative inline-block select-none ${className}`}>
+    <span style={style} className={`relative inline-flex select-none ${className}`}>
       <Image
         src={asset(src)}
         alt=""
         width={w}
         height={h}
         priority
-        className={`w-full h-auto drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none transition-opacity duration-fast ${
+        className={`${fit} drop-shadow-[0_6px_16px_rgba(0,0,0,0.6)] pointer-events-none transition-opacity duration-fast ${
           pending ? "opacity-40" : ""
         }`}
         draggable={false}
@@ -117,7 +130,8 @@ export function ImageButton({
   name,
   onClick,
   label,
-  width = 220,
+  width,
+  size,
   disabled = false,
   pending = false,
   selected = false,
@@ -128,8 +142,10 @@ export function ImageButton({
   onClick?: () => void;
   /** accessible label (the visible text is baked into the art). */
   label: string;
-  /** rendered width (px number, or a CSS length like "100%"). Height follows the art ratio. */
+  /** legacy width (px number, or a CSS length like "100%"). Prefer `size`. */
   width?: number | string;
+  /** consistent-height sizing (preferred): sm/md/lg. */
+  size?: ButtonSize;
   disabled?: boolean;
   /** in-flight: dim the art and show a spinner over it (the baked text can't change). */
   pending?: boolean;
@@ -153,12 +169,19 @@ export function ImageButton({
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
-      style={{ width }}
-      className={`relative inline-block select-none transition-[transform,opacity] duration-fast active:scale-[0.97] hover:scale-[1.03] disabled:opacity-50 disabled:pointer-events-none focus:outline-none ${
+      style={size ? undefined : { width: width ?? 220 }}
+      className={`relative inline-flex select-none transition-[transform,opacity] duration-fast active:scale-[0.97] hover:scale-[1.03] disabled:opacity-50 disabled:pointer-events-none focus:outline-none ${
         dim && !hover ? "opacity-55 hover:opacity-100" : ""
       } ${className}`}
     >
-      <ImageArt name={name} width="100%" hover={hover || selected} inactive={inactive} pending={pending} />
+      <ImageArt
+        name={name}
+        size={size}
+        width={size ? undefined : "100%"}
+        hover={hover || selected}
+        inactive={inactive}
+        pending={pending}
+      />
     </button>
   );
 }

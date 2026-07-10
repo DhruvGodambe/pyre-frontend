@@ -13,7 +13,7 @@ import { formatToken, formatAgo, shortAddress } from "@/lib/format";
 import type { ActivityEvent } from "@/lib/types";
 import type { BonfireState } from "@/lib/constants";
 import { GameIcon } from "@/components/ui/game-icon";
-import { Badge } from "@/components/ui/primitives";
+import { Badge, Panel } from "@/components/ui/primitives";
 
 /* The fire grows with the all-time burn total: the same flame token, larger as
    the bonfire climbs kindling → inferno. */
@@ -32,11 +32,11 @@ export function BonfirePanel() {
     <StateView query={stats}>
       {(s) => {
         const f = FLAME[s.bonfire];
-        // A glass plaque, not an opaque card: the painted bonfire scene glows
-        // through behind it, so the counter reads as carved into the fire-lit
-        // air rather than pasted over it.
+        // Same forged stone panel as the rest of the kingdom; the counter lives
+        // in an ornamental box, a warm ember glow rising through it.
         return (
-          <div className="relative overflow-hidden rounded-panel border border-brand/25 bg-bg/45 p-6 text-center shadow-[0_16px_48px_-16px_rgba(0,0,0,0.85)] ring-1 ring-inset ring-white/5 backdrop-blur-md">
+          <Panel title="The Bonfire" tagline="Live burn counter" frame="forged" bg="stone">
+          <div className="orn-box relative overflow-hidden py-6 text-center">
             <div
               className="absolute inset-0 pointer-events-none"
               style={{ background: "radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--color-brand) 22%, transparent), transparent 62%)" }}
@@ -64,6 +64,7 @@ export function BonfirePanel() {
               </div>
             </div>
           </div>
+          </Panel>
         );
       }}
     </StateView>
