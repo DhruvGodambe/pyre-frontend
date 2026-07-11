@@ -64,72 +64,7 @@ export const CODEX: CodexChapter[] = [
       },
       {
         paragraphs: [
-          "The chapters that follow specify the system in full: the on-chain architecture, the decay schedule and its halvings, the staking weight formula, the Acolyte tiers and both burn tracks, and the Immolated prestige. Every parameter quoted in this Codex mirrors the deployed contracts, and all of it can be verified on-chain once addresses are published at launch.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "architecture",
-    title: "Under the Hood",
-    tagline: "Uniswap v4, hooks, and the Diamond",
-    icon: "/brand/logo-color.png",
-    sections: [
-      {
-        paragraphs: [
-          "Pyre is implemented as a Uniswap v4 hook with a set of periphery contracts around it. This chapter describes the on-chain architecture: what v4 provides, how the hook is structured, and which contract owns each mechanism.",
-        ],
-      },
-      {
-        heading: "Why Uniswap v4",
-        paragraphs: [
-          "Uniswap v4 replaces the contract-per-pool model of earlier versions with a singleton: one PoolManager contract holds every pool. Alongside the singleton design, v4 introduces hooks, external contracts that a pool registers at creation and that the PoolManager invokes at fixed points in the pool's lifecycle, including beforeSwap and afterSwap.",
-          "Hooks are what allow Pyre to exist as a protocol rather than a token with off-chain promises. Protocol logic executes inside the same transaction as the swap that triggers it, atomically: either the swap and the protocol logic both execute, or neither does. The core path depends on no keepers, schedulers, or trusted operators.",
-        ],
-        bullets: [
-          "The canonical market is a single $PYRE/$ETH pool on the v4 PoolManager.",
-          "The Pyre hook is registered on that pool and runs on every swap through it.",
-          "Hook execution is atomic with the swap it accompanies.",
-        ],
-      },
-      {
-        heading: "The hook is a Diamond (EIP-2535)",
-        paragraphs: [
-          "The Pyre hook follows the Diamond standard, EIP-2535, a modular contract architecture. Rather than one monolithic contract, the hook's logic is divided into facets, each owning a single concern. The pool registers one stable hook address, and every subsystem operates behind it.",
-        ],
-        bullets: [
-          "SwapHook facet: implements the v4 callbacks and routes each swap through the protocol's logic.",
-          "Burn facet: accounting for token burns and cumulative burn weight.",
-          "LpBurn facet: executes the LP burn track and locks the v4 liquidity position permanently.",
-          "YieldDistribution facet: moves $ETH into the staking contract's yield accumulator for distribution.",
-        ],
-      },
-      {
-        paragraphs: [
-          "Uniswap v4 encodes a hook's permission set, the list of callbacks it is allowed to implement, into the hook's own address, which is mined with CREATE2 at deployment. The set of callbacks is therefore fixed the moment the pool is created: callbacks not claimed at deployment can never be added.",
-        ],
-      },
-      {
-        heading: "The periphery contracts",
-        paragraphs: [
-          "In all, thirteen contracts make up the protocol: the hook, the facets behind it, and four periphery contracts. Those four own the protocol's state:",
-        ],
-        bullets: [
-          "PyreToken (ERC-20): the $PYRE token. Enforces the 1,000,000,000 hard cap and implements epoch decay on liquid balances.",
-          "PyreStaking: holds staked $PYRE, computes each staker's effective weight, accrues the $ETH yield accumulator, and manages the 7 day unstake release.",
-          "Acolyte (ERC-721): the Acolyte NFT. Records cumulative burn weight, resolves tier and burn track, and is read directly by the staking contract when weighting yield.",
-          "ImmolatedGate: the Ascend rite. Verifies Pyre-tier eligibility and executes the one-time Immolation.",
-        ],
-      },
-      {
-        paragraphs: [
-          "Decay is not applied by any external process. The token contract maintains a global decay index that compounds per epoch, and each account settles lazily against that index whenever the account is next touched. Balances are therefore correct at every block without any keeper iterating over holders.",
-        ],
-      },
-      {
-        heading: "Verifiability",
-        paragraphs: [
-          "The hook's permission set, the supply cap, and the structure of the decay schedule are fixed at deployment. Contract addresses are published at launch, and every figure in this Codex can be checked against them directly on-chain.",
+          "The chapters that follow specify the system in full: the decay schedule and its halvings, the staking weight formula, the Acolyte tiers and both burn tracks, and the Immolated prestige. Every parameter quoted in this Codex mirrors the deployed contracts, and all of it can be verified on-chain once addresses are published at launch.",
         ],
       },
     ],
@@ -311,7 +246,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The four tiers",
         paragraphs: [
-          "Tier resolves from cumulative burn weight and never falls. Thresholds and multipliers are set in the Acolyte contract and mirrored at the Forge. Each tier's art is rarer and more elaborate than the last.",
+          "Tier resolves from cumulative burn weight and never falls. Thresholds and multipliers are set by the protocol and mirrored at the Forge. Each tier's art is rarer and more elaborate than the last.",
         ],
         bullets: [
           "Ember: 10,000 burned. 1x on the token track, 2x on the LP track.",
@@ -329,7 +264,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The LP lock",
         paragraphs: [
-          "In Uniswap v4 a liquidity position is not a fungible LP token but a position NFT. An LP burn deposits the pair and transfers that position into a locker contract which permanently blocks principal withdrawal. The liquidity itself never leaves the pool: it remains active market depth for $PYRE for the life of the protocol, and the locked position continues to generate yield that flows back into the protocol.",
+          "In Uniswap v4 a liquidity position is not a fungible LP token but a position NFT. An LP burn deposits the pair and transfers that position into a permanent lock that blocks principal withdrawal. The liquidity itself never leaves the pool: it remains active market depth for $PYRE for the life of the protocol, and the locked position continues to generate yield that flows back into the protocol.",
           "This is the structural difference between the tracks. A token burn reduces supply once and is complete. An LP burn reduces circulating supply, permanently deepens the pool, and keeps contributing to protocol yield indefinitely. The doubled multiplier prices that difference.",
         ],
       },
@@ -364,7 +299,7 @@ export const CODEX: CodexChapter[] = [
       {
         heading: "The Ascend rite",
         paragraphs: [
-          "Eligibility requires the Pyre tier, 300,000 $PYRE of cumulative burn weight. The rite itself burns a further 100,000 $PYRE in the Hall, executed through the ImmolatedGate contract. A wallet on the LP track pairs the equivalent $ETH as well, both locked permanently, and becomes LP Immolated. The rite executes once per wallet and cannot be undone.",
+          "Eligibility requires the Pyre tier, 300,000 $PYRE of cumulative burn weight. The rite itself burns a further 100,000 $PYRE in the Hall. A wallet on the LP track pairs the equivalent $ETH as well, both locked permanently, and becomes LP Immolated. The rite executes once per wallet and cannot be undone.",
           "For an LP Immolated wallet the sacrifice keeps working after the rite: the locked liquidity remains live in the pool and keeps generating yield that flows back into the protocol, for as long as the pool exists.",
         ],
       },
