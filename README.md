@@ -22,6 +22,10 @@ Create `pyre-app/.env.local`:
 # Any value you like; it is the local login password for the gated /kingdom.
 DESIGNER_PASSWORD=dev
 
+# RainbowKit / WalletConnect — required for the wallet connect modal.
+# Create a free project at https://cloud.walletconnect.com and paste the Project ID.
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+
 # Chain mode: real contract reads/writes instead of demo data.
 NEXT_PUBLIC_USE_MOCK=false
 # Launched mode: buildings unlock by real on-chain progression instead of the
