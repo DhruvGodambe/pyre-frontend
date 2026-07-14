@@ -622,7 +622,23 @@ h1, h2, h3, h4 {
    when the box actually carries actions, so plain framed panels are untouched. */
 .keeper-frame:has(.keeper-actions) { margin-bottom: 28px; }
 @media (max-width: 640px) {
-  .keeper-frame:has(.keeper-actions) { margin-bottom: 30px; }
+  /* ON A PHONE the plates come OFF the ornate bottom edge and sit as a clean row
+     BENEATH the whole box, next to each other, a touch smaller. The straddle looked
+     cramped against the corner embers on a narrow screen. The frame reserves the row's
+     height below itself (margin-bottom) so it never overlaps the scene. Desktop keeps
+     the straddling plates, untouched. */
+  .keeper-frame:has(.keeper-actions) { margin-bottom: 58px; }
+  .keeper-actions {
+    top: 100%;
+    bottom: auto;
+    transform: none;
+    margin-top: 10px;
+    padding: 0 2px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .keeper-plate-btn { height: 44px; min-width: 0; padding: 0 16px; }
+  .keeper-plate-btn > span { font-size: 13px; }
 }
 /* A framed panel that fills its grid row (equal-height side-by-side panels). */
 .keeper-frame.h-full { height: 100%; }

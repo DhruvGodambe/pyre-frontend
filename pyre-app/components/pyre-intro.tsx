@@ -258,7 +258,11 @@ export function PyreIntro({ onDone }: { onDone?: () => void } = {}) {
         preload="metadata"
         onEnded={finish}
         onError={finish}
-        className="w-full h-full object-contain"
+        /* Fill the whole screen. The film is 16:9, so object-contain letterboxed it with
+           black bars above and below on a portrait phone. object-cover fills the phone
+           instead, cropping a little off the sides (the action is centre-framed, so
+           nothing important is lost); desktop, already ~16:9, sees no crop either way. */
+        className="w-full h-full object-cover"
       />
 
       {/* LIGHT THE PYRE: darkness, embers, one instruction. Holding plays the

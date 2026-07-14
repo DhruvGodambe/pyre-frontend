@@ -27,7 +27,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BUILDING_BY_ID } from "@/components/buildings";
 import {
@@ -342,7 +341,11 @@ export function FrontDoor() {
             same gem, so nothing new is drawn. */}
         {!LAUNCHED && (
           <div className="absolute inset-0 pointer-events-none sm:hidden">
-            <div className="absolute bottom-[26%] left-[30%] h-[52%] -translate-x-1/2">
+            {/* Sized to stand roughly as tall as the gate doors, not tower over them:
+                h40% of the viewport, feet on the cobbles just above the dialogue box,
+                left of centre. Not so small he reads as far away, not so large he
+                dwarfs the gate. */}
+            <div className="absolute bottom-[22%] left-[27%] h-[40%] -translate-x-1/2">
               <img
                 src={asset("/world/ashwarden/ashwarden-offering-empty.webp")}
                 alt=""
@@ -423,10 +426,10 @@ export function FrontDoor() {
                  three ride the one grid. */
               <div
                 className={
-                  "flex w-full animate-entry flex-col items-center gap-3 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col"
+                  "flex w-full animate-entry flex-wrap items-center justify-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col"
                 }
               >
-                <div className="flex items-center gap-3 sm:contents">
+                <div className="contents">
                   <PlateButton
                     label="Enter Pyre"
                     locked={!isTeam}
@@ -533,16 +536,8 @@ export function FrontDoor() {
         />
       </a>
 
-      {/* Discreet team entrance: an un-signed-in team member signs in and lands in
-          the kingdom. Only shown while not recognised as team. */}
-      {isTeam === false && (
-        <Link
-          href={`/login?next=${encodeURIComponent(KINGDOM_PATH)}`}
-          className="absolute bottom-4 right-5 z-10 text-text-3/70 text-xs hover:text-brand transition-colors"
-        >
-          Team access
-        </Link>
-      )}
+      {/* The team signs in at /login directly (bookmarked); no visible link on the
+          public front door, so nothing hints the kingdom is reachable. */}
     </div>
     </GateCrystalProvider>
   );
