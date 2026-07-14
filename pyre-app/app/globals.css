@@ -637,8 +637,9 @@ h1, h2, h3, h4 {
     gap: 8px;
     flex-wrap: wrap;
   }
-  .keeper-plate-btn { height: 44px; min-width: 0; padding: 0 16px; }
-  .keeper-plate-btn > span { font-size: 13px; }
+  /* Plate sizing for mobile lives in the LATER max-width block (below the base
+     .keeper-plate-btn rule), so it isn't overridden by base min-width: it must come
+     after that rule to win. */
 }
 /* A framed panel that fills its grid row (equal-height side-by-side panels). */
 .keeper-frame.h-full { height: 100%; }
@@ -845,8 +846,16 @@ h1, h2, h3, h4 {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 @media (max-width: 640px) {
-  .keeper-plate-btn { padding: 0 18px; min-width: 108px; }
-  .keeper-plate-btn > span { font-size: 14px; }
+  /* Small enough that three fit side by side beneath the box, and full-width so they
+     fill their share of the row (the greeting is a 3-column grid on mobile). min-width
+     must be 0 or the 128px base floor forces them to wrap into a stack. */
+  .keeper-plate-btn {
+    height: 44px;
+    min-width: 0;
+    width: 100%;
+    padding: 0 8px;
+  }
+  .keeper-plate-btn > span { font-size: 12px; letter-spacing: 0.01em; }
 }
 .keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked),
 .keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked) {

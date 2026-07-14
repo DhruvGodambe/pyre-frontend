@@ -426,7 +426,7 @@ export function FrontDoor() {
                  three ride the one grid. */
               <div
                 className={
-                  "flex w-full animate-entry flex-wrap items-center justify-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col"
+                  "grid w-full animate-entry grid-cols-3 items-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col sm:gap-3"
                 }
               >
                 <div className="contents">
@@ -520,7 +520,9 @@ export function FrontDoor() {
         onClick={() => track("x_profile_click", { source: "front_door" })}
         aria-label="Follow @pyre_protocol on X"
         title="@pyre_protocol"
-        className="group absolute bottom-12 right-5 z-10 block h-9 w-9 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+        /* Desktop only. On a phone it crowded the corner over the dialogue box; the
+           Follow rite inside the crystal is where the X follow lives on mobile. */
+        className="group absolute bottom-12 right-5 z-10 hidden h-9 w-9 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md sm:block"
       >
         <img
           src={asset("/buttons/x_normal.webp")}
