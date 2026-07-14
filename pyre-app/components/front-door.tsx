@@ -42,7 +42,6 @@ import { KeeperBox, PlateButton } from "@/components/ui/keeper-box";
 import { KeeperSpeech } from "@/components/ui/keeper-speech";
 import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
-import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor, preloadSfx } from "@/lib/sfx";
 import { preloadAudio } from "@/lib/audio-preload";
 import { preloadImages } from "@/lib/image-preload";
@@ -549,34 +548,12 @@ export function FrontDoor() {
         </div>
       )}
 
-      {/* X lives quietly on the scene's corner (never inside the keeper's
-          speech): the standard footer-corner placement. The plate art is dark,
-          so it gets full opacity + a faint ember rim to separate it from the
-          equally dark backdrop; hover/focus cross-fades to the lit variant. */}
-      <a
-        href={X_PROFILE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track("x_profile_click", { source: "front_door" })}
-        aria-label="Follow @pyre_protocol on X"
-        title="@pyre_protocol"
-        /* Desktop only. On a phone it crowded the corner over the dialogue box; the
-           Follow rite inside the crystal is where the X follow lives on mobile. */
-        className="group absolute bottom-12 right-5 z-10 hidden h-9 w-9 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md sm:block"
-      >
-        <img
-          src={asset("/buttons/x_normal.webp")}
-          alt=""
-          draggable={false}
-          className="block h-9 w-9 select-none drop-shadow-[0_0_6px_rgba(255,150,70,0.45)]"
-        />
-        <img
-          src={asset("/buttons/x_hover.webp")}
-          alt=""
-          draggable={false}
-          className="absolute inset-0 h-9 w-9 select-none opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
-        />
-      </a>
+      {/* NO X LINK ON THE CORNER. It used to sit here on desktop, and it was the one
+          control at this gate that led AWAY from the rite: a visitor could follow us
+          from the corner, earn nothing for it, and the crystal would still stand there
+          asking them to follow. The Follow rite inside the crystal is the only place
+          the follow lives now, at every size, where it is worth Embers and counts
+          toward the wallet at the end. */}
 
       {/* The team signs in at /login directly (bookmarked); no visible link on the
           public front door, so nothing hints the kingdom is reachable. */}
