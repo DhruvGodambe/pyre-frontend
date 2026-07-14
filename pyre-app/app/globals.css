@@ -342,11 +342,15 @@ h1, h2, h3, h4 {
     inset 0 1px 0 rgba(255, 214, 150, 0.05);
   transition: box-shadow var(--duration-fast) var(--ease-warm);
 }
-.forged-field:hover {
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-frame-strong) 60%, transparent),
-    inset 0 1px 0 rgba(255, 214, 150, 0.06);
+/* Hover fenced off from touch (see .forged-btn): a tap on a field must land in it,
+   not spend itself lighting the rim. */
+@media (hover: hover) {
+  .forged-field:hover {
+    box-shadow:
+      inset 0 1px 3px rgba(0, 0, 0, 0.6),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-frame-strong) 60%, transparent),
+      inset 0 1px 0 rgba(255, 214, 150, 0.06);
+  }
 }
 .forged-field:focus-within {
   box-shadow:
@@ -411,9 +415,28 @@ h1, h2, h3, h4 {
   position: relative;
   z-index: 1;
 }
-.forged-btn:hover:not(:disabled)::after,
+/* HOVER IS FENCED OFF FROM TOUCH, everywhere in this file, and it is not cosmetic:
+   it is what made a phone need TWO taps to press a button.
+
+   A tap on a touch device also fires the hover. When that hover CHANGES what is drawn
+   (every button in this family cross-fades to its molten plate and lifts a pixel),
+   Safari reads the first tap as "the page reacted, the user may just be looking": it
+   delivers the hover and WITHHOLDS the click. Only a second tap activates. The richer
+   the button, the harder it was to press.
+
+   Behind `hover: hover` a phone has no hover state at all, so the first tap is a
+   click. Nothing changes for a mouse. Tailwind already fences its own `hover:`
+   utilities this way, which is why only the hand-written rules here were at fault.
+
+   FOCUS STAYS OUTSIDE THE FENCE: keyboard focus must light the plate on any device,
+   which is why the two selectors are split rather than left sharing one rule. */
 .forged-btn:focus-visible:not(:disabled)::after {
   opacity: 1;
+}
+@media (hover: hover) {
+  .forged-btn:hover:not(:disabled)::after {
+    opacity: 1;
+  }
 }
 /* Selected in a toggle group: lock the plate into its lit (hover) skin, so the
    chosen side glows like a hovered plate and the rest sit in the normal skin,
@@ -424,8 +447,10 @@ h1, h2, h3, h4 {
 .forged-btn--on {
   transform: translateY(-1px);
 }
-.forged-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .forged-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
 }
 .forged-btn:active:not(:disabled) {
   transform: translateY(0);
@@ -485,8 +510,11 @@ h1, h2, h3, h4 {
   position: relative;
   z-index: 1;
 }
-.seg-item:hover:not([data-active="true"]) {
-  color: var(--color-text);
+/* Hover fenced off from touch (see .forged-btn): a segment must switch on one tap. */
+@media (hover: hover) {
+  .seg-item:hover:not([data-active="true"]) {
+    color: var(--color-text);
+  }
 }
 /* Active segment lifts to warm-lit stone with a brand rim, recessed inactive
    segments stay in the track. (The designer's keeper-plate art is drawn for a
@@ -531,11 +559,14 @@ h1, h2, h3, h4 {
     transform var(--duration-fast) var(--ease-warm);
   outline: none;
 }
-.chip:hover {
-  color: var(--color-text);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--color-frame-strong) 70%, transparent),
-    inset 0 1px 0 rgba(255, 214, 150, 0.08);
+/* Hover fenced off from touch (see .forged-btn): a chip must pick on one tap. */
+@media (hover: hover) {
+  .chip:hover {
+    color: var(--color-text);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-frame-strong) 70%, transparent),
+      inset 0 1px 0 rgba(255, 214, 150, 0.08);
+  }
 }
 .chip[aria-pressed="true"],
 .chip[data-active="true"] {
@@ -800,9 +831,16 @@ h1, h2, h3, h4 {
   opacity: 0;
   transition: opacity var(--duration-fast);
 }
-.keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked)::after,
+/* Hover fenced off from touch, so the FIRST tap presses the plate (see .forged-btn).
+   This is the family the gate is built from, so the fence matters most here: the
+   Ashwarden's plates are the only controls a stranger on a phone ever meets. */
 .keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked)::after {
   opacity: 1;
+}
+@media (hover: hover) {
+  .keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked)::after {
+    opacity: 1;
+  }
 }
 /* A plate's own progress: a molten line creeping across its face while the thing it
    fired is still being weighed (the gate's Like + Repost, while the Emberheart listens
@@ -870,9 +908,13 @@ h1, h2, h3, h4 {
   }
   .keeper-plate-btn > span { font-size: 13px; letter-spacing: 0.01em; }
 }
-.keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked),
 .keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked) {
   transform: translateY(-1px);
+}
+@media (hover: hover) {
+  .keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked) {
+    transform: translateY(-1px);
+  }
 }
 .keeper-plate-btn:focus-visible {
   outline: 2px solid var(--color-brand);

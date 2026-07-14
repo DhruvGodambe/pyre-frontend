@@ -98,13 +98,31 @@ body {
   opacity: 0;
   transition: opacity 180ms var(--ease-warm);
 }
-.imgbtn:hover .hov,
+/* WHY THE HOVER IS FENCED OFF FROM TOUCH: it is what made a phone need TWO taps.
+
+   A tap on a touch device also fires the hover. When that hover CHANGES what is
+   drawn (here: the molten plate cross-fades in, the button lifts, a glow appears),
+   Safari treats the first tap as "the page reacted, the user may just be looking",
+   delivers the hover, and WITHHOLDS the click. Only the second tap activates the
+   link. So the prettier the button, the harder it was to press.
+
+   Behind `hover: hover` there is no hover state on a phone at all, so the first tap
+   is a click, exactly like a plain link. Nothing changes for a mouse. This is the
+   same fence Tailwind puts around its own `hover:` utilities, which is why those
+   were never part of the problem.
+
+   Focus stays OUTSIDE the fence: keyboard focus must light the plate on any device. */
 .imgbtn:focus-visible .hov {
   opacity: 1;
 }
-.imgbtn:hover {
-  transform: translateY(-1px);
-  filter: drop-shadow(0 8px 24px rgba(240, 88, 24, 0.35));
+@media (hover: hover) {
+  .imgbtn:hover .hov {
+    opacity: 1;
+  }
+  .imgbtn:hover {
+    transform: translateY(-1px);
+    filter: drop-shadow(0 8px 24px rgba(240, 88, 24, 0.35));
+  }
 }
 .imgbtn:focus-visible {
   outline: 2px solid var(--color-brand);

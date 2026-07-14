@@ -12,6 +12,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { asset } from "@/lib/config";
+import { canHover } from "@/lib/can-hover";
 
 /* name → [normal, hover, intrinsic w, h]. Add a row when the designer ships
    more. */
@@ -165,7 +166,11 @@ export function ImageButton({
       aria-label={label}
       aria-pressed={selected || undefined}
       aria-busy={pending}
-      onMouseEnter={() => setHover(true)}
+      /* Only a real pointer may light the plate. On a phone, a mouseenter that swapped
+         in the hover art made Safari withhold the first tap's click, so every button
+         here needed pressing twice (see lib/can-hover.ts). Focus is untouched: the
+         keyboard still lights it on any device. */
+      onMouseEnter={() => canHover() && setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}

@@ -10,6 +10,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { asset } from "@/lib/config";
+import { canHover } from "@/lib/can-hover";
 import { useMute } from "@/lib/mute";
 
 export function MuteButton({ width = 50, className = "" }: { width?: number | string; className?: string }) {
@@ -23,7 +24,8 @@ export function MuteButton({ width = 50, className = "" }: { width?: number | st
       aria-label={muted ? "Unmute music" : "Mute music"}
       aria-pressed={muted}
       title={muted ? "Unmute music" : "Mute music"}
-      onMouseEnter={() => setHover(true)}
+      /* Mouse only (see lib/can-hover.ts): a phone must mute on the FIRST tap. */
+      onMouseEnter={() => canHover() && setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}

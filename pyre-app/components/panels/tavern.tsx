@@ -25,6 +25,7 @@ import {
   useQuestLeaderboard,
   useReferral,
 } from "@/lib/hooks";
+import { canHover } from "@/lib/can-hover";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { useTour } from "@/lib/tour";
@@ -429,7 +430,9 @@ function ShareLink({
       rel="noreferrer"
       onClick={onClick}
       aria-label={label}
-      onMouseEnter={() => setHover(true)}
+      /* Mouse only: on a phone, lighting the art on mouseenter made Safari swallow
+         the first tap (see lib/can-hover.ts). */
+      onMouseEnter={() => canHover() && setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
@@ -507,7 +510,9 @@ function CtaImageLink({
       rel="noreferrer"
       onClick={onClick}
       aria-label={label}
-      onMouseEnter={() => setHover(true)}
+      /* Mouse only: on a phone, lighting the art on mouseenter made Safari swallow
+         the first tap (see lib/can-hover.ts). */
+      onMouseEnter={() => canHover() && setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
@@ -965,7 +970,8 @@ function SummonSection() {
           target="_blank"
           rel="noreferrer"
           aria-label="Share on X"
-          onMouseEnter={() => setShareHover(true)}
+          /* Mouse only (see lib/can-hover.ts): the Share art must not eat the tap. */
+          onMouseEnter={() => canHover() && setShareHover(true)}
           onMouseLeave={() => setShareHover(false)}
           onFocus={() => setShareHover(true)}
           onBlur={() => setShareHover(false)}
