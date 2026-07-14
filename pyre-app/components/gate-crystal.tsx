@@ -59,7 +59,7 @@ import { KeeperSpeech } from "@/components/ui/keeper-speech";
 import { GameIcon } from "@/components/ui/game-icon";
 import { asset } from "@/lib/config";
 import { playEmberClaim, playEmberGain } from "@/lib/sfx";
-import { likeIntent, repostIntent, MANIFESTO_TWEET_ID, X_PROFILE_URL } from "@/lib/social";
+import { likeIntent, repostIntent, DECREE_TWEET_ID, X_PROFILE_URL } from "@/lib/social";
 import { completeQuestTask, fetchQuestTasks, submitWallet } from "@/lib/quests/client";
 import type { QuestTask } from "@/lib/types";
 import { track } from "@vercel/analytics";
@@ -502,6 +502,22 @@ export function GateCrystalRite() {
             <span className="text-text-3">Embers</span>
             {gate.award && <span className="gc-plus">+{gate.award.n}</span>}
           </span>
+
+          {/* THE WAY BACK. Without it the rite is a dead end: once the Embers are taken
+              there is no plate left to press, and the visitor is stranded in the crystal
+              with the Codex and the gate itself out of reach. It lives up here, not on
+              the frame, because leaving is navigation and the plates are for the ONE
+              thing he is asking for. */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              gate.setOpen(false);
+            }}
+            className="shrink-0 whitespace-nowrap text-text-3 text-xs transition-colors hover:text-brand"
+          >
+            ← Back to the gate
+          </button>
         </div>
 
         {/* He TALKS the visitor through each rung, voice and words together. Keyed by
@@ -527,7 +543,12 @@ export function GateCrystalRite() {
 
         {/* The one control that cannot be a plate on the frame's edge. Appears only
             on the rung that needs it, so the box keeps its size everywhere else. */}
-        {stage === "more" && !walletDone && (
+        {/* The address is the LAST rung, and it does NOT appear until the fire has been
+            followed. Showing the field alongside the Follow plate let a visitor bind for
+            +50 and walk away from the +10, skipping the rite entirely: the one ask that
+            costs them nothing was the one they could dodge. It also broke the one-rung
+            rule, with a plate and a field both live at once. */}
+        {stage === "more" && gate.followed && !walletDone && (
           <div className="mt-2">
             <div className="flex gap-2">
               <input
@@ -586,7 +607,7 @@ export function GateCrystalActions() {
         return (
           <PlateButton
             label="Like the decree"
-            href={likeIntent(MANIFESTO_TWEET_ID)}
+            href={likeIntent(DECREE_TWEET_ID)}
             newTab
             onClick={(e) => {
               e.stopPropagation();
@@ -599,7 +620,7 @@ export function GateCrystalActions() {
         return (
           <PlateButton
             label="Share the decree"
-            href={repostIntent(MANIFESTO_TWEET_ID)}
+            href={repostIntent(DECREE_TWEET_ID)}
             newTab
             onClick={(e) => {
               e.stopPropagation();
@@ -637,7 +658,7 @@ export function GateCrystalActions() {
     // exact moment a visitor wonders whether they got their Embers.
     return (
       <PlateButton
-        label={gate.followed ? "Followed ✓" : "Follow the fire"}
+        label={gate.followed ? "Followed ✓" : "Follow Pyre"}
         href={gate.followed ? undefined : X_PROFILE_URL}
         newTab
         disabled={gate.followed}

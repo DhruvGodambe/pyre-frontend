@@ -16,9 +16,30 @@ export const SITE_URL = "https://pyreprotocol.com"; // TODO: real site URL
     place to set: swap for the real Telegram invite before launch. */
 export const COMMUNITY_URL = "https://t.me/pyreprotocol";
 
-/** The pinned manifesto post the "share the manifesto" quest amplifies. */
+/** The pinned manifesto post the Ashen Cup's "share the manifesto" rite amplifies. */
 export const MANIFESTO_TWEET_ID = "2069487264615346514";
 export const MANIFESTO_TWEET_URL = `https://x.com/${X_HANDLE}/status/${MANIFESTO_TWEET_ID}`;
+
+/* ============================================================================
+   THE DECREE: the ONE post the sealed gate sends everyone to.
+   ----------------------------------------------------------------------------
+   This is the launch-announcement film. It is what every visitor who claims at
+   the Emberheart likes and reposts, so all of that engagement lands on a single
+   post instead of being scattered.
+
+   ⚠️ SET THIS THE MOMENT THE FILM IS POSTED. Until then it falls back to the
+   manifesto, which means the gate is quietly pumping the wrong (older, weaker)
+   post: every like and repost the funnel earns is spent on it. It is one line.
+
+   Paste the id from the post's URL:  x.com/pyre_protocol/status/<THIS>
+   ========================================================================== */
+const ANNOUNCEMENT_TWEET_ID: string | null = null; // TODO: the film's post id
+
+/** The post the gate's Like + Share rite acts on. */
+export const DECREE_TWEET_ID = ANNOUNCEMENT_TWEET_ID ?? MANIFESTO_TWEET_ID;
+export const DECREE_TWEET_URL = `https://x.com/${X_HANDLE}/status/${DECREE_TWEET_ID}`;
+/** False while the gate is still pointing at the fallback, so it can say so. */
+export const DECREE_IS_ANNOUNCEMENT = ANNOUNCEMENT_TWEET_ID !== null;
 
 /** Build an X web-intent URL, no API/auth needed, the user just posts.
     URLSearchParams handles encoding; `via` carries the public handle only. */
