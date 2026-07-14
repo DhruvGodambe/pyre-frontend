@@ -129,6 +129,10 @@ interface GateCrystalApi {
       Repost confirm optimistically, and this one has to feel the same. */
   followed: boolean;
   listening: boolean;
+  /** The decree write failed after the "listens" beat; offer a retry rather than
+      stranding a visitor who did everything on a dead plate. */
+  decreeFailed: boolean;
+  retryDecree: () => void;
   /** The Embers that just LANDED, and a key that changes on every award so the flourish
       re-fires even when the same amount is won twice. null when nothing is landing. */
   award: { n: number; key: number } | null;
@@ -163,6 +167,7 @@ export function GateCrystalProvider({
   const [reposted, setReposted] = useState(false);
   const [followed, setFollowed] = useState(false);
   const [listening, setListening] = useState(false);
+  const [decreeFailed, setDecreeFailed] = useState(false);
   const [taking, setTaking] = useState(false);
   const [flaring, setFlaring] = useState(false);
   const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,10 +175,16 @@ export function GateCrystalProvider({
   const fired = useRef(false);
 
   const refresh = useCallback(async () => {
-    try {
-      setTasks(await fetchQuestTasks());
-    } catch {
-      /* sealed or offline: the crystal simply stays asleep. */
+    // Retry a few times before giving up: a single transient 500 on GET /api/quests
+    // used to leave tasks null forever, which hides the entire earn surface (no Claim
+    // plate, no crystal) with no feedback and no reason for a visitor to reload.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        setTasks(await fetchQuestTasks());
+        return;
+      } catch {
+        await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      }
     }
   }, []);
 
@@ -220,10 +231,20 @@ export function GateCrystalProvider({
   const listen = (nextLiked: boolean, nextReposted: boolean) => {
     if (!nextLiked || !nextReposted || fired.current) return;
     fired.current = true;
+    setDecreeFailed(false);
     setListening(true);
     listenTimer.current = setTimeout(async () => {
-      await completeQuestTask("share");
+      const res = await completeQuestTask("share");
       setListening(false);
+      // The write can FAIL (a Supabase blip, a dropped connection) and postJson
+      // swallows it into {ok:false} rather than throwing. If it did, the visitor has
+      // done everything asked and must not be stranded on a dead plate: re-arm so the
+      // rite can offer them a retry, and say so. Only credit + advance on success.
+      if (!res.ok) {
+        fired.current = false;
+        setDecreeFailed(true);
+        return;
+      }
       track("gate_crystal_decree");
       void refresh();
     }, LISTEN_MS);
@@ -247,6 +268,8 @@ export function GateCrystalProvider({
     // Either the click just happened, or a previous visit already did it.
     followed: followed || followDone,
     listening,
+    decreeFailed,
+    retryDecree: () => listen(true, true),
     award,
     taking,
     markLiked: () => {
@@ -625,6 +648,19 @@ export function GateCrystalActions() {
             onClick={(e) => {
               e.stopPropagation();
               gate.markReposted();
+            }}
+          />
+        );
+      }
+      // The decree write faltered after the beat. Rather than a dead plate, offer the
+      // retry: the visitor did everything asked and must be able to get their Embers.
+      if (gate.decreeFailed) {
+        return (
+          <PlateButton
+            label="The fire wavered — try again"
+            onClick={(e) => {
+              e.stopPropagation();
+              gate.retryDecree();
             }}
           />
         );

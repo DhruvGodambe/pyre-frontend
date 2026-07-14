@@ -60,6 +60,11 @@ import { track } from "@vercel/analytics";
    more of the original painting's craft until it read as machine-made. The designer's
    golden-hour original is untouched at gate-closed.webp; the open gate returns at LAUNCHED. */
 const CLOSED_GATE_ART = "/world/interiors/gate-closed-lava-d175aab2.webp";
+/* The same gate reframed TALL for a phone. The landscape art is 16:9, so object-cover on
+   a portrait screen crops it to a slab of the doors, losing the walls, the lava and the
+   whole scene. This 9:16 version fills a phone properly. It is shown ONLY below sm; the
+   desktop scene (landscape art + the standing Ashwarden layer) is byte-for-byte unchanged. */
+const CLOSED_GATE_ART_PORTRAIT = "/world/interiors/gate-portrait-9e42ab92.webp";
 
 /* The keeper's voice for this scene. NOTE: free-tier ElevenLabs test clip in
    the gitignored voice-previews folder, so production simply stays silent
@@ -258,20 +263,35 @@ export function FrontDoor() {
           transitionDuration: entering ? "1050ms" : "1200ms",
         }}
       >
+        {/* DESKTOP scene, unchanged: the landscape gate, with the standing Ashwarden
+            layered on top below. Hidden on phones, where it cropped to a slab of doors. */}
         <Image
           src={asset(LAUNCHED ? gate.interior ?? CLOSED_GATE_ART : CLOSED_GATE_ART)}
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover select-none pointer-events-none"
+          className="hidden object-cover select-none pointer-events-none sm:block"
         />
+        {/* MOBILE, portrait framing of the same gate: the whole scene fits a tall screen,
+            so no rotating the phone to see it. Only below sm; never touches desktop. At
+            launch the open landscape gate returns for everyone. */}
+        {!LAUNCHED && (
+          <Image
+            src={asset(CLOSED_GATE_ART_PORTRAIT)}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover select-none pointer-events-none sm:hidden"
+          />
+        )}
         {/* The Ashwarden himself: the designer's EXACT pixels (clean cutout,
             zero repainting), standing left of the doors, cropped by the frame
             bottom. Positioned in image coordinates via the same cover-proxy
             geometry as the art, so he stands on the path at every viewport. */}
         {!LAUNCHED && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)] pointer-events-none">
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)] pointer-events-none sm:block">
             {/* Part of the painting, not a control: he stands at the gate and
                 talks through the box below. The Codex has its own plate. */}
             {/* Lifted off the frame's bottom edge so his OFFERED HAND clears the
@@ -303,6 +323,32 @@ export function FrontDoor() {
                   inside it. Anchored so it rests on the same point of his open palm the
                   old gem did (its bottom point in his fingers), in the figure's own
                   coordinates, so it rides his hand at every viewport. */}
+              <img
+                src={asset("/world/ashwarden/hand-crystal.webp")}
+                alt=""
+                draggable={false}
+                className="ashwarden-gem absolute select-none"
+                style={{ left: "68.84%", top: "29.10%", width: "9.47%" }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* MOBILE Ashwarden. The desktop layer above is anchored in the LANDSCAPE image's
+            coordinates, so on the portrait art he would land in the wrong place. This one
+            is anchored to the VIEWPORT instead: he stands left of the gate, offered hand
+            toward centre, his feet a little into the dialogue box, the same reading as
+            desktop. Only below sm; the desktop scene never sees it. Same designer cutout,
+            same gem, so nothing new is drawn. */}
+        {!LAUNCHED && (
+          <div className="absolute inset-0 pointer-events-none sm:hidden">
+            <div className="absolute bottom-[26%] left-[30%] h-[52%] -translate-x-1/2">
+              <img
+                src={asset("/world/ashwarden/ashwarden-offering-empty.webp")}
+                alt=""
+                draggable={false}
+                className="h-full w-auto max-w-none select-none drop-shadow-[0_6px_24px_rgba(0,0,0,0.7)]"
+              />
               <img
                 src={asset("/world/ashwarden/hand-crystal.webp")}
                 alt=""
