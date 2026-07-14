@@ -521,7 +521,32 @@ export function GateCrystalRite() {
     /* NOT clickable. He is never cut off by a stray click here either: the plates are
        live from the moment the rung opens, so anyone in a hurry just presses one and
        never needs to swat at his words. */
-    <div className="flex items-center gap-4">
+    <div className="relative flex items-center gap-4">
+      {/* THE QUIET WAY OUT, and the only one on a phone.
+
+          The way back is no longer a plate until the wallet is bound (see
+          GateCrystalActions): a visitor must not be offered a comfortable exit in the
+          middle of the ask. But an ask with NO exit is a trap, and on a phone it would
+          be a real one: the rite replaces the Ashwarden's plates entirely, and the
+          crystal in the rocks (the desktop's way back out) is cropped off the screen
+          down here. So the rite carries its own dismiss.
+
+          Deliberately quiet: a small mark in the corner, not a plate on the frame. It
+          is an escape hatch for someone who wants no part of this, not a choice being
+          offered alongside the rung. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          gate.setOpen(false);
+        }}
+        aria-label="Close, and go back to the gate"
+        title="Back to the gate"
+        className="-right-1 -top-1 absolute z-10 flex h-8 w-8 items-center justify-center rounded-md text-text-3 text-lg leading-none outline-none transition-colors hover:text-brand-soft focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <span aria-hidden>✕</span>
+      </button>
+
       {/* The Ember Crystal: the emblem of the thing being claimed. On a phone this is
           the ONLY place the crystal can be seen, since the painted one in the rocks is
           cropped out of the scene entirely. */}
@@ -532,7 +557,9 @@ export function GateCrystalRite() {
         <CrystalArt flaring={flaring} src="/world/ui/icons/ember_crystal.png" />
       </div>
 
-      <div className="min-w-0 flex-1">
+      {/* pr-7 keeps the corner clear for the dismiss above, so his words never run
+          underneath it on a narrow phone. */}
+      <div className="min-w-0 flex-1 pr-7">
         {/* The Embers LAND: the total flares and a +N flies up off it, with a struck-
             crystal chime. Without this the reward for a rite is a small number quietly
             changing in a corner, which a visitor who just went out to X and back will
@@ -622,12 +649,17 @@ export function GateCrystalRite() {
     (once the crystal has opened) Take, then Follow. Four plates across the box read as a
     wall of choices, and worse, they were not four of the same thing.
 
-    THE WAY BACK RIDES THE FRAME TOO, but ONLY on the last rung, beside Follow. The rite
-    is meant to be walked, not browsed: while the decree is still being carried, or the
-    Embers still unclaimed, there is no back plate, so the way out of the crystal is
-    THROUGH it. Once the Embers are taken (stage "more") the ask is over and the plate
-    appears, because a rite with nothing left to press and no exit strands the visitor
-    away from the Codex and the gate. */
+    THE WAY BACK RIDES THE FRAME TOO, but ONLY once the WALLET IS BOUND, which is the
+    moment the rite has actually paid for itself. It used to appear as soon as the Embers
+    were taken, beside Follow, which put a comfortable exit on the frame while the last
+    and most valuable ask (the wallet) was still outstanding: visitors took the Embers
+    and left, and an unbound wallet is an Ember balance we cannot pay out to.
+
+    So while ANYTHING is still being asked, the way out of the crystal is THROUGH it, and
+    the only exit is the quiet dismiss in the rite's own corner (see GateCrystalRite):
+    an escape hatch, not a plate competing with the ask. Once the wallet is in, the ask
+    is over and the plate appears, because a rite with nothing left to press and no exit
+    strands the visitor away from the Codex and the gate. */
 export function GateCrystalActions() {
   const gate = useGate();
   if (!gate?.ready) return null;
@@ -714,7 +746,11 @@ export function GateCrystalActions() {
     // After the claim: Follow, and it STAYS once done and confirms itself with a tick.
     // Rendering it conditionally deleted it out of the tree on success, which is the
     // exact moment a visitor wonders whether they got their Embers.
-    // The way back joins it here, and ONLY here: the rite is done being asked.
+    //
+    // The way back joins it ONLY once the wallet is bound. Until then the wallet is
+    // still being asked for (the field appears in the rite's body, under Follow), and
+    // a "Back to the gate" plate sitting next to that field is just the easier button
+    // to press. Anyone who truly wants out uses the dismiss in the corner.
     return (
       <>
         <PlateButton
@@ -728,7 +764,7 @@ export function GateCrystalActions() {
             gate.follow();
           }}
         />
-        {back}
+        {gate.walletDone && back}
       </>
     );
   })();
