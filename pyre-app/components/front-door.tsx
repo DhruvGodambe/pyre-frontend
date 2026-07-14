@@ -426,7 +426,7 @@ export function FrontDoor() {
                  three ride the one grid. */
               <div
                 className={
-                  "grid w-full animate-entry grid-cols-3 items-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col sm:gap-3"
+                  "flex w-full animate-entry flex-wrap items-center justify-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col sm:gap-3"
                 }
               >
                 <div className="contents">

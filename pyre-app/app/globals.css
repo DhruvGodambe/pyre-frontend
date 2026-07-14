@@ -622,19 +622,20 @@ h1, h2, h3, h4 {
    when the box actually carries actions, so plain framed panels are untouched. */
 .keeper-frame:has(.keeper-actions) { margin-bottom: 28px; }
 @media (max-width: 640px) {
-  /* ON A PHONE the plates come OFF the ornate bottom edge and sit as a clean row
-     BENEATH the whole box, next to each other, a touch smaller. The straddle looked
-     cramped against the corner embers on a narrow screen. The frame reserves the row's
-     height below itself (margin-bottom) so it never overlaps the scene. Desktop keeps
-     the straddling plates, untouched. */
-  .keeper-frame:has(.keeper-actions) { margin-bottom: 58px; }
+  /* ON A PHONE the plates come fully OFF the ornate bottom edge and sit CLEARLY below
+     the box, with real breathing room between, so each can be wide enough for its text.
+     The frame reserves that height below itself (margin-bottom) so the row never
+     overlaps the scene. Desktop keeps the straddling plates, untouched. */
+  .keeper-frame:has(.keeper-actions) { margin-bottom: 68px; }
   .keeper-actions {
     top: 100%;
     bottom: auto;
     transform: none;
-    margin-top: 10px;
-    padding: 0 2px;
+    margin-top: 18px;
+    padding: 0;
     gap: 8px;
+    /* Wrap only if a narrow phone can't fit the row; on most phones the three
+       content-sized plates sit next to each other. */
     flex-wrap: wrap;
   }
   /* Plate sizing for mobile lives in the LATER max-width block (below the base
@@ -846,16 +847,16 @@ h1, h2, h3, h4 {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 @media (max-width: 640px) {
-  /* Small enough that three fit side by side beneath the box, and full-width so they
-     fill their share of the row (the greeting is a 3-column grid on mobile). min-width
-     must be 0 or the 128px base floor forces them to wrap into a stack. */
+  /* Content-sized, not forced into equal columns: each plate is as wide as its own
+     label needs, so "Read the Codex" stops getting squeezed. min-width 0 (not the base
+     128px floor) lets them size down, and padding keeps the text off the plate edge.
+     Three sit next to each other on a normal phone; narrower phones wrap one down. */
   .keeper-plate-btn {
-    height: 44px;
+    height: 46px;
     min-width: 0;
-    width: 100%;
-    padding: 0 8px;
+    padding: 0 14px;
   }
-  .keeper-plate-btn > span { font-size: 12px; letter-spacing: 0.01em; }
+  .keeper-plate-btn > span { font-size: 13px; letter-spacing: 0.01em; }
 }
 .keeper-plate-btn:hover:not(:disabled):not(.keeper-plate-btn--locked),
 .keeper-plate-btn:focus-visible:not(.keeper-plate-btn--locked) {
