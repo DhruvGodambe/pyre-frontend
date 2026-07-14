@@ -24,7 +24,7 @@ import {
   type MouseEventHandler,
   type ReactNode,
 } from "react";
-import { GameIcon } from "@/components/ui/game-icon";
+import { GameIcon, type GameIconName } from "@/components/ui/game-icon";
 
 /* ------------------------------------------------------------- KeeperBox */
 
@@ -62,6 +62,7 @@ export function KeeperBox({
    Material/HIG touch-target floors. */
 export function PlateButton({
   label,
+  icon,
   onClick,
   href,
   newTab,
@@ -71,6 +72,14 @@ export function PlateButton({
   progressMs,
 }: {
   label: string;
+  /** The plate's symbol, riding left of the label (the tome on the Codex plate, the
+      crystal on the Claim plate), so a plate is recognisable before it is read.
+
+      DESKTOP ONLY, deliberately. On a phone the plates are already sized to their
+      text with barely a spare pixel, and a symbol would either shove the label into
+      a second line or push the row into a different arrangement. The phone keeps the
+      layout it has; the symbol is a flourish for the screens with room for it. */
+  icon?: GameIconName;
   onClick?: MouseEventHandler<HTMLElement>;
   /** Renders an anchor instead of a button (e.g. the Codex link). */
   href?: string;
@@ -109,6 +118,12 @@ export function PlateButton({
           needs to run bigger than a normal glyph to read as a LOCK: the max
           that fits each plate face (52px phone / 47px desktop). */}
       {locked && <GameIcon name="lock" size={28} className="mr-2 -mt-0.5 h-7 w-7 sm:h-6 sm:w-6" />}
+      {/* The plate's symbol. Hidden below sm (see the prop): the phone's plates have no
+          spare width, and the lock above is the one exception, because a sealed plate
+          that doesn't LOOK sealed is worse than a tight one. */}
+      {icon && !locked && (
+        <GameIcon name={icon} size={22} className="mr-2 hidden h-[22px] w-[22px] sm:inline-block" />
+      )}
       {label}
     </span>
   );

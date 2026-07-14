@@ -324,6 +324,9 @@ export function GateCrystalPlate() {
   return (
     <PlateButton
       label="Claim Embers"
+      /* The Ember Crystal, the emblem Embers are counted with everywhere else, so the
+         plate says what it pays before it is read. */
+      icon="emberCrystal"
       onClick={(e) => {
         e.stopPropagation();
         gate.setOpen(!gate.open);
@@ -510,38 +513,22 @@ export function GateCrystalRite() {
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          {/* The Embers LAND: the total flares and a +N flies up off it, with a struck-
-              crystal chime. Without this the reward for a rite is a small number quietly
-              changing in a corner, which a visitor who just went out to X and back will
-              not notice, and a rite they did not see pay out is a rite they think
-              failed. */}
-          <span
-            key={gate.award?.key ?? "idle"}
-            className={`gc-total inline-flex items-center gap-1.5 text-brand-soft text-sm ${gate.award ? "is-won" : ""}`}
-          >
-            <GameIcon name="emberCrystal" size={16} />
-            <Count to={embers} />
-            <span className="text-text-3">Embers</span>
-            {gate.award && <span className="gc-plus">+{gate.award.n}</span>}
-          </span>
-
-          {/* THE WAY BACK. Without it the rite is a dead end: once the Embers are taken
-              there is no plate left to press, and the visitor is stranded in the crystal
-              with the Codex and the gate itself out of reach. It lives up here, not on
-              the frame, because leaving is navigation and the plates are for the ONE
-              thing he is asking for. */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              gate.setOpen(false);
-            }}
-            className="shrink-0 whitespace-nowrap text-text-3 text-xs transition-colors hover:text-brand"
-          >
-            ← Back to the gate
-          </button>
-        </div>
+        {/* The Embers LAND: the total flares and a +N flies up off it, with a struck-
+            crystal chime. Without this the reward for a rite is a small number quietly
+            changing in a corner, which a visitor who just went out to X and back will
+            not notice, and a rite they did not see pay out is a rite they think
+            failed. */}
+        {/* THE WAY BACK is no longer a small link riding this row: it is a plate on the
+            frame, and only on the last rung (see GateCrystalActions). */}
+        <span
+          key={gate.award?.key ?? "idle"}
+          className={`gc-total inline-flex items-center gap-1.5 text-brand-soft text-sm ${gate.award ? "is-won" : ""}`}
+        >
+          <GameIcon name="emberCrystal" size={16} />
+          <Count to={embers} />
+          <span className="text-text-3">Embers</span>
+          {gate.award && <span className="gc-plus">+{gate.award.n}</span>}
+        </span>
 
         {/* He TALKS the visitor through each rung, voice and words together. Keyed by
             stage, so every rung is a fresh delivery. Dumping the finished paragraph in
@@ -615,13 +602,26 @@ export function GateCrystalRite() {
     (once the crystal has opened) Take, then Follow. Four plates across the box read as a
     wall of choices, and worse, they were not four of the same thing.
 
-    STEP BACK IS NOT AN ACTION and does not ride the frame. It is a quiet corner link in
-    the box (see the rite body): navigation and action are different classes, and mixing
-    them in one row is what made the box feel crowded. */
+    THE WAY BACK RIDES THE FRAME TOO, but ONLY on the last rung, beside Follow. The rite
+    is meant to be walked, not browsed: while the decree is still being carried, or the
+    Embers still unclaimed, there is no back plate, so the way out of the crystal is
+    THROUGH it. Once the Embers are taken (stage "more") the ask is over and the plate
+    appears, because a rite with nothing left to press and no exit strands the visitor
+    away from the Codex and the gate. */
 export function GateCrystalActions() {
   const gate = useGate();
   if (!gate?.ready) return null;
   const { stage, reward } = gate;
+
+  const back = (
+    <PlateButton
+      label="Back to the gate"
+      onClick={(e) => {
+        e.stopPropagation();
+        gate.setOpen(false);
+      }}
+    />
+  );
 
   const plate = (() => {
     if (stage === "carry") {
@@ -692,21 +692,32 @@ export function GateCrystalActions() {
     // After the claim: Follow, and it STAYS once done and confirms itself with a tick.
     // Rendering it conditionally deleted it out of the tree on success, which is the
     // exact moment a visitor wonders whether they got their Embers.
+    // The way back joins it here, and ONLY here: the rite is done being asked.
     return (
-      <PlateButton
-        label={gate.followed ? "Followed ✓" : "Follow Pyre"}
-        href={gate.followed ? undefined : X_PROFILE_URL}
-        newTab
-        disabled={gate.followed}
-        onClick={(e) => {
-          e.stopPropagation();
-          gate.follow();
-        }}
-      />
+      <>
+        <PlateButton
+          label={gate.followed ? "Followed ✓" : "Follow Pyre"}
+          href={gate.followed ? undefined : X_PROFILE_URL}
+          newTab
+          disabled={gate.followed}
+          onClick={(e) => {
+            e.stopPropagation();
+            gate.follow();
+          }}
+        />
+        {back}
+      </>
     );
   })();
 
-  return <div className="inline-grid auto-cols-fr grid-flow-col items-center gap-3">{plate}</div>;
+  /* One plate rides the frame alone; the last rung rides two. On a phone they wrap
+     (the plates sit below the box down there and are sized to their text), and from
+     sm up they share one grid row, exactly like the Ashwarden's standing plates. */
+  return (
+    <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col sm:gap-3">
+      {plate}
+    </div>
+  );
 }
 
 /** The styles for all three pieces. Kept together so the surge reads as one

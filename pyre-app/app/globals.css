@@ -608,6 +608,13 @@ h1, h2, h3, h4 {
   border: var(--kf) solid transparent;
   /* `fill` carries the painted charred-soot panel + its baked bottom glow. */
   border-image: url("/world/ui/keeper-frame.webp") 165 fill / var(--kf) / 0 stretch;
+  /* A body UNDER the painted fill, for the window where the art has not arrived
+     (a CSS image is only fetched once an element wearing the class renders, so a
+     cold first mount had the keeper's words hanging on bare scene with no box).
+     The fill is opaque and covers this the moment it paints; the front door also
+     warms the art during the film, so this is the last line of defence, not the
+     plan. Matches the .forged-card fallback. */
+  background-color: #14100c;
   /* The name plate rides ABOVE the top edge (see .keeper-plate), so every framed
      panel reserves clearance above itself, otherwise the plate clips against the
      viewport top or a panel stacked above it. Travels with the component so no
@@ -622,25 +629,11 @@ h1, h2, h3, h4 {
    when the box actually carries actions, so plain framed panels are untouched. */
 .keeper-frame:has(.keeper-actions) { margin-bottom: 28px; }
 @media (max-width: 640px) {
-  /* ON A PHONE the plates come fully OFF the ornate bottom edge and sit CLEARLY below
-     the box, with real breathing room between, so each can be wide enough for its text.
-     The frame reserves that height below itself (margin-bottom) so the row never
-     overlaps the scene. Desktop keeps the straddling plates, untouched. */
-  .keeper-frame:has(.keeper-actions) { margin-bottom: 68px; }
-  .keeper-actions {
-    top: 100%;
-    bottom: auto;
-    transform: none;
-    margin-top: 18px;
-    padding: 0;
-    gap: 8px;
-    /* Wrap only if a narrow phone can't fit the row; on most phones the three
-       content-sized plates sit next to each other. */
-    flex-wrap: wrap;
-  }
-  /* Plate sizing for mobile lives in the LATER max-width block (below the base
-     .keeper-plate-btn rule), so it isn't overridden by base min-width: it must come
-     after that rule to win. */
+  /* On a phone the frame reserves room BELOW itself for the plate row (which no longer
+     straddles the bottom edge but sits under the box, see the later mobile block). The
+     keeper-actions + plate overrides live AFTER the base rules so they actually win;
+     placing them here would be silently overridden by the base .keeper-actions. */
+  .keeper-frame:has(.keeper-actions) { margin-bottom: 66px; }
 }
 /* A framed panel that fills its grid row (equal-height side-by-side panels). */
 .keeper-frame.h-full { height: 100%; }
@@ -847,10 +840,29 @@ h1, h2, h3, h4 {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
 }
 @media (max-width: 640px) {
+  /* MOBILE plate row, verified in-browser. This block sits AFTER the base
+     .keeper-actions / .keeper-plate-btn rules, so it wins (an identical block placed
+     before them was silently overridden, which is what left the plates 128px wide and
+     the row inset by the borders). Two fixes measured live:
+       - top: 100% lands at the frame's PADDING edge, so the 30px bottom border shoved
+         the row up ONTO the box; margin-top clears the border (var(--kf)) + a real gap.
+       - left/right: -var(--kf) break the row out of the border inset to the frame's
+         FULL width, so three content-sized plates fit one clean row instead of wrapping.
+     Result confirmed: three plates on one row, 12px below the box, no overlap. */
+  .keeper-actions {
+    top: 100%;
+    bottom: auto;
+    left: calc(-1 * var(--kf));
+    right: calc(-1 * var(--kf));
+    transform: none;
+    margin-top: calc(var(--kf) + 12px);
+    padding: 0;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
   /* Content-sized, not forced into equal columns: each plate is as wide as its own
      label needs, so "Read the Codex" stops getting squeezed. min-width 0 (not the base
-     128px floor) lets them size down, and padding keeps the text off the plate edge.
-     Three sit next to each other on a normal phone; narrower phones wrap one down. */
+     128px floor) lets them size down, and padding keeps the text off the plate edge. */
   .keeper-plate-btn {
     height: 46px;
     min-width: 0;

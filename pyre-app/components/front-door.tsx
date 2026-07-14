@@ -45,6 +45,7 @@ import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
 import { playDoor, preloadSfx } from "@/lib/sfx";
 import { preloadAudio } from "@/lib/audio-preload";
+import { preloadImages } from "@/lib/image-preload";
 import { captureReferral } from "@/lib/quests/client";
 import { track } from "@vercel/analytics";
 
@@ -97,6 +98,24 @@ const SEALED_LINES = [
   "Study the Ember Codex, and be ready when the doors open.",
 ];
 
+/* EVERY PIECE OF ART HIS BOX IS MADE OF. The frame, the name plate and the action
+   plates are CSS border-images, and a CSS image is not fetched until an element
+   wearing that class first renders: the download would otherwise begin at the very
+   moment he starts speaking, so his words appeared over bare scene and the forged
+   frame painted in behind them a beat later. Warmed during the film, and he waits
+   for them (see CHROME_WAIT). */
+const KEEPER_CHROME = [
+  "/world/ui/keeper-frame.webp",
+  "/world/ui/keeper-plate.webp",
+  "/world/ui/keeper-plate-hover.webp",
+  "/world/ashwarden/ashwarden-face.webp",
+];
+
+/* How long he will wait for his own box before speaking anyway. On any normal
+   connection the film has long since warmed it and this never fires; on a bad one
+   the greeting still lands, just against whatever chrome has arrived. */
+const CHROME_WAIT = 4000;
+
 export function FrontDoor() {
   const router = useRouter();
   const identity = useIdentity();
@@ -115,12 +134,25 @@ export function FrontDoor() {
     window.history.replaceState({}, "", url.toString());
   }, []);
 
-  // Warm the audio the visitor is seconds from hearing: the keeper's gate lines
-  // (so the voice plays instantly and never trips the 2s watchdog into the silent
-  // typewriter) and the world SFX (so the first door/zoom click doesn't lag).
+  // Warm what the visitor is seconds away from meeting, while the film covers the
+  // screen: the keeper's gate lines (so the voice plays instantly and never trips
+  // the 2s watchdog into the silent typewriter), the world SFX (so the first
+  // door/zoom click doesn't lag), and the art his dialogue box is built from (so
+  // the box is THERE the moment he speaks in it).
+  const [chromeReady, setChromeReady] = useState(false);
   useEffect(() => {
     preloadAudio([KEEPER_VOICE, SEALED_VOICE]);
     preloadSfx();
+
+    let settled = false;
+    const ready = () => {
+      if (settled) return;
+      settled = true;
+      setChromeReady(true);
+    };
+    void preloadImages(KEEPER_CHROME).then(ready);
+    const cap = window.setTimeout(ready, CHROME_WAIT);
+    return () => window.clearTimeout(cap);
   }, []);
 
   // Until we've settled whether this is a returning visitor, an opaque curtain
@@ -184,11 +216,15 @@ export function FrontDoor() {
 
   useEffect(() => {
     if (keeper !== "appear") return;
-    // A short beat so the visitor SEES him standing at the gate before he
-    // starts talking.
+    // He does not speak until his box exists. Until the frame art is in cache the
+    // border-image paints nothing, and his line would hang in the middle of the
+    // scene with the forged frame arriving late behind it. The beat below (so the
+    // visitor SEES him standing at the gate before he starts talking) runs from the
+    // moment the box CAN be drawn, and CHROME_WAIT guarantees that moment comes.
+    if (!chromeReady) return;
     const t = window.setTimeout(() => setKeeper("box"), 1200);
     return () => window.clearTimeout(t);
-  }, [keeper]);
+  }, [keeper, chromeReady]);
 
   // PRE-LAUNCH: everyone faces the closed gate, no exceptions. A saved
   // wallet/guest identity from before the gate existed does NOT skip past it
@@ -444,6 +480,10 @@ export function FrontDoor() {
                   />
                   <PlateButton
                     label="Read the Codex"
+                    /* The same book the in-app Codex button carries (its glyph, cut
+                       out of that baked plate), so the tome means the Codex here and
+                       inside the kingdom alike. */
+                    icon="codex"
                     href="/codex"
                     newTab
                     onClick={(e) => {

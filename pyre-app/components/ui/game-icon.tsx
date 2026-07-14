@@ -43,6 +43,11 @@ const ICONS = {
   // the $PYRE token (the Forge's amounts, the Staked row), and pointing the same
   // emblem at two different things taught nobody what either one was.
   emberCrystal: "/world/ui/icons/ember_crystal.png",
+  // THE TOME: the Codex's own symbol. Not a new drawing: it is the book glyph cut
+  // straight out of the designer's baked Codex plate (/buttons/codex_normal.png),
+  // so the gate's "Read the Codex" plate and the in-app Codex button carry the
+  // exact same book.
+  codex: "/world/ui/icons/codex.png",
   // Status / utility.
   fireToken: "/world/ui/icons/fire_token.png",
   wallet: "/world/ui/icons/wallet.png",
