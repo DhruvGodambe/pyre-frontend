@@ -63,6 +63,7 @@ export function KeeperBox({
 export function PlateButton({
   label,
   icon,
+  symbol,
   onClick,
   href,
   newTab,
@@ -72,6 +73,11 @@ export function PlateButton({
   progressMs,
 }: {
   label: string;
+  /** A small inline mark riding left of the label, shown at EVERY size (unlike `icon`,
+      which is desktop-only). For the X brand marks on the gate's rite plates: a heart on
+      Like, the retweet arrows on Share, the X logo on Follow. Pass an inline SVG sized to
+      the text (~1em); it inherits the label's colour via currentColor. */
+  symbol?: ReactNode;
   /** The plate's symbol, riding left of the label (the tome on the Codex plate, the
       crystal on the Claim plate), so a plate is recognisable before it is read.
 
@@ -123,6 +129,13 @@ export function PlateButton({
           that doesn't LOOK sealed is worse than a tight one. */}
       {icon && !locked && (
         <GameIcon name={icon} size={22} className="mr-2 hidden h-[22px] w-[22px] sm:inline-block" />
+      )}
+      {/* The X brand mark (heart / retweet / X logo), shown at every size, riding just
+          left of the label. Small so it never crowds the phone plates. */}
+      {symbol && !locked && (
+        <span className="mr-1.5 inline-flex h-[0.95em] w-[0.95em] shrink-0 items-center align-[-0.1em]">
+          {symbol}
+        </span>
       )}
       {label}
     </span>

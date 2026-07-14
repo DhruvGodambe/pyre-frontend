@@ -64,6 +64,26 @@ import { completeQuestTask, fetchQuestTasks, submitWallet } from "@/lib/quests/c
 import type { QuestTask } from "@/lib/types";
 import { track } from "@vercel/analytics";
 
+/** The X brand marks that ride the rite's plates, so the decree reads as X actions at a
+    glance: a heart on Like, the retweet arrows on Share, the X logo on Follow. Inline
+    SVGs (not image assets) so they inherit the plate's gold via currentColor and stay
+    crisp at any size, phone and desktop alike. */
+const LikeMark = (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="h-full w-full" aria-hidden>
+    <path d="M12 21.638h-.014C9.403 21.59 1.95 14.856 1.95 8.478c0-3.064 2.525-5.754 5.403-5.754 2.29 0 3.83 1.58 4.646 2.73.813-1.148 2.353-2.73 4.645-2.73 2.88 0 5.404 2.69 5.404 5.755 0 6.376-7.454 13.11-10.037 13.157H12z" />
+  </svg>
+);
+const RetweetMark = (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="h-full w-full" aria-hidden>
+    <path d="M4.75 3.79l4.603 4.3-1.706 1.82L6 8.38v7.37c0 .97.784 1.75 1.75 1.75H13V20H7.75c-2.347 0-4.25-1.9-4.25-4.25V8.38L1.853 9.91.147 8.09l4.603-4.3zm11.5 2.71H11V4h5.25c2.347 0 4.25 1.9 4.25 4.25v7.37l1.647-1.53 1.706 1.82-4.603 4.3-4.603-4.3 1.706-1.82L18 15.62V8.25c0-.97-.784-1.75-1.75-1.75z" />
+  </svg>
+);
+const XMark = (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="h-full w-full" aria-hidden>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 /** Where the cluster was painted, in IMAGE coordinates (% of the 16:9 frame).
     Measured from the extraction, so it lands exactly back in the rocks it grew
     out of, at every viewport. */
@@ -630,6 +650,7 @@ export function GateCrystalActions() {
         return (
           <PlateButton
             label="Like the decree"
+            symbol={LikeMark}
             href={likeIntent(DECREE_TWEET_ID)}
             newTab
             onClick={(e) => {
@@ -643,6 +664,7 @@ export function GateCrystalActions() {
         return (
           <PlateButton
             label="Share the decree"
+            symbol={RetweetMark}
             href={repostIntent(DECREE_TWEET_ID)}
             newTab
             onClick={(e) => {
@@ -697,6 +719,7 @@ export function GateCrystalActions() {
       <>
         <PlateButton
           label={gate.followed ? "Followed ✓" : "Follow Pyre"}
+          symbol={gate.followed ? undefined : XMark}
           href={gate.followed ? undefined : X_PROFILE_URL}
           newTab
           disabled={gate.followed}
