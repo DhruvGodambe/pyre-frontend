@@ -141,16 +141,20 @@ function QuestFunnel() {
 
           return (
             <>
-              {/* Rank + uncollected: the two nudges, stacked. */}
-              <div className="orn-box">
-                <StandingStrip lb={lb} unclaimed={unclaimed} allDone={allQuestsDone && submitted} />
-              </div>
+              {/* Rank + uncollected: the two nudges, stacked. Once everything is
+                  done + submitted this strip has nothing left to say (the
+                  leaderboard already shows their rank), so we drop it entirely. */}
+              {!(allQuestsDone && submitted) && (
+                <div className="orn-box">
+                  <StandingStrip lb={lb} unclaimed={unclaimed} />
+                </div>
+              )}
 
               {/* Ember total, ticks up on completion. */}
               <div className="orn-box flex items-center justify-between">
                 <span className="text-text-3 text-xs uppercase tracking-wider">Points earned</span>
                 <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg">
-                  <GameIcon name="fireToken" size={18} /> <EmberCount value={totalEmbers} />
+                  <GameIcon name="emberCrystal" size={18} /> <EmberCount value={totalEmbers} />
                 </span>
               </div>
 
@@ -655,11 +659,9 @@ function QuizModal({ onClose, onPass }: { onClose: () => void; onPass: () => voi
 function StandingStrip({
   lb,
   unclaimed,
-  allDone,
 }: {
   lb: ReturnType<typeof useQuestLeaderboard>;
   unclaimed: number;
-  allDone: boolean;
 }) {
   const you = lb.data?.you ?? null;
   // Gap to the rank directly above you, when that row is in the visible top.
@@ -668,11 +670,7 @@ function StandingStrip({
 
   return (
     <div className="text-xs leading-relaxed text-text-2">
-      {allDone ? (
-        <span className="text-text-2">
-          All quests done. Your Points are locked in, your reward arrives at launch.
-        </span>
-      ) : unclaimed > 0 ? (
+      {unclaimed > 0 ? (
         <span>
           <span className="text-brand">⚠ {unclaimed} Points</span> still unclaimed.
           Rewards are revealed at launch.
@@ -899,7 +897,7 @@ function SummonSection() {
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-text-3 text-xs uppercase tracking-wider">Points from invites</span>
-          <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg"><GameIcon name="fireToken" size={18} /> {earned}</span>
+          <span className="inline-flex items-center gap-1.5 tabular text-brand text-lg"><GameIcon name="emberCrystal" size={18} /> {earned}</span>
         </div>
       </div>
 
@@ -1019,7 +1017,7 @@ function QuestLeaderboard() {
                     {r.you && <span className="text-brand"> (you)</span>}
                   </span>
                   <span className="flex items-center gap-1 tabular text-brand shrink-0">
-                    <GameIcon name="fireToken" size={16} /> {r.embers}
+                    <GameIcon name="emberCrystal" size={16} /> {r.embers}
                   </span>
                 </li>
               ))}
@@ -1043,7 +1041,7 @@ function QuestLeaderboard() {
                     <span>You</span>
                   </span>
                   <span className="flex items-center gap-1 tabular text-brand shrink-0">
-                    <GameIcon name="fireToken" size={16} /> {data.you.embers}
+                    <GameIcon name="emberCrystal" size={16} /> {data.you.embers}
                   </span>
                 </div>
               </div>

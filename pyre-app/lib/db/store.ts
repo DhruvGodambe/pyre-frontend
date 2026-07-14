@@ -49,6 +49,14 @@ export interface QuestStore {
   getSubmission(sessionId: string): Promise<WalletSubmission | null>;
   /** Record (or replace) the wallet this session submitted. */
   submitWallet(sessionId: string, wallet: string): Promise<void>;
+
+  /** Every session that has submitted this wallet (lower-cased). THE WALLET IS THE
+      DURABLE IDENTITY: a session is a cookie, and cookies die (a new phone, a cleared
+      browser, private mode), but the address a visitor gave us does not. This is what
+      lets their Embers be found again on a device that has never seen them, and it is
+      what stops the same funnel being farmed twice into one wallet. See the union in
+      GET /api/quests. */
+  getSessionsByWallet(wallet: string): Promise<string[]>;
   /** How this session entered the funnel (wallet or named guest), if chosen. */
   getIdentity(sessionId: string): Promise<StoredIdentity | null>;
   /** Record (or replace) this session's identity choice. */

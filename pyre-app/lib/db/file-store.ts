@@ -89,6 +89,16 @@ export class FileStore implements QuestStore {
     });
   }
 
+  getSessionsByWallet(wallet: string): Promise<string[]> {
+    return this.run(async () => {
+      const data = await this.read();
+      const want = wallet.toLowerCase();
+      return Object.entries(data.submissions)
+        .filter(([, s]) => s.wallet.toLowerCase() === want)
+        .map(([sessionId]) => sessionId);
+    });
+  }
+
   getIdentity(sessionId: string): Promise<StoredIdentity | null> {
     return this.run(async () => {
       const data = await this.read();

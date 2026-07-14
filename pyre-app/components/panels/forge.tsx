@@ -19,7 +19,7 @@
    DESIGNER SCAFFOLD: real, wired to the mock, every state reachable. Styling is
    token-driven. Navigation-aware via useNavigation({ building: "forge", tab }). */
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   useStakingPosition,
@@ -29,11 +29,12 @@ import {
   useClaimDrip,
   useBurnTokens,
   useBurnLP,
+  usePoolState,
 } from "@/lib/hooks";
 import { useNavigation } from "@/lib/navigation";
-import { Panel, Stat, Field, ProgressBar, Badge, Button, SegmentedControl } from "@/components/ui/primitives";
+import { Panel, Stat, Field, ProgressBar, Badge, Button } from "@/components/ui/primitives";
 import { StateView } from "@/components/ui/state";
-import { TxButton, TxImageButton } from "@/components/ui/tx-button";
+import { TxButton } from "@/components/ui/tx-button";
 import { NavCta } from "@/components/ui/nav-cta";
 import { AcolyteArt } from "@/components/ui/acolyte-art";
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
@@ -44,6 +45,7 @@ import { RequireWallet } from "@/components/ui/wallet-gate";
 import { USE_MOCK } from "@/lib/config";
 import {
   formatToken,
+  formatEth,
   parseToken,
   toNumber,
   toAmountString,
@@ -118,55 +120,57 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
     }
   }, [a.exists, a.stage, a.isImmolated, a]);
 
+  void hasAcolyte;
   return (
-    <Panel
-      title="The Forge"
-      tagline="Forge your Acolyte"
-      frame="forged"
-      bg="stone"
-      className="w-full"
-      action={
-        <p className="hidden max-w-md items-center gap-2 text-right text-xs italic text-text-2 sm:flex">
-          <span className="not-italic text-brand shrink-0">Emberkeeper</span>
-          <span aria-hidden className="text-text-3">·</span>
-          <span>&ldquo;{floorLine(a, p)}&rdquo;</span>
-        </p>
-      }
-    >
-      <div className="space-y-3">
-        {/* THE ACOLYTE, a horizontal status banner across the top: art + the tier
-            ladder + progress. Your standing at a glance. */}
-        <AcolyteBanner a={a} />
-
-      {/* STAKE (left) and BURN (right), the two actions side by side. Burn stays
-          locked (visible but ghosted) until you've staked. */}
-      <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
-        <Step
-          index={1}
-          id="forge-stake"
-          title="Stake $PYRE"
-          sub="Earn $ETH · stop the decay"
-          done={staked}
-          flash={flash === "stake"}
+    <>
+      <div className="space-y-4">
+        {/* THREE separate forged panels (like the Ashen Cup) so the forge interior
+            breathes between them: your Acolyte, then Stake + Burn. */}
+        <Panel
+          title="Your Acolyte"
+          frame="forged"
+          bg="stone"
+          className="w-full"
+          action={
+            <p className="hidden max-w-md items-center gap-2 text-right text-xs italic text-text-2 sm:flex">
+              <span className="not-italic text-brand shrink-0">Emberkeeper</span>
+              <span aria-hidden className="text-text-3">·</span>
+              <span>&ldquo;{floorLine(a, p)}&rdquo;</span>
+            </p>
+          }
         >
-          <StakeRitual p={p} />
-        </Step>
+          <AcolyteHero a={a} />
+        </Panel>
 
-        <Step
-          index={2}
-          id="forge-burn"
-          title="Choose your path & burn"
-          sub="Forge your Acolyte"
-          locked={!staked}
-          done={hasAcolyte}
-          flash={flash === "burn"}
-          lockHint="Stake first to unlock burning"
-          preview={<PathChooser path={null} onPick={() => {}} />}
-        >
-          <BurnRitual p={p} a={a} path={path} setPath={setPath} />
-        </Step>
-      </div>
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <div
+            id="forge-stake"
+            className={`scroll-mt-24 transition-[filter] duration-base ${
+              flash === "stake" ? "drop-shadow-[0_0_22px_rgba(240,169,59,0.35)]" : ""
+            }`}
+          >
+            <Panel title="Stake" tagline="Earn $ETH · stop the decay" frame="forged" bg="stone">
+              <StakeRitual p={p} />
+            </Panel>
+          </div>
 
+          <div
+            id="forge-burn"
+            className={`scroll-mt-24 transition-[filter] duration-base ${
+              flash === "burn" ? "drop-shadow-[0_0_22px_rgba(240,169,59,0.35)]" : ""
+            }`}
+          >
+            <Panel title="Burn" tagline="Forge your Acolyte" frame="forged" bg="stone">
+              {staked ? (
+                <BurnRitual p={p} a={a} path={path} setPath={setPath} />
+              ) : (
+                <LockedPreview hint="Stake first to unlock burning">
+                  <PathChooser path={null} onPick={() => {}} />
+                </LockedPreview>
+              )}
+            </Panel>
+          </div>
+        </div>
       </div>
 
       {/* The cinematic (scaffold). Portaled full-screen; see forge-reveal.tsx. */}
@@ -204,7 +208,7 @@ function ForgeScene({ a, p }: { a: Acolyte; p: StakingPosition }) {
           </div>,
           document.body
         )}
-    </Panel>
+    </>
   );
 }
 
@@ -284,7 +288,7 @@ function compactPyre(n: number): string {
 /* A shared "you have no $PYRE" nudge. */
 function BuyNudge({ message }: { message: string }) {
   return (
-    <div className="forged-card p-3 space-y-2">
+    <div className="orn-box space-y-2">
       <p className="text-text-2 text-sm">{message}</p>
       <NavCta to="exchange">Buy $PYRE</NavCta>
     </div>
@@ -358,26 +362,31 @@ function BurnRitual({
   setPath: (p: "tokens" | "lp") => void;
 }) {
   const [amount, setAmount] = useState("");
-  const [eth, setEth] = useState("");
   // The path is chosen (lifted state); the amount + burn controls stay hidden
   // until one is picked, so a path is always a deliberate choice. A crossed tier
   // triggers the tier reveal up in ForgeScene (LP or plain, per the Acolyte).
   const lp = path === "lp";
   const burn = useBurnTokens();
   const burnLP = useBurnLP();
+  const pool = usePoolState();
   const amt = parseToken(amount);
 
   if (p.liquidBalance <= 0n) {
     return <BuyNudge message="You have no $PYRE to burn. Buy some, then come back to level your Acolyte." />;
   }
 
-  // An LP burn pairs $PYRE WITH $ETH, both are required. Burning "LP" with zero
-  // $ETH is just a plain burn and must be blocked. (The stake gate is enforced one
-  // level up by the Burn step, which stays locked until you've staked.)
-  const ethAmt = parseToken(eth);
-  const lpMissingEth = lp && ethAmt <= 0n;
+  // An LP burn pairs your $PYRE WITH $ETH at the current pool ratio. The user only
+  // ever enters $PYRE; the paired $ETH is DERIVED from the pool price (never typed),
+  // so the pair is always correct. (The stake gate is enforced one level up by the
+  // Burn panel, which stays locked until you've staked.)
+  const ethPerPyre = pool.data?.pricePyreInEth ?? 0;
+  const pyreHuman = parseFloat(amount) || 0;
+  const ethHuman = pyreHuman * ethPerPyre;
+  const ethAmt = ethHuman > 0 ? parseToken(ethHuman.toFixed(12)) : 0n;
+  const ethDisplay = ethHuman > 0 ? formatEth(ethAmt) : "";
+  const priceReady = ethPerPyre > 0;
   const overBalance = amt > p.liquidBalance;
-  const blocked = amt <= 0n || lpMissingEth || overBalance;
+  const blocked = amt <= 0n || overBalance || (lp && !priceReady);
 
   return (
     <div className="space-y-3">
@@ -385,54 +394,35 @@ function BurnRitual({
 
       {path && (
         <>
-          <div className="space-y-1.5">
-            <AmountControls balance={p.liquidBalance} onPick={setAmount} />
-            <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
-          </div>
-          {overBalance && (
-            <p className="text-danger text-[11px]">More than your wallet balance.</p>
-          )}
-          {lp && <Field label="Paired $ETH" value={eth} onChange={setEth} suffix="$ETH" />}
-          {lp && lpMissingEth && amt > 0n && (
-            <p className="text-danger text-[11px]">An LP burn must pair $ETH with your $PYRE. Enter an $ETH amount.</p>
-          )}
-          {lp && (
-            <div className="forged-card px-3 py-2 text-[11px] text-text-3 space-y-1">
-              <p>
-                <span className="text-brand">2× the $ETH yield</span> of a plain-burn Acolyte of
-                the same tier.
-              </p>
-              <p>
-                Forges the <span className="text-text-2">exclusive LP Acolyte</span>, rarer and distinct
-                from plain-burn ones.
-              </p>
-              <p>Same tiers: burn the same amounts to climb.</p>
-              <p>
-                Your $PYRE + $ETH are added to the pool and{" "}
-                <span className="text-text-2">locked there permanently</span>, you won&rsquo;t get them
-                back.
-              </p>
+          <div className="orn-box space-y-2.5">
+            <div className="space-y-1.5">
+              <AmountControls balance={p.liquidBalance} onPick={setAmount} />
+              <Field label="$PYRE to burn" value={amount} onChange={setAmount} suffix="$PYRE" />
             </div>
-          )}
+            {overBalance && (
+              <p className="text-danger text-[11px]">More than your wallet balance.</p>
+            )}
+            {lp && (
+              <Field
+                label="Paired $ETH"
+                value={ethDisplay}
+                suffix="$ETH"
+                readOnly
+                hint={priceReady ? "Auto-paired at the current pool price." : "Fetching the pool price…"}
+              />
+            )}
+          </div>
 
           {lp ? (
-            <TxImageButton
-              tx={burnLP}
-              name="burnlp"
-              label="Burn LP (2×)"
-              disabled={blocked}
-              onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })}
-              size="lg"
-            />
+            <TxButton tx={burnLP} onClick={() => burnLP.mutate({ eth: ethAmt, pyre: amt })} disabled={blocked} pendingLabel="Burning…">
+              <GameIcon name="flame" size={18} className="mr-2 -mt-0.5" />
+              Burn LP (2×)
+            </TxButton>
           ) : (
-            <TxImageButton
-              tx={burn}
-              name="burntokens"
-              label="Burn $PYRE"
-              disabled={blocked}
-              onClick={() => burn.mutate(amt)}
-              size="lg"
-            />
+            <TxButton tx={burn} onClick={() => burn.mutate(amt)} disabled={blocked} pendingLabel="Burning…">
+              <GameIcon name="flame" size={18} className="mr-2 -mt-0.5" />
+              Burn $PYRE
+            </TxButton>
           )}
         </>
       )}
@@ -444,10 +434,28 @@ function BurnRitual({
   );
 }
 
-/* CHOOSE YOUR PATH: two matched cards, one of which the user must actively pick
-   before any amount/burn control appears. No default selection, so a path is
-   always a deliberate choice. "Burn Tokens" is the direct path; "Burn LP" is the
-   deeper, permanent path worth 2× the yield. */
+/* CHOOSE YOUR PATH: two keeper-plate toggle plates (same family as the Stake /
+   Unstake toggle), selected = lit skin. The chosen path's details (tagline, yield
+   and what it does) show as a caption below, so the info the old cards carried is
+   kept without the heavy card layout. "Burn $PYRE" is the direct path; "Burn LP"
+   is the deeper, permanent path worth 2× the yield. */
+const BURN_PATHS = [
+  {
+    p: "tokens",
+    label: "Burn $PYRE",
+    tagline: "The direct path",
+    yieldLabel: "1× → 3× yield",
+    desc: "Burn $PYRE on its own to forge and climb the tiers.",
+  },
+  {
+    p: "lp",
+    label: "Burn LP",
+    tagline: "The deeper path",
+    yieldLabel: "2× → 6× yield",
+    desc: "Pair $PYRE + $ETH, locked forever. A rarer Acolyte.",
+  },
+] as const;
+
 function PathChooser({
   path,
   onPick,
@@ -455,85 +463,40 @@ function PathChooser({
   path: "tokens" | "lp" | null;
   onPick: (p: "tokens" | "lp") => void;
 }) {
+  const active = BURN_PATHS.find((x) => x.p === path) ?? null;
   return (
-    <div className="space-y-1.5">
-      <div className="eyebrow">Choose your path</div>
-      <div className="grid grid-cols-2 gap-2">
-        <PathCard
-          selected={path === "tokens"}
-          onClick={() => onPick("tokens")}
-          title="Burn Tokens"
-          tagline="The direct path"
-          yieldLabel="1× → 3× yield"
-          desc="Burn $PYRE on its own to forge and climb the tiers."
-        />
-        <PathCard
-          selected={path === "lp"}
-          onClick={() => onPick("lp")}
-          title="Burn LP"
-          badge="6×"
-          tagline="The deeper path"
-          yieldLabel="2× → 6× yield"
-          desc="Pair $PYRE + $ETH, locked forever. A rarer Acolyte."
-        />
+    <div className="space-y-2">
+      <div role="tablist" aria-label="Burn path" className="grid grid-cols-2 gap-3">
+        {BURN_PATHS.map(({ p, label }) => {
+          const on = path === p;
+          return (
+            <button
+              key={p}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => onPick(p)}
+              className={`forged-btn forged-btn--block ${on ? "forged-btn--on" : ""}`}
+            >
+              <span>
+                <GameIcon name="flame" size={17} className="mr-2 -mt-0.5" />
+                {label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </div>
-  );
-}
-
-/* One selectable path card. Selected = brand ring + check; unselected is quiet
-   until hover. Matches the token-driven card language used across the Forge. */
-function PathCard({
-  selected,
-  onClick,
-  title,
-  tagline,
-  yieldLabel,
-  desc,
-  badge,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  title: string;
-  tagline: string;
-  yieldLabel: string;
-  desc: string;
-  badge?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={`group relative flex flex-col gap-1.5 rounded-md border px-3 py-3 text-left transition-colors ${
-        selected
-          ? "border-brand bg-brand/10 ring-1 ring-brand/40"
-          : "border-surface-3 bg-surface-2/40 hover:border-brand/50 hover:bg-surface-2/70"
-      }`}
-    >
-      {selected && (
-        <span
-          className="absolute right-2 top-2 grid h-4 w-4 place-items-center rounded-full bg-brand text-[10px] text-bg"
-          aria-hidden
-        >
-          ✓
-        </span>
-      )}
-      <div className="flex items-center gap-2">
-        <GameIcon name="fireToken" size={26} />
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-display text-sm leading-none text-text">{title}</span>
-            {badge && (
-              <span className="rounded-sm bg-brand/20 px-1 text-[10px] font-medium text-brand">{badge}</span>
-            )}
-          </div>
-          <div className="text-[10px] uppercase tracking-wider text-text-3">{tagline}</div>
+      {active && (
+        <div className="text-center">
+          <p className="text-xs">
+            <span className="text-text-2">{active.tagline}</span>
+            <span className="mx-1.5 text-text-3">·</span>
+            <span className="text-brand">{active.yieldLabel}</span>
+          </p>
+          <p className="mt-0.5 text-[11px] leading-snug text-text-3">{active.desc}</p>
         </div>
-      </div>
-      <div className="text-[11px] text-brand">{yieldLabel}</div>
-      <p className="text-[11px] leading-snug text-text-3">{desc}</p>
-    </button>
+      )}
+    </div>
   );
 }
 
@@ -643,49 +606,100 @@ function LockedPreview({ hint, action, children }: { hint?: string; action?: Rea
    the Forge. Art on the left, then the tier name, the four-tier ladder and the
    progress bar filling the width. Sits on its own solid surface so it reads
    cleanly over the busy interior, and stays short so nothing has to scale down. */
-function AcolyteBanner({ a }: { a: Acolyte }) {
+/* The hero of the Forge: your Acolyte art (the Immolated glyph is baked into the
+   art), your status at a glance, and a compact tier stepper (replacing the old
+   full-width progress bar + dense ladder). */
+function AcolyteHero({ a }: { a: Acolyte }) {
   const forged = a.exists;
-  const status = tierInfo(a).short;
-  const value = toNumber(a.cumulativeBurnWeight) / toNumber(STAGES[4].threshold);
-  const label = a.isImmolated
-    ? `Immolated in the Hall, the highest prestige · ${formatToken(a.cumulativeBurnWeight)} burned`
+  const name = a.isImmolated ? IMMOLATED_TIER_NAME : forged ? acolyteName(a.stage) : "Unforged";
+  const mult = a.isImmolated ? IMMOLATED_MULTIPLIER : a.multiplier;
+  const line = a.isImmolated
+    ? `Immolated in the Hall, the highest prestige. ${formatToken(a.cumulativeBurnWeight)} $PYRE burned.`
     : a.stage >= 4
-      ? `Pyre reached, the top tier · ${formatToken(a.cumulativeBurnWeight)} burned`
+      ? `Pyre reached, the top tier. ${formatToken(a.cumulativeBurnWeight)} $PYRE burned.`
       : forged
-        ? `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre, the 3× tier`
-        : `Burn $PYRE to forge your Acolyte · Ember at ${compactPyre(toNumber(STAGES[1].threshold))} burned`;
+        ? `${formatToken(STAGES[4].threshold - a.cumulativeBurnWeight)} $PYRE to Pyre, the top tier.`
+        : "Burn $PYRE below to forge your first Acolyte.";
   return (
-    <section className="orn-box relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
-        style={{ background: "radial-gradient(70% 90% at 50% 100%, var(--color-brand)14, transparent 70%)" }}
-      />
-      <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-5">
-        <ForgeHero acolyte={a} size={96} />
-        <div className="w-full min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-display text-lg leading-none text-brand">
-              {a.isImmolated ? IMMOLATED_TIER_NAME : forged ? acolyteName(a.stage) : "Unforged"}
+    <div className="orn-box flex flex-col items-center gap-5 text-center lg:flex-row lg:items-center lg:gap-7 lg:text-left">
+      <ForgeHero acolyte={a} size={120} />
+      <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 lg:justify-start">
+          <span className="font-display text-3xl leading-none text-brand">{name}</span>
+          {a.isImmolated && (
+            <span className="rounded-full border border-brand-soft/50 bg-brand-soft/10 px-2.5 py-0.5 text-[10px] uppercase tracking-widest text-brand-soft">
+              Immolated
             </span>
-            {a.isImmolated ? (
-              <Badge tone="danger">{IMMOLATED_MULTIPLIER}× yield</Badge>
-            ) : forged ? (
-              <Badge tone="brand">{a.multiplier}× yield</Badge>
-            ) : (
-              <Badge>No Acolyte yet</Badge>
-            )}
-            {a.isLP && <Badge tone="brand">LP</Badge>}
-            <span className="tabular ml-auto text-[11px] text-text-3">{status}</span>
-          </div>
-          <StageLadder a={a} />
-          <ProgressBar value={value} label={label} />
-          {forged && a.stage >= 4 && !a.isImmolated && (
-            <NavCta to="immolated">Take the Ascend rite in the Hall →</NavCta>
           )}
         </div>
+        <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
+          {forged && <HeroChip>{mult}× yield</HeroChip>}
+          {a.isLP && <HeroChip>LP variant</HeroChip>}
+          {forged && a.stage >= 4 && <HeroChip>Top tier</HeroChip>}
+        </div>
+        <p className="text-text-3 text-sm">{line}</p>
+        {forged && a.stage >= 4 && !a.isImmolated && (
+          <NavCta to="immolated" variant="ghost">Take the Ascend rite in the Hall →</NavCta>
+        )}
       </div>
-    </section>
+      <TierStepper a={a} />
+    </div>
+  );
+}
+
+function HeroChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="tabular rounded-full border border-frame-strong/50 px-3 py-1 text-xs text-brand">
+      {children}
+    </span>
+  );
+}
+
+/* Compact tier stepper: Ember → Flame → Forge → Pyre as small crests with a lit
+   connector, the current tier glowing. Doubles as the ladder + the progress. */
+function TierStepper({ a }: { a: Acolyte }) {
+  return (
+    <div className="flex flex-none flex-col items-center gap-2">
+      <div className="flex items-center">
+        {([1, 2, 3, 4] as Stage[]).map((s, i) => {
+          const reached = a.exists ? a.stage >= s : a.cumulativeBurnWeight >= STAGES[s].threshold;
+          const current = a.exists && a.stage === s;
+          return (
+            <Fragment key={s}>
+              {i > 0 && (
+                <span className={`mb-4 h-0.5 w-4 rounded ${reached ? "bg-brand/60" : "bg-surface-3"}`} />
+              )}
+              <div className="flex w-11 flex-col items-center gap-1">
+                <GameIcon
+                  name={tierCrest(s)}
+                  size={30}
+                  alt={STAGES[s].name}
+                  className={
+                    current
+                      ? "scale-110 drop-shadow-[0_0_8px_rgba(255,140,40,0.6)]"
+                      : reached
+                        ? ""
+                        : "opacity-40 grayscale"
+                  }
+                />
+                <span
+                  className={`text-[9px] uppercase tracking-wide ${current ? "text-brand-soft" : "text-text-3"}`}
+                >
+                  {STAGES[s].name}
+                </span>
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+      <span className="text-[11px] text-brand-soft">
+        {a.stage >= 4
+          ? "★ Top tier reached"
+          : a.nextStageThreshold
+            ? `${formatToken(a.nextStageThreshold - a.cumulativeBurnWeight)} to next tier`
+            : ""}
+      </span>
+    </div>
   );
 }
 
@@ -702,23 +716,30 @@ function StakeRitual({ p }: { p: StakingPosition }) {
   const hasStaked = p.stakedBalance > 0n;
   const unstaking = mode === "unstake" && hasStaked;
 
-  // THE WARDING (staking experience): a fast in-panel flourish on a successful
-  // stake. We capture the totals at click time so the count-up is correct
-  // regardless of refetch timing.
-  const [warding, setWarding] = useState<{ from: number; to: number } | null>(null);
-  const pending = useRef<{ from: number; to: number } | null>(null);
+  // THE WARDING (staking experience): a fast in-box flourish on a successful
+  // stake OR unstake. We capture the mode + totals at click time so the count-up
+  // reads correctly regardless of refetch timing, and it fires off whichever
+  // mutation actually resolved (the panel mode may have changed by then).
+  type Ward = { mode: "stake" | "unstake"; from: number; to: number };
+  const [warding, setWarding] = useState<Ward | null>(null);
+  const pending = useRef<Ward | null>(null);
   const wardedFired = useRef(false);
   useEffect(() => {
-    if (stake.isSuccess && !wardedFired.current && pending.current) {
+    const settled = stake.isSuccess || unstake.isSuccess;
+    if (settled && !wardedFired.current && pending.current) {
       wardedFired.current = true;
       setWarding(pending.current);
       playStakeWard();
       setAmount("");
     }
-    if (!stake.isSuccess) wardedFired.current = false;
-  }, [stake.isSuccess]);
+    if (!settled) wardedFired.current = false;
+  }, [stake.isSuccess, unstake.isSuccess]);
 
-  if (p.drip) return <DripPanel drip={p.drip} />;
+  // Hold the DripPanel handoff until the unstake flourish finishes: on unstake
+  // success `p.drip` populates immediately, so early-returning here would swallow
+  // the flourish. Keep the ritual mounted while `warding` runs; onDone clears it
+  // and the next render hands off to DripPanel.
+  if (p.drip && !warding) return <DripPanel drip={p.drip} />;
 
   if (p.liquidBalance <= 0n && p.stakedBalance <= 0n) {
     return <BuyNudge message="Nothing to stake yet. Buy $PYRE, then stake it to earn $ETH and stop the decay." />;
@@ -734,24 +755,45 @@ function StakeRitual({ p }: { p: StakingPosition }) {
   };
   const onStake = () => {
     const from = toNumber(p.stakedBalance);
-    pending.current = { from, to: from + toNumber(amt) };
+    pending.current = { mode: "stake", from, to: from + toNumber(amt) };
     stake.mutate(amt);
+  };
+  const onUnstake = () => {
+    const from = toNumber(p.stakedBalance);
+    pending.current = { mode: "unstake", from, to: Math.max(0, from - toNumber(amt)) };
+    unstake.mutate(amt);
   };
 
   return (
     <div className="relative space-y-3">
-      {/* Stake / Unstake toggle, only when there's a stake to pull from. */}
+      {/* Stake / Unstake toggle, only when there's a stake to pull from. Built
+          from the keeper-plate button family (the app's one button look): the
+          chosen side stays lit, the other dims, with a gold rule under the
+          active plate. */}
       {hasStaked && (
-        <SegmentedControl
-          value={mode}
-          onChange={pick}
-          ariaLabel="Stake or unstake"
-          className="w-full"
-          options={[
-            { value: "stake", label: "Stake" },
-            { value: "unstake", label: "Unstake" },
-          ]}
-        />
+        <div role="tablist" aria-label="Stake or unstake" className="grid grid-cols-2 gap-3">
+          {([
+            { m: "stake", label: "Stake" },
+            { m: "unstake", label: "Unstake" },
+          ] as const).map(({ m, label }) => {
+            const on = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => pick(m)}
+                className={`forged-btn forged-btn--block ${on ? "forged-btn--on" : ""}`}
+              >
+                <span>
+                  <GameIcon name="fireToken" size={17} className="mr-2 -mt-0.5" />
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       <p className="text-text-3 text-xs">
@@ -761,41 +803,46 @@ function StakeRitual({ p }: { p: StakingPosition }) {
         Your balances and yield live in the Amber Vault.
       </p>
 
-      <div className="space-y-1.5">
-        <AmountControls balance={balance} onPick={setAmount} label={unstaking ? "Staked" : "Wallet"} />
-        <Field
-          label={unstaking ? "$PYRE to unstake" : "$PYRE to stake"}
-          value={amount}
-          onChange={setAmount}
-          suffix="$PYRE"
-        />
+      {/* The input box doubles as the stage for the warding flourish: on a
+          successful stake/unstake the overlay fills THIS box (framed by its
+          ornamental rim) instead of the whole panel. It grows to hold the chest
+          so nothing clips. */}
+      <div
+        className={`orn-box relative space-y-2.5 transition-[min-height] duration-500 ${warding ? "min-h-[20rem]" : ""}`}
+      >
+        <div className="space-y-1.5">
+          <AmountControls balance={balance} onPick={setAmount} label={unstaking ? "Staked" : "Wallet"} />
+          <Field
+            label={unstaking ? "$PYRE to unstake" : "$PYRE to stake"}
+            value={amount}
+            onChange={setAmount}
+            suffix="$PYRE"
+          />
+        </div>
+        {overBalance && (
+          <p className="text-danger text-[11px]">More than your {unstaking ? "staked" : "wallet"} balance.</p>
+        )}
+
+        {warding && (
+          <StakeWarding
+            mode={warding.mode}
+            fromTokens={warding.from}
+            toTokens={warding.to}
+            onDone={() => setWarding(null)}
+          />
+        )}
       </div>
-      {overBalance && (
-        <p className="text-danger text-[11px]">More than your {unstaking ? "staked" : "wallet"} balance.</p>
-      )}
 
       {unstaking ? (
-        <TxImageButton
-          tx={unstake}
-          name="unstake"
-          label="Unstake · returns over 7 days"
-          disabled={blocked}
-          onClick={() => unstake.mutate(amt)}
-          size="lg"
-        />
+        <TxButton tx={unstake} onClick={onUnstake} disabled={blocked} pendingLabel="Unstaking…">
+          <GameIcon name="fireToken" size={18} className="mr-2 -mt-0.5" />
+          Unstake · returns over 7 days
+        </TxButton>
       ) : (
-        <TxImageButton
-          tx={stake}
-          name="stakepyre"
-          label="Stake $PYRE"
-          disabled={blocked}
-          onClick={onStake}
-          size="lg"
-        />
-      )}
-
-      {warding && (
-        <StakeWarding fromTokens={warding.from} toTokens={warding.to} onDone={() => setWarding(null)} />
+        <TxButton tx={stake} onClick={onStake} disabled={blocked} pendingLabel="Staking…">
+          <GameIcon name="fireToken" size={18} className="mr-2 -mt-0.5" />
+          Stake $PYRE
+        </TxButton>
       )}
     </div>
   );

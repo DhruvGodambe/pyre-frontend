@@ -68,6 +68,7 @@ export function PlateButton({
   disabled,
   locked,
   title,
+  progressMs,
 }: {
   label: string;
   onClick?: MouseEventHandler<HTMLElement>;
@@ -81,9 +82,29 @@ export function PlateButton({
       onClick decides what the answer is. */
   locked?: boolean;
   title?: string;
+  /** How long the pending work takes, in ms. Fills a molten line across the plate's face
+      over exactly that long, in CSS. Omit entirely for a plate with nothing pending. */
+  progressMs?: number;
 }) {
   const inner = (
     <span>
+      {/* The plate's OWN progress: a molten line filling across its face while something
+          it started is still being weighed (the gate's Like + Share, while the Emberheart
+          listens). Work shows on the control that caused it, and the label keeps its
+          tick, so the plate still says it succeeded.
+
+          Driven by CSS, from a DURATION, not by a per-frame React value. Animating it
+          from state meant a setState every frame, which re-rendered the whole dialogue
+          on top of the karaoke reveal already re-rendering it every frame, and the box
+          visibly stuttered. The fill is a straight line to a known end: the browser can
+          run it on its own. */}
+      {progressMs !== undefined && (
+        <span
+          className="keeper-plate-btn-fill"
+          style={{ animationDuration: `${progressMs}ms` }}
+          aria-hidden
+        />
+      )}
       {/* The padlock is only ~half the medallion art's height, so the icon
           needs to run bigger than a normal glyph to read as a LOCK: the max
           that fits each plate face (52px phone / 47px desktop). */}

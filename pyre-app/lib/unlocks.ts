@@ -73,7 +73,7 @@ export function computeLock(
       locked: true,
       label: "Opens at launch",
       hint,
-      cta: { to: "tavern", label: "Earn Points toward launch rewards" },
+      cta: { to: "tavern", label: "Earn Points at the Ashen Cup" },
     };
   }
 

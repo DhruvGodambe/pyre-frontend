@@ -85,6 +85,17 @@ export class SupabaseStore implements QuestStore {
     if (error) throw new Error(error.message);
   }
 
+  /** Uses the wallet_submissions_wallet_idx index on lower(wallet). Wallets are stored
+      lower-cased by the route that writes them, so an exact match is enough. */
+  async getSessionsByWallet(wallet: string): Promise<string[]> {
+    const { data, error } = await this.db
+      .from(SUBMISSIONS)
+      .select("session_id")
+      .eq("wallet", wallet.toLowerCase());
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => r.session_id as string);
+  }
+
   async getIdentity(sessionId: string): Promise<StoredIdentity | null> {
     const { data, error } = await this.db
       .from(IDENTITIES)

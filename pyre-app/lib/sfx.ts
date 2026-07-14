@@ -61,7 +61,14 @@ function playOneShot(src: string, volume = SFX_VOLUME) {
     forge stings are intentionally left out until the designer delivers them (they
     404 today and would just noise the console). Idempotent. */
 export function preloadSfx() {
-  preloadAudio([...DOOR_OPEN, "/world/audio/sfx/zoom.wav", "/world/audio/sfx/stake-ward.mp3"]);
+  preloadAudio([
+    ...DOOR_OPEN,
+    "/world/audio/sfx/zoom.wav",
+    "/world/audio/sfx/stake-ward.mp3",
+    // The gate's Embers chime: the very first rite must not land silently while the
+    // file is still downloading.
+    "/world/audio/sfx/ember-gain.wav",
+  ]);
 }
 
 /** Door sound for a building, the SAME on enter and leave (keyed by building id). */
@@ -97,4 +104,21 @@ export function playLpBurn() {
 /** Stake "warding" sound (commit → protection). Softer than the burn stings. */
 export function playStakeWard() {
   playOneShot("/world/audio/sfx/stake-ward.mp3", 0.7);
+}
+
+/** The Ember Crystal cracking open at the sealed gate (the claim payoff). Same
+    convention as the forge stings: silently no-ops until the designer delivers
+    /world/audio/sfx/ember-claim.mp3, so the flourish still runs, just muted. */
+export function playEmberClaim() {
+  playOneShot("/world/audio/sfx/ember-claim.mp3", 0.8);
+}
+
+/** An Ember LANDING: one struck-crystal chime per rite credited at the gate, so the
+    reward is HEARD and not just quietly added to a small number in the corner.
+
+    PLACEHOLDER, synthesised (a bell's inharmonic partials, which is what makes glass
+    sound like glass) because the ElevenLabs key is scoped to speech and its sound
+    endpoint refuses us. Swap in the designer's when it lands; nothing else changes. */
+export function playEmberGain() {
+  playOneShot("/world/audio/sfx/ember-gain.wav", 0.55);
 }

@@ -258,6 +258,18 @@ export function VillageShell() {
     setFocusId(id);
   };
 
+  // When you're stranded on a sealed door and its lock resolves to OPEN, walk you
+  // in instead of leaving you there needing a manual back-and-re-click. Fires when
+  // "Connect your wallet" finishes connecting (the lock recomputes), or when a
+  // preview journey's async data/connect settles after you'd already tapped in.
+  useEffect(() => {
+    if (lockedId && !lockOf(lockedId).locked) {
+      const id = lockedId;
+      setLockedId(null);
+      setFocusId(id);
+    }
+  }, [lockedId, lockOf]);
+
   return (
     <main className="min-h-dvh relative overflow-hidden bg-bg">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-6 py-4">
@@ -890,9 +902,11 @@ export function LockedExterior({
         <ImageButton name="return" label="Back to the map" size="md" onClick={back} />
       </div>
 
-      {/* Centered lock crest + building name + label, a lock crest marks the door
-          as sealed. */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
+      {/* Lock crest + building name + label + CTA, anchored to the BOTTOM in the
+          exact spot the open exterior puts its title + Enter button, so the door
+          reads consistently whether it's sealed or open (the name/CTA don't jump
+          when a building unlocks). The lock crest just stacks above the name. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center p-6">
         <div className="pointer-events-auto w-full max-w-lg text-center animate-entry">
           <GameIcon name="lock" size={104} className="mx-auto mb-3 drop-shadow-[0_4px_14px_rgba(0,0,0,0.8)]" />
           <div className="flex items-center justify-center gap-3">
@@ -910,8 +924,13 @@ export function LockedExterior({
             </h2>
           </div>
           <p className="text-text-3 text-xs uppercase tracking-widest mt-1">{lock.label}</p>
+          {/* The building's own description, the SAME explanation the open exterior
+              shows, so a sealed door still tells you what the place is. */}
+          <p className="text-text-2 text-sm mt-3 max-w-md mx-auto leading-relaxed">{b.description}</p>
+          {/* Contextual "how to open it" line (the Forge's launch flow pre-launch,
+              or the unlock step after launch), tinted to read as the next action. */}
           {lock.hint && (
-            <p className="text-text-2 text-sm mt-3 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
+            <p className="text-brand text-sm mt-2 max-w-sm mx-auto leading-relaxed">{lock.hint}</p>
           )}
           {lock.cta && (
             <div className="mt-5 flex justify-center">
@@ -1010,7 +1029,11 @@ function FitToViewport({ wide, children }: { wide?: boolean; children: React.Rea
       const outer = outerRef.current;
       const inner = innerRef.current;
       if (!outer || !inner) return;
-      const avail = outer.clientHeight - 32; // breathing room top + bottom
+      // Breathing room = the container's own top/bottom padding (read live so the
+      // panel's vertical bias can be tuned in the class list without touching this).
+      const cs = getComputedStyle(outer);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const avail = outer.clientHeight - padY;
       const content = inner.scrollHeight; // natural layout height (pre-transform)
       setScale(content > avail ? Math.max(0.5, avail / content) : 1);
     };
@@ -1025,11 +1048,11 @@ function FitToViewport({ wide, children }: { wide?: boolean; children: React.Rea
   }, []);
 
   return (
-    <div ref={outerRef} className="absolute inset-0 flex items-center justify-center overflow-hidden px-4">
+    <div ref={outerRef} className="absolute inset-0 flex items-start justify-center overflow-hidden px-4 pt-[7vh] pb-8">
       <div
         ref={innerRef}
         className={`w-full ${wide ? "max-w-[92rem]" : "max-w-lg"} animate-entry`}
-        style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "center" }}
+        style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "top center" }}
       >
         {children}
       </div>

@@ -19,8 +19,9 @@
    later (it reuses the fire token + CSS, no new assets required).
    ========================================================================== */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { GameIcon } from "./game-icon";
+import { asset } from "@/lib/config";
 import { formatToken, formatEth, toNumber } from "@/lib/format";
 
 const easeOut = (k: number) => 1 - Math.pow(1 - k, 3);
@@ -152,25 +153,35 @@ export function StakeHearth({
     fires once, auto-dismisses. Rendered absolutely over the Stake box (the parent
     must be `relative`). pointer-events-none so it never traps clicks. */
 export function StakeWarding({
+  mode = "stake",
   fromTokens,
   toTokens,
   onDone,
 }: {
+  /** stake = lid slams SHUT (lock in); unstake = lid lifts OPEN (release). */
+  mode?: "stake" | "unstake";
   fromTokens: number;
   toTokens: number;
   onDone: () => void;
 }) {
+  const isUnstake = mode === "unstake";
+  const copy = isUnstake
+    ? { eyebrow: "Unstaking", label: "$PYRE released", sub: "returns over 7 days", keeper: "Your fire is drawn back." }
+    : { eyebrow: "$PYRE Staked", label: "$PYRE warded", sub: "earning $ETH", keeper: "Your fire is kept." };
   const [shown, setShown] = useState(false);
   const [val, setVal] = useState(fromTokens);
 
-  const sparks = useMemo(
+  // A few embers drifting up behind the seal, staggered. Fewer and softer than
+  // the old confetti of dots, so they read as a warm hearth, not static.
+  const embers = useMemo(
     () =>
-      Array.from({ length: 16 }, (_, i) => ({
-        left: `${8 + Math.random() * 84}%`,
-        delay: `${(Math.random() * 0.5).toFixed(2)}s`,
-        dur: `${(1 + Math.random()).toFixed(2)}s`,
-        size: 2 + Math.round(Math.random() * 4),
+      Array.from({ length: 9 }, (_, i) => ({
         key: i,
+        left: `${18 + Math.random() * 64}%`,
+        delay: `${(0.1 + Math.random() * 0.6).toFixed(2)}s`,
+        dur: `${(1.4 + Math.random() * 0.9).toFixed(2)}s`,
+        size: 2 + Math.round(Math.random() * 3),
+        drift: `${(Math.random() * 24 - 12).toFixed(0)}px`,
       })),
     []
   );
@@ -186,7 +197,7 @@ export function StakeWarding({
       if (k < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    const done = setTimeout(onDone, 2200);
+    const done = setTimeout(onDone, 2600);
     return () => {
       cancelAnimationFrame(r);
       cancelAnimationFrame(raf);
@@ -197,60 +208,128 @@ export function StakeWarding({
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-hidden rounded-panel transition-opacity duration-300"
-      style={{ opacity: shown ? 1 : 0, background: "color-mix(in srgb, var(--color-bg) 72%, transparent)" }}
+      className={`ward pointer-events-none absolute inset-0 z-20 grid place-items-center overflow-hidden rounded-panel ${isUnstake ? "is-unstake" : ""}`}
+      style={{ opacity: shown ? 1 : 0 }}
       aria-hidden
     >
-      {/* protective ring igniting around the box */}
-      <div
-        className="absolute inset-2 rounded-panel border-2"
-        style={{
-          borderColor: "color-mix(in srgb, var(--color-brand) 70%, transparent)",
-          boxShadow: "0 0 28px 2px color-mix(in srgb, var(--color-brand) 35%, transparent), inset 0 0 26px color-mix(in srgb, var(--color-brand) 22%, transparent)",
-          transform: shown ? "scale(1)" : "scale(1.04)",
-          opacity: shown ? 1 : 0,
-          transition: "all 500ms var(--ease-warm)",
-          animation: "warding-pulse 1.8s ease-in-out 0.3s infinite",
-        }}
-      />
-      {/* rising embers */}
-      {sparks.map((s) => (
+      {/* embers rising behind the chest */}
+      {embers.map((e) => (
         <span
-          key={s.key}
-          className="absolute bottom-2 rounded-full"
-          style={{
-            left: s.left,
-            width: s.size,
-            height: s.size,
-            background: "var(--color-brand)",
-            opacity: 0,
-            animation: `warding-spark ${s.dur} ${s.delay} ease-out forwards`,
-          }}
+          key={e.key}
+          className="ward-ember absolute bottom-3 rounded-full"
+          style={
+            {
+              left: e.left,
+              width: e.size,
+              height: e.size,
+              "--dur": e.dur,
+              "--delay": e.delay,
+              "--drift": e.drift,
+            } as CSSProperties
+          }
         />
       ))}
 
-      <div className="relative text-center">
-        <div className="flex justify-center">
-          <GameIcon name="fireToken" size={40} />
+      <div className="ward-stage relative flex flex-col items-center">
+        {/* The action headline, so it's unmistakable WHICH act this is. */}
+        <div className="ward-eyebrow font-display uppercase tracking-[0.28em] text-brand">
+          {copy.eyebrow}
         </div>
-        <div className="mt-1 font-display text-3xl text-brand tabular">
-          {Math.round(val).toLocaleString()}
+
+        {/* THE CHEST: on a STAKE it lands open with your $PYRE then the lid slams
+            SHUT and locks (open frame crossfades to closed). On an UNSTAKE it runs
+            the opposite, the lid lifts OPEN to release the fire. */}
+        <div className="ward-chest relative" style={{ width: "clamp(158px, 46%, 208px)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset("/world/ui/chest_closed.webp")} alt="" draggable={false} className="block w-full select-none" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset("/world/ui/chest_open.webp")} alt="" draggable={false} className="ward-open absolute inset-0 block w-full select-none" />
+          <span className="ward-flash pointer-events-none absolute inset-0" />
         </div>
-        <div className="text-text-3 text-[11px] uppercase tracking-widest">$PYRE warded · earning $ETH</div>
-        <p className="mt-1.5 text-sm italic text-text-2">
-          <span className="not-italic text-brand">Emberkeeper:</span> &ldquo;Your fire is kept.&rdquo;
-        </p>
+
+        <div className="relative -mt-1 text-center">
+          <div className="font-display text-4xl leading-none text-brand tabular drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+            {Math.round(val).toLocaleString()}
+          </div>
+          <div className="mt-0.5 text-text-3 text-[11px] uppercase tracking-[0.2em]">{copy.label}</div>
+          <div className="text-success text-xs">{copy.sub}</div>
+          <p className="mt-1.5 text-sm italic text-text-2">
+            <span className="not-italic text-brand">Emberkeeper:</span> &ldquo;{copy.keeper}&rdquo;
+          </p>
+        </div>
       </div>
 
       <style>{`
-        @keyframes warding-spark {
-          0%   { transform: translateY(0) scale(1);     opacity: 0; }
-          20%  { opacity: 0.9; }
-          100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+        .ward {
+          transition: opacity 300ms ease;
+          background: radial-gradient(
+            ellipse at 50% 42%,
+            color-mix(in srgb, var(--color-bg) 55%, transparent),
+            color-mix(in srgb, var(--color-bg) 92%, transparent)
+          );
         }
-        @keyframes warding-pulse {
-          0%,100% { box-shadow: 0 0 24px 1px color-mix(in srgb, var(--color-brand) 30%, transparent), inset 0 0 22px color-mix(in srgb, var(--color-brand) 18%, transparent); }
-          50%     { box-shadow: 0 0 40px 5px color-mix(in srgb, var(--color-brand) 48%, transparent), inset 0 0 30px color-mix(in srgb, var(--color-brand) 28%, transparent); }
+        .ward-stage { animation: ward-in 380ms var(--ease-warm) both; }
+        .ward-eyebrow {
+          font-size: 12px;
+          margin-bottom: 8px;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+          animation: ward-in 360ms var(--ease-warm) both;
+        }
+        .ward-chest {
+          transform-origin: 50% 100%;
+          filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6));
+          animation: ward-slam 300ms var(--ease-warm) 520ms both;
+        }
+        /* STAKE: the open lid fades out to reveal the closed frame = lid shutting. */
+        .ward-open { animation: ward-lidfade 260ms ease-in 540ms forwards; }
+        /* UNSTAKE: the reverse. Chest starts closed, the open frame fades IN = lid
+           lifting to release the fire, with a small upward pop instead of a slam. */
+        .is-unstake .ward-open { animation: ward-lidopen 320ms var(--ease-warm) 380ms both; }
+        .is-unstake .ward-chest { animation: ward-lift 340ms var(--ease-warm) 360ms both; }
+        .ward-flash {
+          border-radius: 16px;
+          background: radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--color-brand) 78%, white), transparent 62%);
+          opacity: 0;
+          mix-blend-mode: screen;
+          animation: ward-flash 460ms ease-out 560ms;
+        }
+        .ward-ember {
+          background: radial-gradient(circle, var(--color-brand), color-mix(in srgb, var(--color-brand) 20%, transparent));
+          opacity: 0;
+          animation: ward-ember var(--dur) var(--delay) ease-out forwards;
+        }
+        @keyframes ward-in {
+          from { opacity: 0; transform: scale(0.92) translateY(10px); }
+          to   { opacity: 1; transform: none; }
+        }
+        @keyframes ward-lidfade { to { opacity: 0; } }
+        @keyframes ward-lidopen { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes ward-slam {
+          0%   { transform: translateY(-5px) scale(1.02); }
+          55%  { transform: translateY(3px) scale(0.985); }
+          100% { transform: none; }
+        }
+        @keyframes ward-lift {
+          0%   { transform: translateY(4px) scale(0.99); }
+          55%  { transform: translateY(-3px) scale(1.015); }
+          100% { transform: none; }
+        }
+        @keyframes ward-flash {
+          0%   { opacity: 0; }
+          28%  { opacity: 0.85; }
+          100% { opacity: 0; }
+        }
+        @keyframes ward-ember {
+          0%   { opacity: 0;    transform: translate(0, 0) scale(1); }
+          25%  { opacity: 0.85; }
+          100% { opacity: 0;    transform: translate(var(--drift), -96px) scale(0.3); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ward-ember, .ward-flash { display: none; }
+          .ward-stage, .ward-chest, .ward-eyebrow { animation: none; }
+          /* settle on the end frame with no motion: stake = closed, unstake = open */
+          .ward-open { display: none; }
+          .is-unstake .ward-open { display: block; opacity: 1; animation: none; }
         }
       `}</style>
     </div>

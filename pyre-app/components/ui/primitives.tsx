@@ -339,7 +339,7 @@ export function SegmentedControl<T extends string>({
           onClick={() => onChange(o.value)}
           className="seg-item capitalize"
         >
-          {o.label}
+          <span className="seg-label">{o.label}</span>
         </button>
       ))}
     </div>
@@ -486,26 +486,36 @@ export function Field({
   onChange,
   placeholder = "0.0",
   suffix,
+  readOnly = false,
+  hint,
 }: {
   label?: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange?: (v: string) => void;
   placeholder?: string;
   suffix?: ReactNode;
+  /** Derived value the user can't edit (e.g. a paired amount computed from a price). */
+  readOnly?: boolean;
+  /** Small line under the field, e.g. "auto-calculated from the pool price". */
+  hint?: ReactNode;
 }) {
   return (
     <label className="flex flex-col gap-1">
       {label && <span className="text-text-3 text-xs uppercase tracking-wider">{label}</span>}
-      <div className="forged-field flex items-center gap-2 px-3 py-2.5">
+      <div className={`forged-field flex items-center gap-2 px-3 py-2.5 ${readOnly ? "opacity-90" : ""}`}>
         <input
           inputMode="decimal"
           value={value}
           placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className="tabular flex-1 bg-transparent outline-none text-text text-lg min-w-0 placeholder:text-text-3/60"
+          readOnly={readOnly}
+          onChange={(e) => onChange?.(e.target.value)}
+          className={`tabular flex-1 bg-transparent outline-none text-lg min-w-0 placeholder:text-text-3/60 ${
+            readOnly ? "cursor-default text-text-2" : "text-text"
+          }`}
         />
         {suffix && <span className="text-brand-soft/80 text-sm font-medium shrink-0">{suffix}</span>}
       </div>
+      {hint && <span className="text-text-3 text-[11px]">{hint}</span>}
     </label>
   );
 }

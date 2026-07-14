@@ -51,6 +51,21 @@ export interface QuestDef {
 
 export const QUEST_CATALOG: QuestDef[] = [
   {
+    id: "crystal",
+    title: "Claim the Ember Crystal",
+    description: "Take your first Embers from the crystal at the sealed gate.",
+    href: null,
+    unlockAt: null,
+    // A gate rite, not part of the kingdom funnel: it must stay claimable by a
+    // visitor who never gets inside, so it does not count toward the boost.
+    required: false,
+    // Credited when the visitor takes the Embers from the crystal at the gate
+    // (the crystal only opens once the decree has been carried, see the gate).
+    completion: "click",
+    points: 25,
+    addedAt: FUNNEL_OPENS_AT - 14 * DAYS,
+  },
+  {
     id: "intro",
     title: "Let the Emberkeeper guide you through Pyre",
     description: "Take the Emberkeeper's guided tour of the kingdom.",
@@ -147,3 +162,15 @@ export function buildQuestTasks(
 export const CLICK_TASK_IDS = new Set(
   QUEST_CATALOG.filter((d) => d.completion === "click").map((d) => d.id)
 );
+
+/** The rites a visitor can complete from OUTSIDE the kingdom, i.e. at the sealed
+    gate's Ember Crystal, with no team password. Everything else stays sealed.
+
+    This is a real boundary, not decoration: the gate needs /complete to be public
+    (see middleware), and without a whitelist anyone could POST their way to the
+    `intro` and `quiz` rites, which can only genuinely be performed INSIDE the
+    kingdom (take the tour, pass the quiz). Those two would be pure fabrication
+    from the outside, so they stay team-only until the kingdom itself opens. The
+    three below are self-attested link-outs anyway, so exposing them costs
+    nothing that clearing a cookie wouldn't already give. */
+export const PUBLIC_TASK_IDS = new Set(["crystal", "share", "follow"]);

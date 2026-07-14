@@ -251,7 +251,11 @@ export function PyreIntro({ onDone }: { onDone?: () => void } = {}) {
         ref={videoRef}
         src={VIDEO_SRC}
         playsInline
-        preload="auto"
+        /* METADATA, not the whole film. It used to preload="auto", so every visitor
+           downloaded 3.5MB of cinematic before the gate was usable, even though nobody
+           had touched the screen yet and the film only ever plays if they hold. The
+           browser now takes the header, and streams the rest the moment they ignite. */
+        preload="metadata"
         onEnded={finish}
         onError={finish}
         className="w-full h-full object-contain"

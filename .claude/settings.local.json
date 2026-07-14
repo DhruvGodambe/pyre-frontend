@@ -249,7 +249,16 @@
       "Read(//tmp/**)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(vercel --version)",
-      "Bash(NODE_PATH=./node_modules node *)"
+      "Bash(NODE_PATH=./node_modules node *)",
+      "Bash(rm -rf C:/Users/USER/AppData/Local/Temp/claude/C--Users-USER-projects-PYRE/ebd5e6db-67a9-4408-a70e-77e69c4425cd/scratchpad/ui-assets)",
+      "Bash(mkdir -p C:/Users/USER/AppData/Local/Temp/claude/C--Users-USER-projects-PYRE/ebd5e6db-67a9-4408-a70e-77e69c4425cd/scratchpad/ui-assets)",
+      "Bash(unzip -q \"C:/Users/USER/Downloads/swisstransfer_9922f1c2-9fad-4b44-a83b-eb82a3730aef.zip\")",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"===EXIT $?===\")",
+      "Bash(tasklist)",
+      "Bash(timeout 280 ffmpeg -v error -y -i marketing/video/announcement/plate_bonfire_locked.mp4 -i \"pyre-app/public/world/emberkeeper/arm-out.webp\" -filter_complex \"[1:v]scale=-1:880[k];[0:v][k]overlay=x=140:y=H-h+8:format=auto,format=yuv420p\" -c:v libx264 -crf 20 -preset veryfast marketing/video/announcement/keeper_at_bonfire.mp4)",
+      "Bash(ffprobe -v error -show_entries format=duration -of default=nw=1 marketing/video/announcement/keeper_at_bonfire.mp4)",
+      "WebFetch(domain:docs.eigenfoundation.org)"
     ]
   }
 }

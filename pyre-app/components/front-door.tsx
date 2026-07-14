@@ -30,8 +30,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BUILDING_BY_ID } from "@/components/buildings";
+import {
+  GateCrystalActions,
+  GateCrystalPlate,
+  GateCrystalProvider,
+  GateCrystalRite,
+  GateCrystalScene,
+  GateCrystalStyles,
+} from "@/components/gate-crystal";
 import { PyreIntro } from "@/components/pyre-intro";
-import { KeeperBox, KeeperText, PlateButton } from "@/components/ui/keeper-box";
+import { KeeperBox, PlateButton } from "@/components/ui/keeper-box";
+import { KeeperSpeech } from "@/components/ui/keeper-speech";
 import { useIdentity } from "@/lib/identity";
 import { asset, KINGDOM_PATH, LAUNCHED } from "@/lib/config";
 import { X_PROFILE_URL } from "@/lib/social";
@@ -39,14 +48,18 @@ import { playDoor, preloadSfx } from "@/lib/sfx";
 import { preloadAudio } from "@/lib/audio-preload";
 import { captureReferral } from "@/lib/quests/client";
 import { track } from "@vercel/analytics";
-import { VOICE_TIMING } from "@/lib/tour-voice-timing";
 
 /* Pre-launch the gate stands SEALED and THE ASHWARDEN, the threshold guard,
    stands before it: the designer EXACT character art (clean cutout, zero
    repainting), layered over the scene in image coordinates. He delivers the
    message from the dialogue box once the film clears. At launch the original
    open-gate art returns. */
-const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
+/* THE GATE THE FILM LEAVES YOU AT: night, the kingdom burning behind a raised wall, a
+   molten seam splitting the doors. Deliberately RESTRAINED. Earlier passes flooded the
+   floor with lava and grew crystals out of every crack, and each addition traded away
+   more of the original painting's craft until it read as machine-made. The designer's
+   golden-hour original is untouched at gate-closed.webp; the open gate returns at LAUNCHED. */
+const CLOSED_GATE_ART = "/world/interiors/gate-closed-lava-d175aab2.webp";
 
 /* The keeper's voice for this scene. NOTE: free-tier ElevenLabs test clip in
    the gitignored voice-previews folder, so production simply stays silent
@@ -54,9 +67,22 @@ const CLOSED_GATE_ART = "/world/interiors/gate-closed.webp";
    When a clip OR its lines change, re-run scripts/align-voice.py so the
    karaoke timing below stays letter-exact. */
 const KEEPER_VOICE = "/voice-previews/mystic-callum-gate.mp3";
+/* He does NOT explain the Emberheart here. At the threshold he only names the two
+   things a stranger can actually do, and the crystal's own lore waits until they
+   reach for it (see LORE in gate-crystal.tsx). Front-loading the whole myth into a
+   greeting nobody asked for is how you get skipped.
+
+   NOTE, do not put quoted text in this array's comments. scripts/align-voice.py
+   scrapes the spoken script by matching quoted strings out of this file, so a quoted
+   phrase in a comment gets read as a LINE and silently corrupts every word timing (it
+   cost exactly that once). */
 const GREETING_LINES = [
   "Welcome, stranger. The gate is currently closed. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
-  "You might want to study the Ember Codex while you wait.",
+  /* One clean sentence, no nested clauses. An earlier take wrapped a clause in commas
+     (the Ember Codex, or claim your first embers, while you wait) and ElevenLabs reads
+     commas as pauses, so Callum trailed off and muttered the ending. Keep any rewrite of
+     this line free of comma-wrapped clauses. */
+  "Study the Ember Codex and claim your first Embers while you wait.",
 ];
 
 /* His answer to a hand on the sealed door (same voice, same recipe as the
@@ -66,117 +92,6 @@ const SEALED_LINES = [
   "Patience, stranger. This gate stays sealed until the first flame rises.",
   "Study the Ember Codex, and be ready when the doors open.",
 ];
-
-/* How far (seconds) the revealed text runs ahead of the voice, same lead as
-   the tour narration: a touch of early reads as in-sync, trailing as broken. */
-const VOICE_LEAD = 0.12;
-
-/* The keeper's lines through the KeeperBox's fixed 3-line window (the box
-   never grows with the script; earlier lines slide up teleprompter-style).
-   The reveal is paced against the CLIP'S OWN PLAYHEAD with the word
-   timestamps from scripts/align-voice.py, the same letter-exact karaoke as
-   the tour narration: the text waits for the voice and never runs ahead of
-   it. With no usable clip (missing in production, autoplay refused, ended
-   early) it falls back to a reading-pace typewriter. Clicking the box
-   (forceDone) lands everything at once. */
-function KeeperSpeech({
-  lines,
-  voice,
-  audioRef,
-  forceDone,
-  onDone,
-}: {
-  lines: string[];
-  /** the clip speaking this text; its playhead paces the reveal. */
-  voice: string;
-  /** receives the live Audio element so the caller can quiet a skip. */
-  audioRef: React.MutableRefObject<HTMLAudioElement | null>;
-  forceDone: boolean;
-  onDone: () => void;
-}) {
-  const text = lines.join("\n");
-  const total = text.length;
-  // The clip's playhead in seconds; null = nothing to pace against (fall back
-  // to the reading-pace counter).
-  const [playhead, setPlayhead] = useState<number | null>(0);
-  const [synth, setSynth] = useState(0);
-  const maxShownRef = useRef(0);
-  const doneRef = useRef(false);
-
-  // Create and play the clip, following its playhead while it sounds (the
-  // tour narration's machinery). The light-the-pyre hold was the gesture, so
-  // playback is allowed; if a browser still refuses, the watchdog bails to
-  // the typewriter.
-  useEffect(() => {
-    const a = new Audio(asset(voice));
-    audioRef.current = a;
-    let raf = 0;
-    const follow = () => {
-      if (!a.paused && !a.ended) setPlayhead(a.currentTime);
-      raf = requestAnimationFrame(follow);
-    };
-    const bail = () => {
-      if (audioRef.current === a) setPlayhead(null);
-    };
-    a.addEventListener("ended", bail);
-    a.addEventListener("error", bail);
-    setPlayhead(0);
-    raf = requestAnimationFrame(follow);
-    void a.play().catch(bail);
-    const watchdog = window.setTimeout(() => {
-      if (a.paused || a.currentTime === 0) bail();
-    }, 2000);
-    return () => {
-      window.clearTimeout(watchdog);
-      cancelAnimationFrame(raf);
-      a.pause();
-      if (audioRef.current === a) audioRef.current = null;
-    };
-  }, [voice, audioRef]);
-
-  // Reading-pace fallback: only consulted while there is no voice pacing.
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setSynth((v) => (v >= total ? v : v + 1));
-    }, 24);
-    return () => window.clearInterval(id);
-  }, [total]);
-
-  // Letter-exact pacing against the clip's word timestamps. Lines join with
-  // "\n" and words split on space OR newline so the word count (and the
-  // one-separator-per-word character accounting) matches the timing table.
-  const words = text.split(/[ \n]/);
-  const timing = VOICE_TIMING[voice]?.find((t) => t.length === words.length);
-  let paced: number | null = null;
-  if (playhead !== null && timing) {
-    const t = playhead + VOICE_LEAD;
-    paced = 0;
-    for (let i = 0; i < words.length; i++) {
-      const [start, end] = timing[i];
-      if (t >= end) {
-        paced += words[i].length + 1; // the whole word and its separator
-      } else {
-        if (t > start) paced += Math.round((words[i].length * (t - start)) / (end - start));
-        break;
-      }
-    }
-    paced = Math.min(paced, total);
-  }
-  // Voice paces when it can; the reading-pace counter carries otherwise. The
-  // max() keeps the reveal monotonic when pacing sources swap mid-line.
-  const shown = forceDone
-    ? total
-    : Math.min(total, Math.max(paced ?? synth, maxShownRef.current));
-  maxShownRef.current = shown;
-
-  useEffect(() => {
-    if (shown >= total && !doneRef.current) {
-      doneRef.current = true;
-      onDone();
-    }
-  }, [shown, total, onDone]);
-  return <KeeperText text={text} shown={shown} lines={3} />;
-}
 
 export function FrontDoor() {
   const router = useRouter();
@@ -216,26 +131,39 @@ export function FrontDoor() {
   // the gate, full figure) -> BOX (he settles into the dialogue box and talks).
   const [keeper, setKeeper] = useState<"hidden" | "appear" | "box">("hidden");
   const [spoken, setSpoken] = useState(false);
+  // The crystal's panel takes the Ashwarden's place at the foot of the scene
+  // while it's open (they'd otherwise sit on top of each other), so he steps
+  // back rather than talking over it.
+  const [crystalOpen, setCrystalOpen] = useState(false);
   // The keeper ANSWERS a tap on the sealed Enter plate (the plate is locked,
   // not dead: aria-disabled + clickable). Counter so every tap re-delivers
   // the line; 0 = still on the greeting.
   const [sealedReply, setSealedReply] = useState(0);
   const [replyDone, setReplyDone] = useState(false);
-  // The live clips, assigned by each KeeperSpeech (which owns playback and
-  // paces its text against the clip's playhead); held here so a deliberate
-  // skip can quiet them.
+  // The live clips, assigned by each KeeperSpeech (which owns playback and paces its
+  // text against the clip's playhead); held here so a deliberate act (answering the
+  // sealed door) can quiet them.
   const keeperAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Skipping the words also quiets the keeper. Only a deliberate skip cuts the
-  // voice; when the typing simply finishes first (it is paced to land a beat
-  // early), the clip plays out its final words.
-  const skipSpeech = () => {
-    setSpoken(true);
-    setReplyDone(true);
-    keeperAudioRef.current?.pause();
-    replyAudioRef.current?.pause();
-  };
+  /* NOTHING SKIPS HIM BY ACCIDENT.
+
+     Clicking the box used to cut him off mid-sentence and dump the rest of the line on
+     screen. People click by reflex, at the scene, at the box, at nothing, and they were
+     killing his delivery without ever meaning to, on the one screen where he explains
+     what this place is.
+
+     He simply speaks. Since he cannot be hurried, his instructions can no longer wait on
+     him either: the plates come up straight away (see the actions below) and he talks
+     over them. Anyone who wants to get on with it just presses one, and reaching for the
+     crystal quiets him properly, because opening the rite unmounts his greeting. */
+
+  // He has begun the greeting once. Stepping in and out of the crystal rite re-mounts
+  // him, and a stranger should not be re-greeted from the top every time they come back.
+  const greetingHeard = useRef(false);
+  useEffect(() => {
+    if (keeper === "box" && !crystalOpen) greetingHeard.current = true;
+  }, [keeper, crystalOpen]);
 
   // A tap on the sealed gate plate: the keeper explains instead of the plate
   // silently ignoring it (tooltips never show on touch, so HE is the tooltip).
@@ -305,10 +233,12 @@ export function FrontDoor() {
   };
 
   return (
+    <GateCrystalProvider open={crystalOpen} onOpenChange={setCrystalOpen}>
     <div
       className="fixed inset-0 z-40 overflow-hidden bg-bg transition-opacity duration-[1000ms] ease-out"
       style={{ opacity: entering ? 0 : 1 }}
     >
+      <GateCrystalStyles />
       {/* The cinematic film plays over everything on first arrival, then clears
           and the Ashwarden arrives at the threshold. */}
       <PyreIntro
@@ -344,12 +274,41 @@ export function FrontDoor() {
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[max(100vw,177.78vh)] h-[max(100vh,56.25vw)] pointer-events-none">
             {/* Part of the painting, not a control: he stands at the gate and
                 talks through the box below. The Codex has its own plate. */}
-            <div className="absolute bottom-[-1.5%] left-[30%] -translate-x-1/2 h-[57%]">
+            {/* Lifted off the frame's bottom edge so his OFFERED HAND clears the
+                dialogue box below. He reads as standing a little further back up
+                the path, which the receding cobbles support. */}
+            <div className="absolute bottom-[5%] left-[30%] -translate-x-1/2 h-[57%]">
+              {/* He OFFERS the Emberheart: his free hand is out, palm up, a small
+                  ember crystal burning above it, so the invitation is in the painting
+                  itself and not only on a plate. Still the designer's exact figure:
+                  only the arm is new (helm, spear, cloak untouched, and
+                  ashwarden-cut.webp remains for rollback).
+
+                  HE DOES NOT MOVE. A painted figure that breathes reads as a sticker,
+                  which is the same thing that sank the first floating crystal. The
+                  ONLY thing alive here is the ember in his palm, which is why it is a
+                  separate layer at all: the crystal was baked into his hand, so a
+                  second pass repainted the hand EMPTY and the difference between the
+                  two became the gem below. */}
               <img
-                src={asset("/world/ashwarden/ashwarden-cut.webp")}
+                src={asset("/world/ashwarden/ashwarden-offering-empty.webp")}
                 alt=""
                 draggable={false}
-                className="keeper-idle h-full w-auto max-w-none select-none"
+                className="h-full w-auto max-w-none select-none"
+              />
+              {/* The gem, hovering over his open palm. Positioned in the figure's own
+                  coordinates (this div is exactly the image's box), so it rides his
+                  hand at every viewport. */}
+              {/* THE EMBER from the film: one dark faceted shard with a furnace burning
+                  inside it. Anchored so it rests on the same point of his open palm the
+                  old gem did (its bottom point in his fingers), in the figure's own
+                  coordinates, so it rides his hand at every viewport. */}
+              <img
+                src={asset("/world/ashwarden/hand-crystal.webp")}
+                alt=""
+                draggable={false}
+                className="ashwarden-gem absolute select-none"
+                style={{ left: "68.84%", top: "29.10%", width: "9.47%" }}
               />
             </div>
           </div>
@@ -377,6 +336,15 @@ export function FrontDoor() {
         />
       </div>
 
+      {/* THE EMBER CRYSTAL, grown into the rocks at the right of the gate: the one
+          thing out here that can actually be EARNED, and so the only reason a
+          stranger who can't get in has to stay. Part of the painting, so it stands
+          perfectly still and only surges when its fire is taken. The way IN is the
+          Claim plate in the Ashwarden's box (below), which is on screen at every
+          size; the crystals themselves are cropped away on a phone.
+          At launch the doors open and the crystal has done its job. */}
+      {!LAUNCHED && keeper !== "hidden" && !entering && <GateCrystalScene />}
+
       {/* THE ASHWARDEN stands at the gate, painted into the scene itself.
           Once the film clears (and after a beat so he is SEEN), he speaks
           through the dialogue box, the same box chrome as the guided tour in
@@ -391,42 +359,61 @@ export function FrontDoor() {
                village's Emberkeeper (who guides inside the kingdom). Distinct
                name, distinct voice. */
             name="The Ashwarden"
-            className="animate-entry w-full max-w-2xl shadow-panel cursor-pointer"
-            onClick={skipSpeech}
+            className="animate-entry w-full max-w-2xl shadow-panel"
             actions={
+              /* While the crystal rite is open, HE runs it: the plates below are
+                 its rungs, not his standing instructions. */
+              crystalOpen ? (
+                <GateCrystalActions />
+              ) : (
               /* His instructions: forged plates riding the bottom edge, they
                  appear once the words have landed. The X now lives on the
-                 scene's corner, not in his speech (see below). */
+                 scene's corner, not in his speech (see below).
+
+                 Three plates do NOT fit across a phone (each has a 128px floor,
+                 and the keeper frame leaves ~300px inside), so on mobile the
+                 Claim plate takes its own row above the other two, which sit side
+                 by side. From sm up, `contents` dissolves that inner row and all
+                 three ride the one grid. */
               <div
                 className={
-                  "inline-grid grid-flow-col auto-cols-fr items-center gap-3 transition-opacity duration-500 " +
-                  (spoken ? "opacity-100" : "opacity-0 pointer-events-none")
+                  "flex w-full animate-entry flex-col items-center gap-3 sm:inline-grid sm:w-auto sm:auto-cols-fr sm:grid-flow-col"
                 }
               >
-                <PlateButton
-                  label="Enter Pyre"
-                  locked={!isTeam}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isTeam) {
-                      sealedTap();
-                      return;
-                    }
-                    enter();
-                  }}
-                />
-                <PlateButton
-                  label="Read the Codex"
-                  href="/codex"
-                  newTab
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    track("codex_open", { source: "front_door" });
-                  }}
-                />
+                <div className="flex items-center gap-3 sm:contents">
+                  <PlateButton
+                    label="Enter Pyre"
+                    locked={!isTeam}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isTeam) {
+                        sealedTap();
+                        return;
+                      }
+                      enter();
+                    }}
+                  />
+                  <PlateButton
+                    label="Read the Codex"
+                    href="/codex"
+                    newTab
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      track("codex_open", { source: "front_door" });
+                    }}
+                  />
+                </div>
+                {/* The way to the crystal, riding the right end of his instructions.
+                    On a phone it drops to its own row beneath the other two (three
+                    plates cannot fit across, see above). */}
+                <GateCrystalPlate />
               </div>
+              )
             }
           >
+            {crystalOpen ? (
+              <GateCrystalRite />
+            ) : (
             <div className="flex gap-4 items-center">
               {/* His face up close: the wide shot already shows the figure at
                   the gate, so the box carries the close-up (helm and burning
@@ -444,6 +431,10 @@ export function FrontDoor() {
                     voice={KEEPER_VOICE}
                     audioRef={keeperAudioRef}
                     forceDone={spoken}
+                    /* Stepping back out of the crystal rite re-mounts him. He does not
+                       greet the same stranger twice: the words are simply THERE, and he
+                       stays quiet. */
+                    mute={greetingHeard.current}
                     onDone={() => setSpoken(true)}
                   />
                 ) : (
@@ -455,11 +446,16 @@ export function FrontDoor() {
                     voice={SEALED_VOICE}
                     audioRef={replyAudioRef}
                     forceDone={replyDone}
+                    /* Same as the greeting: a fresh TAP re-keys this and he answers
+                       again, but merely coming back from the crystal must not make
+                       him repeat an answer he has already given. */
+                    mute={replyDone}
                     onDone={() => setReplyDone(true)}
                   />
                 )}
               </div>
             </div>
+            )}
           </KeeperBox>
         </div>
       )}
@@ -502,5 +498,6 @@ export function FrontDoor() {
         </Link>
       )}
     </div>
+    </GateCrystalProvider>
   );
 }

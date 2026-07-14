@@ -38,6 +38,11 @@ const ICONS = {
   rank3On: "/world/ui/icons/rank3_active.png",
   rank4On: "/world/ui/icons/rank4_active.png",
   rank5On: "/world/ui/icons/rank5_active.png",
+  // THE EMBER CRYSTAL: the symbol of Embers (the pre-launch points), everywhere
+  // they are counted. Distinct from fireToken on purpose: that flame medallion is
+  // the $PYRE token (the Forge's amounts, the Staked row), and pointing the same
+  // emblem at two different things taught nobody what either one was.
+  emberCrystal: "/world/ui/icons/ember_crystal.png",
   // Status / utility.
   fireToken: "/world/ui/icons/fire_token.png",
   wallet: "/world/ui/icons/wallet.png",

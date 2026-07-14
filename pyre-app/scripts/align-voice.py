@@ -23,6 +23,7 @@ from pathlib import Path
 APP = Path(__file__).resolve().parent.parent
 TOUR = APP / "lib" / "tour.tsx"
 FRONT_DOOR = APP / "components" / "front-door.tsx"
+GATE_CRYSTAL = APP / "components" / "gate-crystal.tsx"
 OUT = APP / "lib" / "tour-voice-timing.ts"
 VOICE_DIR = APP / "public"
 
@@ -55,6 +56,34 @@ def gate_lines() -> list[tuple[str, str, str]]:
         (const_lines("GREETING_LINES"), const_lines("GREETING_LINES"), const_str("KEEPER_VOICE")),
         (const_lines("SEALED_LINES"), const_lines("SEALED_LINES"), const_str("SEALED_VOICE")),
     ]
+
+
+def rite_lines() -> list[tuple[str, str, str]]:
+    """The Emberheart rite's scripts, read out of gate-crystal.tsx.
+
+    The Ashwarden speaks every rung of the crystal rite (carry / take / more / done),
+    one clip each, through the same KeeperSpeech as his greeting. So those clips need
+    word timings too, or his voice runs against words that are still being revealed.
+
+    Pairs each stage in LORE with its clip in RITE_VOICE. Anchored on the closing "],"
+    of each stage so the LAST stage is not silently dropped (a looser pattern skipped
+    `done` once already, and a missing clip fails quietly: it just falls back to the
+    typewriter, which is exactly the drift this file exists to prevent)."""
+    src = GATE_CRYSTAL.read_text(encoding="utf-8")
+
+    lore = re.search(r"const LORE:[^=]+= \{(.*?)\n\};", src, re.DOTALL)
+    voices = re.search(r"const RITE_VOICE:[^=]+= \{(.*?)\n\};", src, re.DOTALL)
+    if not lore or not voices:
+        sys.exit("missing LORE / RITE_VOICE in gate-crystal.tsx")
+
+    clips = dict(re.findall(r'(\w+):\s*"([^"]+)"', voices.group(1)))
+    rows: list[tuple[str, str, str]] = []
+    for stage, body in re.findall(r"(\w+):\s*\[(.*?)\n  \],", lore.group(1), re.DOTALL):
+        if stage not in clips:
+            sys.exit(f"LORE stage {stage} has no clip in RITE_VOICE")
+        text = " ".join(re.findall(r'^\s*"(.+?)",\s*$', body, re.M))
+        rows.append((text, text, clips[stage]))
+    return rows
 
 
 def norm(word: str) -> str:
@@ -119,6 +148,7 @@ def main() -> None:
         sys.exit("No text/preText/voice blocks found in lib/tour.tsx")
     print(f"{len(lines)} voiced tour lines found in tour.tsx")
     lines += gate_lines()
+    lines += rite_lines()
     print("+ 2 gate lines from front-door.tsx")
 
     from faster_whisper import WhisperModel

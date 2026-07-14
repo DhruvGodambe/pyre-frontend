@@ -51,3 +51,7 @@ swisstransfer_*/
 
 # ElevenLabs test clips (free-tier, non-commercial, never ship)
 pyre-app/public/voice-previews/
+
+# Announcement film working files: 432MB of raw takes, keyframes and renders.
+# The finished film belongs in the app (public/intro), not in git history.
+marketing/video/announcement/
