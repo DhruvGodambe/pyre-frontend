@@ -33,7 +33,7 @@ export const MANIFESTO_TWEET_URL = `https://x.com/${X_HANDLE}/status/${MANIFESTO
 
    Paste the id from the post's URL:  x.com/pyre_protocol/status/<THIS>
    ========================================================================== */
-const ANNOUNCEMENT_TWEET_ID: string | null = null; // TODO: the film's post id
+const ANNOUNCEMENT_TWEET_ID: string | null = "2077098659917791548";
 
 /** The post the gate's Like + Share rite acts on. */
 export const DECREE_TWEET_ID = ANNOUNCEMENT_TWEET_ID ?? MANIFESTO_TWEET_ID;
