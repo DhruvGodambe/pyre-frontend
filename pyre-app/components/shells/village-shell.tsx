@@ -28,6 +28,7 @@ import { TourNarration } from "@/components/tour-ui";
 import { useTour } from "@/lib/tour";
 import { GatePanel } from "@/components/panels/gate";
 import { useWallet } from "@/lib/wallet";
+import { useTargetChain } from "@/lib/target-chain";
 import { useIdentity } from "@/lib/identity";
 import { useNavigation } from "@/lib/navigation";
 import { asset, USE_MOCK } from "@/lib/config";
@@ -821,6 +822,7 @@ export function LockedExterior({
   const bg = b.exterior ?? b.interior;
   const { navigate } = useNavigation();
   const { status, connect } = useWallet();
+  const { switchToTarget, isSwitching } = useTargetChain();
   const connecting = status === "connecting";
   const [shown, setShown] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -839,6 +841,10 @@ export function LockedExterior({
     // (e.g. "Buy $PYRE at the Grand Exchange"). Walking-to-a-building CTAs leave.
     if (lock.cta.connect) {
       connect();
+      return;
+    }
+    if (lock.cta.switchNetwork) {
+      switchToTarget();
       return;
     }
     const to = lock.cta.to;
@@ -934,8 +940,12 @@ export function LockedExterior({
           )}
           {lock.cta && (
             <div className="mt-5 flex justify-center">
-              <Button onClick={goUnlock} disabled={connecting}>
-                {lock.cta.connect && connecting ? "Connecting…" : `${lock.cta.label} →`}
+              <Button onClick={goUnlock} disabled={connecting || isSwitching}>
+                {lock.cta.connect && connecting
+                  ? "Connecting…"
+                  : lock.cta.switchNetwork && isSwitching
+                    ? "Switching…"
+                    : `${lock.cta.label} →`}
               </Button>
             </div>
           )}

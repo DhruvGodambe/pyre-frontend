@@ -122,9 +122,8 @@ import {
 
 /* ---- Grand Exchange helpers ------------------------------------------------ */
 
-/** The active chain id, typed to the ids registered in wagmiConfig (Sepolia +
-    mainnet) so the wagmi actions accept it. */
-const CHAIN = CHAIN_ID as 1 | 11155111;
+/** The active chain id, typed to the ids registered in wagmiConfig. */
+const CHAIN = CHAIN_ID as 1 | 11155111 | 4663;
 
 const Q96 = 2n ** 96n;
 const QUOTE_TTL_MS = 30_000; // quote refresh window (~Uniswap)

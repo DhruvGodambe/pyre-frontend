@@ -19,6 +19,8 @@ import type { BuildingId } from "@/components/buildings";
 import { usePreview } from "@/lib/preview";
 import { useTour } from "@/lib/tour";
 import { useWallet } from "@/lib/wallet";
+import { useTargetChain } from "@/lib/target-chain";
+import { TARGET_CHAIN_NAME } from "@/lib/config";
 import { useStakingPosition, useAcolyte } from "@/lib/hooks";
 
 export interface LockState {
@@ -29,7 +31,7 @@ export interface LockState {
   hint: string;
   /** how to open it: either walk to a building that IS open (`to`), or prompt the
       wallet connect (`connect`). One or the other. */
-  cta?: { label: string; to?: BuildingId; connect?: boolean };
+  cta?: { label: string; to?: BuildingId; connect?: boolean; switchNetwork?: boolean };
 }
 
 const OPEN: LockState = { locked: false, label: "", hint: "" };
@@ -51,7 +53,14 @@ const CONNECT_HINT: Partial<Record<BuildingId, string>> = {
 
 export function computeLock(
   id: BuildingId,
-  ctx: { launched: boolean; tourActive: boolean; connected: boolean; progress: Progress }
+  ctx: {
+    launched: boolean;
+    tourActive: boolean;
+    connected: boolean;
+    wrongNetwork: boolean;
+    targetChainName: string;
+    progress: Progress;
+  }
 ): LockState {
   // The tour is a full demo: nothing is locked while it runs.
   if (ctx.tourActive) return OPEN;
@@ -96,7 +105,16 @@ export function computeLock(
     };
   }
 
-  // Connected: the real progress gate.
+  if (ctx.wrongNetwork) {
+    return {
+      locked: true,
+      label: "Wrong network",
+      hint: `Switch your wallet to ${ctx.targetChainName} to read on-chain data here.`,
+      cta: { switchNetwork: true, label: `Switch to ${ctx.targetChainName}` },
+    };
+  }
+
+  // Connected on the target chain: the real progress gate.
   switch (id) {
     case "forge":
       return ctx.progress.hasPyre
@@ -136,11 +154,10 @@ export function useLocks() {
   const { launched } = usePreview();
   const tour = useTour();
   const { status, address } = useWallet();
+  const { onTargetChain, targetChainName } = useTargetChain();
   const staking = useStakingPosition();
   const acolyte = useAcolyte();
 
-  // A guest has no address, so the balance hooks are disabled and we can't read
-  // holdings: gate on connection first (see computeLock), don't infer "no $PYRE".
   const connected = status === "connected" && !!address;
   const hasPyre =
     (staking.data?.liquidBalance ?? 0n) > 0n || (staking.data?.stakedBalance ?? 0n) > 0n;
@@ -154,8 +171,10 @@ export function useLocks() {
         launched,
         tourActive: tour.active,
         connected,
+        wrongNetwork: connected && !onTargetChain,
+        targetChainName: targetChainName ?? TARGET_CHAIN_NAME,
         progress: { hasPyre, hasPosition, topTier },
       }),
-    [launched, tour.active, connected, hasPyre, hasPosition, topTier]
+    [launched, tour.active, connected, onTargetChain, targetChainName, hasPyre, hasPosition, topTier]
   );
 }

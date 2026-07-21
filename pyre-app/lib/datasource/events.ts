@@ -34,6 +34,7 @@
 
 import { createPublicClient, http, parseAbiItem, zeroAddress, type Address, type Hex } from "viem";
 import { mainnet, sepolia } from "viem/chains";
+import { robinhood } from "../chains";
 import { CHAIN_ID, CONTRACTS, DEPLOY_ANCHOR, V4 } from "../config";
 import { toNumber } from "../format";
 import { STAGES, stageFromWeight, type Stage } from "../constants";
@@ -45,17 +46,19 @@ import { getPoolKey, getPoolId } from "./abis";
    without a key; drpc (viem's default transport) caps multi-event filters at
    1,000 blocks, which would turn the first sync into hundreds of round trips.
    So the event layer gets ITS OWN client, separate from the wallet transport:
-   NEXT_PUBLIC_RPC_LOGS > NEXT_PUBLIC_RPC_SEPOLIA/_MAINNET > Tenderly's keyless
-   gateway (handles 50k-block ranges on Sepolia). getLogsAdaptive below bisects
+   NEXT_PUBLIC_RPC_LOGS > chain-specific RPC > public fallback (Tenderly on
+   Sepolia; Robinhood public RPC on 4663). getLogsAdaptive below bisects
    any window an endpoint still refuses, so a swapped RPC degrades to slower,
    never to broken. */
 const LOG_RPC_URL =
   process.env.NEXT_PUBLIC_RPC_LOGS ??
   (CHAIN_ID === 1
     ? process.env.NEXT_PUBLIC_RPC_MAINNET
-    : (process.env.NEXT_PUBLIC_RPC_SEPOLIA ?? "https://sepolia.gateway.tenderly.co"));
+    : CHAIN_ID === 4663
+      ? (process.env.NEXT_PUBLIC_RPC_ROBINHOOD ?? "https://rpc.mainnet.chain.robinhood.com")
+      : (process.env.NEXT_PUBLIC_RPC_SEPOLIA ?? "https://sepolia.gateway.tenderly.co"));
 const logClient = createPublicClient({
-  chain: CHAIN_ID === 1 ? mainnet : sepolia,
+  chain: CHAIN_ID === 1 ? mainnet : CHAIN_ID === 4663 ? robinhood : sepolia,
   transport: http(LOG_RPC_URL),
 });
 

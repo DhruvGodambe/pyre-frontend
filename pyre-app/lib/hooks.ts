@@ -16,32 +16,42 @@ import {
 } from "@tanstack/react-query";
 import { getDataSource } from "./datasource";
 import { useWallet } from "./wallet";
+import { CHAIN_ID } from "./config";
+import { useTargetChain } from "./target-chain";
 import { fetchQuestLeaderboard, fetchReferral } from "./quests/client";
 import type { MarketFilter, SwapParams } from "./datasource";
 import type { Address, SwapDirection, SwapQuoteParams, QuestTask } from "./types";
 
 const ds = () => getDataSource();
 
+/** Wallet connected AND on the configured chain (Robinhood mainnet in prod). */
+function useWalletOnChain() {
+  const { address, status } = useWallet();
+  const { onTargetChain } = useTargetChain();
+  const ready = status === "connected" && !!address && onTargetChain;
+  return { address, ready };
+}
+
 /* Keys all live data depends on; write hooks invalidate the relevant ones. */
 const KEY = {
-  stats: ["protocolStats"] as const,
-  acolyte: (a: Address | null) => ["acolyte", a] as const,
-  staking: (a: Address | null) => ["staking", a] as const,
-  immolated: (a: Address | null) => ["immolated", a] as const,
-  history: (a: Address | null) => ["history", a] as const,
-  leaderboard: ["leaderboard"] as const,
-  topBurners: ["topBurners"] as const,
-  activity: ["activity"] as const,
-  announcements: ["announcements"] as const,
-  market: (f?: MarketFilter) => ["market", f ?? {}] as const,
-  marketActivity: (f?: MarketFilter) => ["marketActivity", f ?? {}] as const,
+  stats: ["protocolStats", CHAIN_ID] as const,
+  acolyte: (a: Address | null) => ["acolyte", CHAIN_ID, a] as const,
+  staking: (a: Address | null) => ["staking", CHAIN_ID, a] as const,
+  immolated: (a: Address | null) => ["immolated", CHAIN_ID, a] as const,
+  history: (a: Address | null) => ["history", CHAIN_ID, a] as const,
+  leaderboard: ["leaderboard", CHAIN_ID] as const,
+  topBurners: ["topBurners", CHAIN_ID] as const,
+  activity: ["activity", CHAIN_ID] as const,
+  announcements: ["announcements", CHAIN_ID] as const,
+  market: (f?: MarketFilter) => ["market", CHAIN_ID, f ?? {}] as const,
+  marketActivity: (f?: MarketFilter) => ["marketActivity", CHAIN_ID, f ?? {}] as const,
   quote: (p: SwapQuoteParams) =>
-    ["quote", p.direction, p.kind, p.amount.toString(), p.slippageBps] as const,
-  poolState: ["poolState"] as const,
-  swapBalances: (a: Address | null) => ["swapBalances", a] as const,
+    ["quote", CHAIN_ID, p.direction, p.kind, p.amount.toString(), p.slippageBps] as const,
+  poolState: ["poolState", CHAIN_ID] as const,
+  swapBalances: (a: Address | null) => ["swapBalances", CHAIN_ID, a] as const,
   approval: (a: Address | null, d: SwapDirection, amt: string) =>
-    ["approval", a, d, amt] as const,
-  quests: (a: Address | null) => ["quests", a] as const,
+    ["approval", CHAIN_ID, a, d, amt] as const,
+  quests: (a: Address | null) => ["quests", CHAIN_ID, a] as const,
 };
 
 /* ----------------------------------------------------------------- reads */
@@ -51,38 +61,38 @@ export function useProtocolStats() {
 }
 
 export function useAcolyte() {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.acolyte(address),
     queryFn: () => ds().getAcolyte(address!),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 
 export function useStakingPosition() {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.staking(address),
     queryFn: () => ds().getStakingPosition(address!),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 
 export function useImmolatedPosition() {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.immolated(address),
     queryFn: () => ds().getImmolatedPosition(address!),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 
 export function useUserHistory() {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.history(address),
     queryFn: () => ds().getUserHistory(address!),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 
@@ -131,20 +141,20 @@ export function usePoolState() {
 }
 
 export function useSwapBalances() {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.swapBalances(address),
     queryFn: () => ds().getSwapBalances(address!),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 
 export function useApprovalState(direction: SwapDirection, amount: bigint) {
-  const { address } = useWallet();
+  const { address, ready } = useWalletOnChain();
   return useQuery({
     queryKey: KEY.approval(address, direction, amount.toString()),
     queryFn: () => ds().getApprovalState(address!, direction, amount),
-    enabled: !!address,
+    enabled: ready,
   });
 }
 

@@ -13,6 +13,18 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { http } from "wagmi";
 import { mainnet, sepolia } from "wagmi/chains";
+import { CHAIN_ID } from "./config";
+import { chainById, robinhood } from "./chains";
+
+const ROBINHOOD_RPC =
+  process.env.NEXT_PUBLIC_RPC_ROBINHOOD ?? "https://rpc.mainnet.chain.robinhood.com";
+
+function appChains() {
+  const target = chainById(CHAIN_ID);
+  if (target.id === robinhood.id) return [robinhood, sepolia, mainnet] as const;
+  if (target.id === sepolia.id) return [sepolia, robinhood, mainnet] as const;
+  return [mainnet, robinhood, sepolia] as const;
+}
 
 let cached: ReturnType<typeof getDefaultConfig> | undefined;
 
@@ -29,8 +41,9 @@ export function getWagmiConfig() {
   cached = getDefaultConfig({
     appName: "PYRE",
     projectId,
-    chains: [sepolia, mainnet],
+    chains: appChains(),
     transports: {
+      [robinhood.id]: http(ROBINHOOD_RPC),
       [sepolia.id]: http(process.env.NEXT_PUBLIC_RPC_SEPOLIA),
       [mainnet.id]: http(process.env.NEXT_PUBLIC_RPC_MAINNET),
     },

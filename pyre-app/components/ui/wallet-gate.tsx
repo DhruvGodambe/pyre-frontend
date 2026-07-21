@@ -1,18 +1,16 @@
 "use client";
 
-/* Wraps wallet-gated panels: shows a connect prompt when disconnected,
-   the real content when connected. Keeps the not-connected state consistent. */
+/* Wraps wallet-gated panels: shows a connect prompt when disconnected, prompts
+   a network switch when on the wrong chain, then the real content. */
 
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { useWallet } from "@/lib/wallet";
-import { asset } from "@/lib/config";
+import { asset, TARGET_CHAIN_NAME } from "@/lib/config";
+import { useTargetChain } from "@/lib/target-chain";
 import { EmptyState } from "./state";
 import { Button } from "./primitives";
 
-/* The dormant Pyre sigil: the brand emblem sitting over a soft ember bloom,
-   dimmed so the kingdom reads as "asleep" until a wallet wakes it. Replaces the
-   old alchemical fire glyph (🜂), which read as a meaningless bare triangle. */
 function DormantSigil() {
   return (
     <span className="relative grid place-items-center py-1" aria-hidden>
@@ -45,6 +43,8 @@ export function RequireWallet({
   message?: string;
 }) {
   const { status, connect } = useWallet();
+  const { wrongNetwork, switchToTarget, isSwitching, targetChainName } = useTargetChain();
+
   if (status !== "connected") {
     return (
       <EmptyState
@@ -59,5 +59,21 @@ export function RequireWallet({
       />
     );
   }
+
+  if (wrongNetwork) {
+    return (
+      <EmptyState
+        icon={<DormantSigil />}
+        title="Wrong network"
+        message={`Switch your wallet to ${targetChainName ?? TARGET_CHAIN_NAME} to read balances and trade on PYRE.`}
+        action={
+          <Button onClick={switchToTarget} disabled={isSwitching}>
+            {isSwitching ? "Switching…" : `Switch to ${targetChainName ?? TARGET_CHAIN_NAME}`}
+          </Button>
+        }
+      />
+    );
+  }
+
   return <>{children}</>;
 }

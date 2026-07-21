@@ -48,11 +48,12 @@ export const asset = (path: string) => `${BASE_PATH}${path}`;
     deep-links are KINGDOM_PATH-relative, e.g. /kingdom/ashencup. */
 export const KINGDOM_PATH = `${BASE_PATH}/kingdom`;
 
-/* Testing phase → default to Sepolia (the dev tests the pool + hook on a
-   testnet). Flips to mainnet (1) at launch via NEXT_PUBLIC_CHAIN_ID, or set it
-   to 84532 (Base Sepolia) / 1301 (Unichain Sepolia), all four are in
-   V4_DEPLOYMENTS below. */
-export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 11155111); // Sepolia
+/* Target chain. Default: Robinhood Chain mainnet (production deploy).
+   Set NEXT_PUBLIC_CHAIN_ID=11155111 for Sepolia testnet dev. */
+export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 4663);
+
+export const TARGET_CHAIN_NAME =
+  CHAIN_ID === 4663 ? "Robinhood Chain" : CHAIN_ID === 11155111 ? "Sepolia" : `Chain ${CHAIN_ID}`;
 
 /* Deployed Sepolia (11155111) addresses from the contracts repo
    (github.com/DhruvGodambe/pyre-protocol, broadcast/DeployAll.s.sol). Used as a
@@ -66,18 +67,29 @@ const SEPOLIA_CONTRACTS = {
   hook: "0xce9cd7eff1156d566cfebada4c025597cf51bff8",
 } as const satisfies Record<string, Address>;
 
-const onSepolia = CHAIN_ID === 11155111;
+/* Robinhood Chain mainnet (4663) — pyre-protocol broadcast/DeployAll.s.sol/4663 */
+const ROBINHOOD_CONTRACTS = {
+  token: "0x4db57d585fa82ca32d25086ddc069d899f08d455",
+  nft: "0xea82487cb1ad960f6beb2572b15cb0770847822d",
+  staking: "0xb09d91d97286a546571c50722e95fc4a682a5446",
+  immolated: "0xe0362a4c6944178700e53bae831643366eb564ac",
+  hook: "0x94fe63792ec58c064f47cdd884b61035d04c7ff8",
+} as const satisfies Record<string, Address>;
 
-/** Resolved from env, with Sepolia deploy addresses as the testnet fallback. */
+const onSepolia = CHAIN_ID === 11155111;
+const onRobinhood = CHAIN_ID === 4663;
+const chainDefaults = onSepolia ? SEPOLIA_CONTRACTS : onRobinhood ? ROBINHOOD_CONTRACTS : null;
+
+/** Resolved from env, with per-chain deploy addresses as fallback. */
 export const CONTRACTS: Record<
   "token" | "nft" | "staking" | "immolated" | "hook",
   Address | null
 > = {
-  token: (process.env.NEXT_PUBLIC_PYRE_TOKEN as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.token : null),
-  nft: (process.env.NEXT_PUBLIC_PYRE_NFT as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.nft : null),
-  staking: (process.env.NEXT_PUBLIC_PYRE_STAKING as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.staking : null),
-  immolated: (process.env.NEXT_PUBLIC_PYRE_IMMOLATED as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.immolated : null),
-  hook: (process.env.NEXT_PUBLIC_PYRE_HOOK as Address) ?? (onSepolia ? SEPOLIA_CONTRACTS.hook : null),
+  token: (process.env.NEXT_PUBLIC_PYRE_TOKEN as Address) ?? chainDefaults?.token ?? null,
+  nft: (process.env.NEXT_PUBLIC_PYRE_NFT as Address) ?? chainDefaults?.nft ?? null,
+  staking: (process.env.NEXT_PUBLIC_PYRE_STAKING as Address) ?? chainDefaults?.staking ?? null,
+  immolated: (process.env.NEXT_PUBLIC_PYRE_IMMOLATED as Address) ?? chainDefaults?.immolated ?? null,
+  hook: (process.env.NEXT_PUBLIC_PYRE_HOOK as Address) ?? chainDefaults?.hook ?? null,
 };
 
 /* Where on-chain history starts: the block that carried the whole deployment
@@ -93,16 +105,22 @@ export const DEPLOY_ANCHOR: { block: bigint; tsMs: number } | null =
         block: BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK),
         tsMs: Number(process.env.NEXT_PUBLIC_DEPLOY_TS) * 1000,
       }
-    : onSepolia
-      ? { block: 11103396n, tsMs: 1781982147_000 }
-      : null;
+    : onRobinhood
+      ? { block: 13860500n, tsMs: 1784467431_000 }
+      : onSepolia
+        ? { block: 11103396n, tsMs: 1781982147_000 }
+        : null;
 
 /* The protocol trades through a custom V4 router (IUniswapV4Router04), NOT the
    canonical Universal Router. Sepolia deploy uses the vanity router below; set
    NEXT_PUBLIC_SWAP_ROUTER for other chains. */
 export const SWAP_ROUTER: Address | null =
   (process.env.NEXT_PUBLIC_SWAP_ROUTER as Address) ??
-  (onSepolia ? "0x00000000000044a361Ae3cAc094c9D1b14Eece97" : null);
+  (onSepolia
+    ? "0x00000000000044a361Ae3cAc094c9D1b14Eece97"
+    : onRobinhood
+      ? "0x8876789976dEcBfCbBbe364623C63652db8C0904"
+      : null);
 
 /* ============================================================================
    UNISWAP V4, Grand Exchange swap wiring
@@ -163,6 +181,15 @@ export const V4_DEPLOYMENTS: Record<number, V4Addresses> = {
     stateView: "0xc199f1072a74d4e905aba1a84d9a45e2546b6222",
     universalRouter: "0xf70536b3bcc1bd1a972dc186a2cf84cc6da6be5d",
     positionManager: "0xf969aee60879c54baaed9f3ed26147db216fd664",
+    permit2: PERMIT2,
+  },
+  4663: {
+    // Robinhood Chain mainnet
+    poolManager: "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    v4Quoter: "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+    stateView: "0xF3334192D15450CdD385c8B70e03f9A6bD9E673b",
+    universalRouter: "0x8876789976dEcBfCbBbe364623C63652db8C0904",
+    positionManager: "0x58daec3116aae6d93017baaea7749052e8a04fa7",
     permit2: PERMIT2,
   },
 };

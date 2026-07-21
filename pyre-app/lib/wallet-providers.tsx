@@ -6,6 +6,7 @@ import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { getWagmiConfig } from "./wagmi";
 import { pyreTheme } from "./rainbowkit-theme";
+import { ChainSync, WrongNetworkBanner } from "./target-chain";
 
 /* Wagmi + RainbowKit are client-only (ssr:false parent) so Next.js prerender
    does not evaluate WalletConnect config without a project id. */
@@ -24,6 +25,8 @@ export function WalletProviders({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={client}>
         <RainbowKitProvider theme={pyreTheme} modalSize="compact">
+          <ChainSync />
+          <WrongNetworkBanner />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
