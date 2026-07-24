@@ -382,8 +382,13 @@ function BurnRitual({
   const ethPerPyre = pool.data?.pricePyreInEth ?? 0;
   const pyreHuman = parseFloat(amount) || 0;
   const ethHuman = pyreHuman * ethPerPyre;
-  const ethAmt = ethHuman > 0 ? parseToken(ethHuman.toFixed(12)) : 0n;
-  const ethDisplay = ethHuman > 0 ? formatEth(ethAmt) : "";
+  const ethAmt = ethHuman > 0 ? parseToken(ethHuman.toFixed(18)) : 0n;
+  // Plain amount for the Field (suffix adds $ETH). Use enough precision that
+  // dust PYRE burns don't show paired ETH as "0".
+  const ethDisplay =
+    ethAmt > 0n
+      ? toAmountString(ethAmt) || formatToken(ethAmt, { maxFrac: 12, compact: false })
+      : "";
   const priceReady = ethPerPyre > 0;
   const overBalance = amt > p.liquidBalance;
   const blocked = amt <= 0n || overBalance || (lp && !priceReady);

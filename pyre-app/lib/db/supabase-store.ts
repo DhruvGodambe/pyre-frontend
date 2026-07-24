@@ -26,6 +26,15 @@ function isMissingTable(error: { code?: string; message?: string } | null): bool
   return error.code === "PGRST205" || /Could not find the table/i.test(error.message ?? "");
 }
 
+/** Supabase occasionally returns opaque 500s ("Internal server error") under
+   load or brief outages. Prefer an empty board over failing the quest APIs. */
+function isTransientDbError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return /Internal server error|upstream connect|timeout|57014|PGRST002/i.test(
+    error.message ?? ""
+  );
+}
+
 export class SupabaseStore implements QuestStore {
   private db: SupabaseClient;
 
@@ -141,9 +150,21 @@ export class SupabaseStore implements QuestStore {
     ]);
     // Referrals are supplementary to the board; if the table isn't applied yet,
     // treat them as empty rather than taking the whole leaderboard down.
-    for (const r of [comps, subs, idents]) if (r.error) throw new Error(r.error.message);
-    if (refs.error && !isMissingTable(refs.error)) throw new Error(refs.error.message);
-    const refRows = isMissingTable(refs.error) ? [] : refs.data ?? [];
+    for (const r of [comps, subs, idents]) {
+      if (!r.error) continue;
+      if (isMissingTable(r.error) || isTransientDbError(r.error)) {
+        console.warn("[quests] getLeaderboard degraded:", r.error.message);
+        return [];
+      }
+      throw new Error(r.error.message);
+    }
+    if (refs.error && !isMissingTable(refs.error) && !isTransientDbError(refs.error)) {
+      throw new Error(refs.error.message);
+    }
+    const refRows =
+      refs.error && (isMissingTable(refs.error) || isTransientDbError(refs.error))
+        ? []
+        : refs.data ?? [];
 
     const rows = new Map<string, LeaderboardRow>();
     const row = (sid: string) => {

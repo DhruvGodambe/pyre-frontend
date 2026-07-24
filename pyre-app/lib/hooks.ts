@@ -57,7 +57,14 @@ const KEY = {
 /* ----------------------------------------------------------------- reads */
 
 export function useProtocolStats() {
-  return useQuery({ queryKey: KEY.stats, queryFn: () => ds().getProtocolStats(), refetchInterval: 15_000 });
+  return useQuery({
+    queryKey: KEY.stats,
+    queryFn: () => ds().getProtocolStats(),
+    // Aggregates finish via capped log sync; refetch picks them up after cache fills.
+    refetchInterval: 8_000,
+    staleTime: 5_000,
+    retry: 1,
+  });
 }
 
 export function useAcolyte() {

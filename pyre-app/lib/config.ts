@@ -111,9 +111,9 @@ export const DEPLOY_ANCHOR: { block: bigint; tsMs: number } | null =
         ? { block: 11103396n, tsMs: 1781982147_000 }
         : null;
 
-/* The protocol trades through a custom V4 router (IUniswapV4Router04), NOT the
-   canonical Universal Router. Sepolia deploy uses the vanity router below; set
-   NEXT_PUBLIC_SWAP_ROUTER for other chains. */
+/* Swap entrypoint. Sepolia uses IUniswapV4Router04 (vanity CREATE2). Robinhood
+   has no V4Router04 deploy — swaps go through Universal Router execute() +
+   V4_SWAP. Override with NEXT_PUBLIC_SWAP_ROUTER if needed. */
 export const SWAP_ROUTER: Address | null =
   (process.env.NEXT_PUBLIC_SWAP_ROUTER as Address) ??
   (onSepolia
@@ -196,6 +196,11 @@ export const V4_DEPLOYMENTS: Record<number, V4Addresses> = {
 
 /** The active deployment for the configured CHAIN_ID (undefined if unsupported). */
 export const V4 = V4_DEPLOYMENTS[CHAIN_ID];
+
+/** True when SWAP_ROUTER is this chain's Universal Router (execute + V4_SWAP). */
+export const USE_UNIVERSAL_ROUTER = Boolean(
+  SWAP_ROUTER && V4 && SWAP_ROUTER.toLowerCase() === V4.universalRouter.toLowerCase()
+);
 
 /** Dynamic-fee sentinel: a v4 pool whose LP fee is set by its hook at swap time
     carries this flag as its PoolKey.fee. PYRE uses a static pool fee + a hook

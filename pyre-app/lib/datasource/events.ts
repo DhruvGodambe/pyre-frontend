@@ -255,6 +255,11 @@ async function fetchRange(from: bigint, to: bigint): Promise<Row[]> {
   return rows;
 }
 
+/** Cap first-time catch-up. Robinhood head can be millions of blocks past
+    DEPLOY_ANCHOR; scanning that range on the public RPC freezes the UI
+    (Observatory, feeds). Prefer a recent window; incremental sync covers the rest. */
+const MAX_FIRST_SYNC_SPAN = 30_000n;
+
 /** Bring the store up to the chain head (single-flight; incremental). */
 async function sync(): Promise<void> {
   if (!DEPLOY_ANCHOR || !CONTRACTS.token) return; // no anchor → serve empty history
@@ -266,6 +271,10 @@ async function sync(): Promise<void> {
     store.headTsMs = Number(head.timestamp) * 1000;
     let from = store.synced === 0n ? DEPLOY_ANCHOR.block : store.synced + 1n;
     if (from > head.number) return;
+    // First sync: jump forward if the gap is huge so we don't block for minutes.
+    if (store.synced === 0n && head.number - from > MAX_FIRST_SYNC_SPAN) {
+      from = head.number - MAX_FIRST_SYNC_SPAN + 1n;
+    }
     const seen = new Set(store.rows.map(rowKey));
     while (from <= head.number) {
       const to = from + CHUNK - 1n > head.number ? head.number : from + CHUNK - 1n;

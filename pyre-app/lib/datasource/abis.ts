@@ -6,10 +6,9 @@
    Sepolia (the pool is initialized + funded; getSlot0/getLiquidity/the Quoter
    all answer, and this poolId matches the on-chain pool).
 
-   We trade through a custom router, IUniswapV4Router04 (config SWAP_ROUTER), a
-   Uniswap-V2-style ergonomic wrapper over the v4 PoolManager. It takes a PLAIN
-   ERC-20 approval (no Permit2): for a sell, approve PYRE to the router; buys send
-   native ETH as msg.value.
+   Sepolia trades through IUniswapV4Router04 (plain ERC-20 approve). Robinhood
+   trades through Universal Router execute() + V4_SWAP (sells settle via Permit2).
+   Buys always send native ETH as msg.value. PoolKey.hooks is the PYRE diamond.
    ========================================================================== */
 
 import { keccak256, encodeAbiParameters, type Address, type Hex } from "viem";
@@ -97,6 +96,28 @@ export const DIAMOND_ABI = [
   { type: "function", name: "getCurrentSellFeeBps", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "burnLpPosition", stateMutability: "nonpayable", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [] },
   { type: "function", name: "getTotalLpBurns", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function",
+    name: "getTotalEthDistributed",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "toYieldPool", type: "uint256" },
+      { name: "toTeam", type: "uint256" },
+    ],
+  },
+  {
+    type: "function",
+    name: "getYieldConfig",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "pyreStaking", type: "address" },
+      { name: "teamWallet", type: "address" },
+      { name: "yieldPoolBps", type: "uint256" },
+      { name: "teamBps", type: "uint256" },
+    ],
+  },
 ] as const;
 
 /* --- Uniswap v4 PositionManager (V4.positionManager) ------------------------
@@ -175,12 +196,58 @@ export const V4_QUOTER_ABI = [
   },
 ] as const;
 
-/* --- IUniswapV4Router04 (config SWAP_ROUTER) --------------------------------
+/* --- Universal Router (Robinhood SWAP_ROUTER) -----------------------------
+   execute(commands, inputs, deadline). V4 swaps are command 0x10 (V4_SWAP)
+   with an inner action plan (see ./universal-router.ts). */
+export const UNIVERSAL_ROUTER_ABI = [
+  {
+    type: "function",
+    name: "execute",
+    stateMutability: "payable",
+    inputs: [
+      { name: "commands", type: "bytes" },
+      { name: "inputs", type: "bytes[]" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+/* --- Permit2 (V4.permit2) — Robinhood sells settle ERC-20 via Permit2 ----- */
+export const PERMIT2_ABI = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "token", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint160" },
+      { name: "expiration", type: "uint48" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "token", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [
+      { name: "amount", type: "uint160" },
+      { name: "expiration", type: "uint48" },
+      { name: "nonce", type: "uint48" },
+    ],
+  },
+] as const;
+
+/* --- IUniswapV4Router04 (Sepolia SWAP_ROUTER) -------------------------------
    Uniswap-V2-style single-pool swaps. zeroForOne=true is currency0→currency1
    (ETH→PYRE, a buy); false is PYRE→ETH (a sell). For a buy, pass the ETH amount
-   as both amountIn and msg.value. `receiver` gets the output. NOTE: confirm
-   against the deployed router before mainnet (params/order verified vs the
-   uniswap v4-router 04 interface; the read path is independently verified). */
+   as both amountIn and msg.value. `receiver` gets the output. */
 export const V4_ROUTER_ABI = [
   {
     type: "function",

@@ -31,9 +31,14 @@ export interface ProtocolStats {
   nextEpochAt: number; // ms timestamp of next hourly decay tick
   scalingFactor: number; // S(t), starts 1.0, falls over time
   stakingRatio: number; // 0..1 share of supply staked
+  totalStaked: bigint; // raw $PYRE currently staked (from logs)
   activeAcolytes: number;
   totalEthDistributed: bigint; // all-time ETH paid to participants (wei)
   pendingYieldPoolEth: bigint; // ETH collected into the reward pool, awaiting the next distribution (wei)
+  /** Cumulative buy-fee ETH the hook has routed to the yield pool (diamond). */
+  totalEthToYieldPool: bigint;
+  /** Cumulative buy-fee ETH the hook has routed to the team wallet (diamond). */
+  totalEthToTeam: bigint;
   volume24h: bigint; // 24h swap volume (wei of ETH)
   bonfire: BonfireState;
   burnRateSeries: SeriesPoint[]; // for the live burn-rate chart

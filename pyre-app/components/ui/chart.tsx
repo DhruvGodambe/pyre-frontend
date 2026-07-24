@@ -16,9 +16,10 @@ export function Sparkline({
   const max = Math.max(...values);
   const range = max - min || 1;
   const w = 100; // viewBox width units
+  const denom = Math.max(1, data.length - 1);
   const points = data
     .map((d, i) => {
-      const x = (i / (data.length - 1)) * w;
+      const x = (i / denom) * w;
       const y = height - ((d.value - min) / range) * height;
       return `${x.toFixed(2)},${y.toFixed(2)}`;
     })

@@ -36,11 +36,14 @@
                       a virtual-reserve model (L, sqrtP).
      getPoolState   → StateView.getSlot0 + getLiquidity → price, TVL, liquidity.
      getSwapBalances→ getBalance(native ETH) + PyreToken.balanceOf.
-     getApprovalState→ the custom router takes a PLAIN ERC-20 approval (NO Permit2):
-                      buy → not-required; sell → PYRE.allowance(addr, router).
-     approveToken   → PyreToken.approve(router, MaxUint256).
-     swap           → IUniswapV4Router04.swap{ExactTokensForTokens|TokensForExact
-                      Tokens}; buys send ETH as msg.value, sells need the approval.
+     getApprovalState→ Sepolia (V4Router04): plain ERC-20 allowance to router.
+                      Robinhood (Universal Router): ERC-20 → Permit2 + Permit2
+                      allowance for the UR. Buys: not-required (native ETH).
+     approveToken   → Sepolia: approve(router). Robinhood: approve(Permit2) then
+                      Permit2.approve(token, UR, max, expiration).
+     swap           → Sepolia: IUniswapV4Router04.swapExactTokensForTokens.
+                      Robinhood: UniversalRouter.execute(V4_SWAP) with the same
+                      PoolKey (hooks = diamond) as quotes.
 
    STILL APPROXIMATE (display only): the ETH/USD price is a keyless spot feed
    w/ constant fallback (swap for Chainlink before mainnet). The hook fee bps
@@ -74,7 +77,15 @@ import {
   completeQuestTask as completeQuestTaskApi,
   submitWallet as submitWalletApi,
 } from "../quests/client";
-import { maxUint256, parseAbiItem, type Hex } from "viem";
+import {
+  createPublicClient,
+  http,
+  maxUint256,
+  parseAbiItem,
+  type Hex,
+  type PublicClient,
+} from "viem";
+import { mainnet, sepolia } from "viem/chains";
 import {
   readContract,
   simulateContract,
@@ -86,13 +97,25 @@ import {
   switchChain,
 } from "wagmi/actions";
 import { wagmiConfig } from "../wagmi";
-import { CHAIN_ID, CONTRACTS, DEPLOY_ANCHOR, POOL, SWAP_ROUTER, TOKENS, V4 } from "../config";
+import {
+  CHAIN_ID,
+  CONTRACTS,
+  DEPLOY_ANCHOR,
+  POOL,
+  SWAP_ROUTER,
+  TOKENS,
+  USE_UNIVERSAL_ROUTER,
+  V4,
+} from "../config";
+import { robinhood } from "../chains";
 import { toNumber } from "../format";
 import {
   ERC20_ABI,
   STATE_VIEW_ABI,
   V4_QUOTER_ABI,
   V4_ROUTER_ABI,
+  UNIVERSAL_ROUTER_ABI,
+  PERMIT2_ABI,
   IMMOLATED_GATE_ABI,
   ACOLYTE_ABI,
   PYRE_TOKEN_ABI,
@@ -103,12 +126,14 @@ import {
   getPoolId,
   type PoolKey,
 } from "./abis";
+import { buildV4SwapExecuteArgs } from "./universal-router";
 import {
   getChainActivity,
   getChainHistory,
   getChainLeaderboard,
   getChainTopBurners,
   getChainAggregates,
+  type ChainAggregates,
 } from "./events";
 import {
   WAD,
@@ -120,6 +145,20 @@ import {
   bonfireState,
 } from "../constants";
 
+/** Dedicated read client for Observatory (bypasses wagmi). Same RPC as the
+    wallet transport; used so protocol stats never stall on connector setup. */
+const READ_RPC =
+  CHAIN_ID === 4663
+    ? (process.env.NEXT_PUBLIC_RPC_ROBINHOOD ?? "https://rpc.mainnet.chain.robinhood.com")
+    : CHAIN_ID === 11155111
+      ? (process.env.NEXT_PUBLIC_RPC_SEPOLIA ?? "https://sepolia.gateway.tenderly.co")
+      : (process.env.NEXT_PUBLIC_RPC_MAINNET ?? "https://cloudflare-eth.com");
+
+const readClient: PublicClient = createPublicClient({
+  chain: CHAIN_ID === 1 ? mainnet : CHAIN_ID === 4663 ? robinhood : sepolia,
+  transport: http(READ_RPC, { timeout: 12_000 }),
+});
+
 /* ---- Grand Exchange helpers ------------------------------------------------ */
 
 /** The active chain id, typed to the ids registered in wagmiConfig. */
@@ -129,6 +168,10 @@ const Q96 = 2n ** 96n;
 const QUOTE_TTL_MS = 30_000; // quote refresh window (~Uniswap)
 const GAS_GWEI = 8n; // testnet gas price assumption for the gas-cost display only
 const HIGH_IMPACT = 0.08; // 8%+ → surface a price-impact warning
+/** Permit2 amount/expiration ceilings (uint160 / uint48). */
+const MAX_UINT160 = (1n << 160n) - 1n;
+/** uint48 max — fits in JS safe integer; viem types expiration as number. */
+const MAX_UINT48 = Number((1n << 48n) - 1n);
 
 /** ETH/USD for the display-only USD fields. Keyless Coinbase spot, cached 60s,
     with a constant fallback so USD never blocks a swap. Replace with a Chainlink
@@ -154,6 +197,42 @@ function requirePool(): { key: PoolKey; poolId: Hex } {
   if (!key) throw new Error("Pool not configured: missing PYRE token / hook address.");
   if (!V4) throw new Error(`No Uniswap v4 deployment configured for chain ${CHAIN_ID}.`);
   return { key, poolId: getPoolId(key) };
+}
+
+function emptyChainAggregates(): ChainAggregates {
+  const now = Date.now();
+  const dayAgo = now - 24 * 3600_000;
+  const bucketMs = 3600_000;
+  const firstBucket = Math.floor(dayAgo / bucketMs) * bucketMs;
+  const burnRateSeries = [];
+  for (let t = firstBucket; t <= now; t += bucketMs) burnRateSeries.push({ t, value: 0 });
+  return {
+    totalBurned: 0n,
+    totalStaked: 0n,
+    activeAcolytes: 0,
+    totalEthDistributed: 0n,
+    volume24h: 0n,
+    burnRateSeries,
+  };
+}
+
+/** Last successful log-derived aggregates (burned / staked / volume / …). */
+let cachedAggregates: ChainAggregates | null = null;
+
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(t);
+        resolve(fallback);
+      }
+    );
+  });
 }
 
 /** sqrtPriceX96 → currency1-per-currency0 (PYRE per ETH; both 18 decimals). */
@@ -189,7 +268,11 @@ export class ChainDataSource implements DataSource {
   private startTime: bigint | null = null;
   private async getStartTime(token: Address): Promise<bigint> {
     if (this.startTime === null) {
-      this.startTime = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "protocolStartTime", args: [] });
+      this.startTime = await readClient.readContract({
+        address: token,
+        abi: PYRE_TOKEN_ABI,
+        functionName: "protocolStartTime",
+      });
     }
     return this.startTime;
   }
@@ -204,24 +287,48 @@ export class ChainDataSource implements DataSource {
     }
   }
 
-  // The Observatory's global stats. Direct views where they exist (supply,
-  // decay clock, scaling factor); everything the contracts have no getter for
-  // (burned, staked, Acolyte count, distributed $ETH, volume) comes from the
-  // event-log layer. pendingYieldPoolEth = PyreStaking's ETH balance: the hook
-  // pushes the yield share there and it sits until claimed.
+  // The Observatory's global stats. Live token/staking reads go through a
+  // dedicated viem client (not wagmi). Burned / staking-ratio / volume / ETH
+  // distributed come from event-log aggregates (no on-chain getters). Sync is
+  // capped (see events.ts) and waited on with a timeout so the panel still
+  // paints; a successful sync is cached for the next refetch.
   async getProtocolStats(): Promise<ProtocolStats> {
     const token = CONTRACTS.token;
     const staking = CONTRACTS.staking;
     if (!token) throw new Error("Token address not configured.");
-    const [totalSupply, epoch, decayIdx, startTime, agg, poolBal] = await Promise.all([
-      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "totalSupply", args: [] }),
-      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "currentEpoch", args: [] }),
-      readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "globalDecayIndex", args: [] }),
+    const fallbackAgg = cachedAggregates ?? emptyChainAggregates();
+    const aggPromise = getChainAggregates()
+      .then((a) => {
+        cachedAggregates = a;
+        return a;
+      })
+      .catch(() => fallbackAgg);
+
+    const hook = CONTRACTS.hook;
+    const [totalSupply, epoch, decayIdx, startTime, poolBal, agg, hookFees] = await Promise.all([
+      readClient.readContract({ address: token, abi: PYRE_TOKEN_ABI, functionName: "totalSupply" }),
+      readClient.readContract({ address: token, abi: PYRE_TOKEN_ABI, functionName: "currentEpoch" }),
+      readClient.readContract({ address: token, abi: PYRE_TOKEN_ABI, functionName: "globalDecayIndex" }),
       this.getStartTime(token),
-      getChainAggregates(),
-      staking ? getBalance(wagmiConfig, { address: staking, chainId: CHAIN }) : Promise.resolve({ value: 0n }),
+      staking ? readClient.getBalance({ address: staking }) : Promise.resolve(0n),
+      withTimeout(aggPromise, 20_000, fallbackAgg),
+      hook
+        ? readClient
+            .readContract({ address: hook, abi: DIAMOND_ABI, functionName: "getTotalEthDistributed" })
+            .catch(() => [0n, 0n] as const)
+        : Promise.resolve([0n, 0n] as const),
     ]);
-    const decayBps = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: PYRE_TOKEN_ABI, functionName: "decayRateBps", args: [epoch] });
+    const decayBps = await readClient.readContract({
+      address: token,
+      abi: PYRE_TOKEN_ABI,
+      functionName: "decayRateBps",
+      args: [epoch],
+    });
+    const [totalEthToYieldPool, totalEthToTeam] = hookFees;
+    // Prefer the diamond's cumulative yield routing over log-derived RewardAdded
+    // (more accurate for dust fees; logs can lag).
+    const totalEthDistributed =
+      totalEthToYieldPool > 0n ? totalEthToYieldPool : agg.totalEthDistributed;
     const halving = BigInt(HALVING_INTERVAL_EPOCHS);
     const supply = toNumber(totalSupply);
     return {
@@ -234,9 +341,12 @@ export class ChainDataSource implements DataSource {
       nextEpochAt: Number(startTime + (epoch + 1n) * 3600n) * 1000,
       scalingFactor: toNumber(decayIdx), // WAD-scaled index, starts at 1.0
       stakingRatio: supply > 0 ? clamp(toNumber(agg.totalStaked) / supply, 0, 1) : 0,
+      totalStaked: agg.totalStaked,
       activeAcolytes: agg.activeAcolytes,
-      totalEthDistributed: agg.totalEthDistributed,
-      pendingYieldPoolEth: poolBal.value,
+      totalEthDistributed,
+      pendingYieldPoolEth: poolBal,
+      totalEthToYieldPool,
+      totalEthToTeam,
       volume24h: agg.volume24h,
       bonfire: bonfireState(agg.totalBurned),
       burnRateSeries: agg.burnRateSeries,
@@ -570,8 +680,44 @@ export class ChainDataSource implements DataSource {
     if (amount <= 0n) return { status: "ready" };
     const token = CONTRACTS.token;
     if (!token || !SWAP_ROUTER) throw new Error("Pool not configured: missing PYRE token / router address.");
-    // The custom router takes a plain ERC-20 approval (no Permit2 / no permit step).
-    const allowance = await readContract(wagmiConfig, { chainId: CHAIN, address: token, abi: ERC20_ABI, functionName: "allowance", args: [address, SWAP_ROUTER] });
+
+    if (USE_UNIVERSAL_ROUTER) {
+      // UR settles ERC-20 via Permit2: need token→Permit2 allowance AND
+      // Permit2 allowance for the Universal Router (unexpired, covering amount).
+      if (!V4) throw new Error(`No Uniswap v4 deployment configured for chain ${CHAIN_ID}.`);
+      const permit2 = V4.permit2;
+      const [erc20Allowance, permit2Allowance] = await Promise.all([
+        readContract(wagmiConfig, {
+          chainId: CHAIN,
+          address: token,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address, permit2],
+        }),
+        readContract(wagmiConfig, {
+          chainId: CHAIN,
+          address: permit2,
+          abi: PERMIT2_ABI,
+          functionName: "allowance",
+          args: [address, token, SWAP_ROUTER],
+        }),
+      ]);
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const [p2Amount, p2Expiration] = permit2Allowance;
+      const permit2Ok = p2Amount >= amount && p2Expiration >= now;
+      return erc20Allowance >= amount && permit2Ok
+        ? { status: "ready" }
+        : { status: "needs-approval" };
+    }
+
+    // V4Router04: plain ERC-20 approval to the router.
+    const allowance = await readContract(wagmiConfig, {
+      chainId: CHAIN,
+      address: token,
+      abi: ERC20_ABI,
+      functionName: "allowance",
+      args: [address, SWAP_ROUTER],
+    });
     return allowance >= amount ? { status: "ready" } : { status: "needs-approval" };
   }
   // Quests are off-chain + permanent, already live, even before contracts ship.
@@ -720,6 +866,48 @@ export class ChainDataSource implements DataSource {
     if (!token || !SWAP_ROUTER) return { ok: false, error: "Pool not configured: missing PYRE token / router address." };
     try {
       await this.ensureChain();
+
+      if (USE_UNIVERSAL_ROUTER) {
+        if (!V4) return { ok: false, error: `No Uniswap v4 deployment configured for chain ${CHAIN_ID}.` };
+        const permit2 = V4.permit2;
+        // 1) ERC-20 approve Permit2 (if needed)
+        const erc20Allowance = await readContract(wagmiConfig, {
+          chainId: CHAIN,
+          address: token,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address, permit2],
+        });
+        if (erc20Allowance < maxUint256 / 2n) {
+          const approveHash = await writeContract(wagmiConfig, {
+            chainId: CHAIN,
+            account: address,
+            address: token,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [permit2, maxUint256],
+          });
+          const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+            chainId: CHAIN,
+            hash: approveHash,
+          });
+          if (approveReceipt.status !== "success") {
+            return { ok: false, error: "Approving PYRE for Permit2 failed." };
+          }
+        }
+        // 2) Permit2 allowance for Universal Router
+        const hash = await writeContract(wagmiConfig, {
+          chainId: CHAIN,
+          account: address,
+          address: permit2,
+          abi: PERMIT2_ABI,
+          functionName: "approve",
+          args: [token, SWAP_ROUTER, MAX_UINT160, MAX_UINT48],
+        });
+        const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+        return { ok: receipt.status === "success", hash };
+      }
+
       const hash = await writeContract(wagmiConfig, {
         chainId: CHAIN,
         account: address,
@@ -744,7 +932,31 @@ export class ChainDataSource implements DataSource {
     try {
       await this.ensureChain();
       let hash: Hex;
-      if (p.kind === "exactIn") {
+
+      if (USE_UNIVERSAL_ROUTER) {
+        // Same PoolKey as quotes — hooks = diamond — so PoolManager invokes
+        // beforeSwap/afterSwap on the PYRE hook.
+        if (key.hooks.toLowerCase() !== CONTRACTS.hook?.toLowerCase()) {
+          return { ok: false, error: "PoolKey.hooks does not match the configured PYRE diamond." };
+        }
+        const exec = buildV4SwapExecuteArgs({
+          kind: p.kind,
+          zeroForOne,
+          key,
+          amount: p.amount,
+          limitAmount: p.limitAmount,
+          deadline,
+        });
+        hash = await writeContract(wagmiConfig, {
+          chainId: CHAIN,
+          account: address,
+          address: SWAP_ROUTER,
+          abi: UNIVERSAL_ROUTER_ABI,
+          functionName: "execute",
+          args: [exec.commands, exec.inputs, exec.deadline],
+          value: exec.value,
+        });
+      } else if (p.kind === "exactIn") {
         // amount = exact input; limitAmount = min output (slippage floor).
         hash = await writeContract(wagmiConfig, {
           chainId: CHAIN,

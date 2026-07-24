@@ -25,7 +25,14 @@ export function ObservatoryPanel() {
 
   return (
     <Panel title="The Observatory" tagline="Live protocol stats" frame="forged" bg="stone">
-      <StateView query={stats}>
+      <StateView
+        query={stats}
+        loading={
+          <p className="text-text-2 text-sm py-8 text-center">
+            Reading the chain… (burn / stake totals sync from logs shortly after)
+          </p>
+        }
+      >
         {(s) => (
           /* Two columns across the wide interior: the live readings on the left
              (the two headline readouts + the reading grid), the trends on the
@@ -47,9 +54,11 @@ export function ObservatoryPanel() {
                 <div className="orn-box flex flex-col justify-between gap-2">
                   <span className="eyebrow">Reward pool</span>
                   <div className="tabular text-3xl text-brand leading-none">
-                    {formatEth(s.pendingYieldPoolEth, 2)}
+                    {formatEth(s.pendingYieldPoolEth)}
                   </div>
-                  <Badge>{formatEth(s.totalEthDistributed, 0)} all-time</Badge>
+                  <Badge>
+                    {formatEth(s.totalEthToYieldPool)} to yield · {formatEth(s.totalEthToTeam)} to team
+                  </Badge>
                 </div>
               </div>
 
@@ -57,10 +66,15 @@ export function ObservatoryPanel() {
                 {[
                   <Stat key="s" label="Supply remaining" value={formatToken(s.totalSupply)} />,
                   <Stat key="b" label="Burned all-time" value={formatToken(s.totalBurned)} accent />,
-                  <Stat key="r" label="Staking ratio" value={formatPercent(s.stakingRatio)} />,
+                  <Stat
+                    key="r"
+                    label="Staking ratio"
+                    value={formatPercent(s.stakingRatio)}
+                    sub={`${formatToken(s.totalStaked)} $PYRE staked`}
+                  />,
                   <Stat key="a" label="Active Acolytes" value={s.activeAcolytes.toLocaleString()} />,
                   <Stat key="sc" label="S(t) scaling" value={s.scalingFactor.toFixed(4)} />,
-                  <Stat key="d" label="$ETH distributed" value={formatEth(s.totalEthDistributed, 0)} />,
+                  <Stat key="d" label="$ETH to yield (all-time)" value={formatEth(s.totalEthToYieldPool)} />,
                 ].map((tile, i) => (
                   <div key={i} className="orn-box flex items-center">
                     {tile}

@@ -12,24 +12,36 @@ export function toNumber(value: bigint, decimals = DECIMALS): number {
   return Number(value) / 10 ** decimals;
 }
 
-/** Compact token amount, e.g. 1_284_500 → "1.28M". */
+/** Compact token amount, e.g. 1_284_500 → "1.28M".
+ *  Small nonzero balances keep enough fraction digits so 0.001 doesn't
+ *  round to "0" (default maxFrac is 2). */
 export function formatToken(
   value: bigint,
   opts: { decimals?: number; maxFrac?: number; compact?: boolean } = {}
 ): string {
   const { decimals = DECIMALS, maxFrac = 2, compact = true } = opts;
   const n = toNumber(value, decimals);
+  let frac = maxFrac;
+  if (value > 0n && n > 0 && n < 10 ** -maxFrac) {
+    // Keep up to 6 dp so dust stakes remain visible; never round a positive
+    // balance all the way to zero.
+    frac = Math.min(6, Math.max(maxFrac, Math.ceil(-Math.log10(n))));
+  }
   return new Intl.NumberFormat("en-US", {
     notation: compact && n >= 10_000 ? "compact" : "standard",
-    maximumFractionDigits: maxFrac,
+    maximumFractionDigits: frac,
   }).format(n);
 }
 
-/** ETH amount (18 decimals) → "0.318 $ETH". (Brand style: ETH is shown as $ETH.) */
+/** ETH amount (18 decimals) → "0.318 $ETH". (Brand style: ETH is shown as $ETH.)
+ *  Tiny nonzero amounts keep extra fraction digits so dust pairs don't show as "0". */
 export function formatEth(value: bigint, maxFrac = 4): string {
-  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: maxFrac }).format(
-    toNumber(value)
-  )} $ETH`;
+  const n = toNumber(value);
+  let frac = maxFrac;
+  if (value > 0n && n > 0 && n < 10 ** -maxFrac) {
+    frac = Math.min(12, Math.max(maxFrac, Math.ceil(-Math.log10(n))));
+  }
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: frac }).format(n)} $ETH`;
 }
 
 /** 12.5 → "$12.50"; 1_284_500 → "$1.28M". Small values keep cents. */
@@ -43,11 +55,17 @@ export function formatUsd(value: number, maxFrac = 2): string {
   }).format(value);
 }
 
-/** 0.0045 → "0.45%". ratio=true treats input as already a fraction. */
+/** 0.0045 → "0.45%". Tiny nonzero ratios keep extra digits so dust stakes
+ *  don't display as "0%" (e.g. 0.002 / 10M ≈ 0.00000002%). */
 export function formatPercent(value: number, maxFrac = 2): string {
+  const pct = value * 100;
+  let frac = maxFrac;
+  if (value > 0 && pct > 0 && pct < 10 ** -maxFrac) {
+    frac = Math.min(8, Math.max(maxFrac, Math.ceil(-Math.log10(pct))));
+  }
   return `${new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: maxFrac,
-  }).format(value * 100)}%`;
+    maximumFractionDigits: frac,
+  }).format(pct)}%`;
 }
 
 /** 0x1234…abcd */
