@@ -13,10 +13,9 @@
                                             leaderboard row
                    RewardAdded              all-time $ETH routed to the pool
                    RewardPaid               yield claims
-     FireSpirit    SpiritMinted/Upgraded    Acolyte mints + tier-ups (the
-                                            DEPLOYED NFT is still "FireSpirit";
-                                            event names follow the bytecode,
-                                            not the rename on main)
+     Acolyte       AcolyteMinted/Upgraded   Acolyte mints + tier-ups
+                   (SpiritMinted/Upgraded   kept as aliases for older Sepolia
+                                            deploys that still use those names)
      ImmolatedGate Immolated                Ascend rites
      PoolManager   Swap (our poolId)        swap feed + 24h volume
 
@@ -76,16 +75,57 @@ const EV = {
   rewardAdded: parseAbiItem("event RewardAdded(uint256 reward, uint256 duration)"),
   rewardPaid: parseAbiItem("event RewardPaid(address indexed account, uint256 reward)"),
   spiritMinted: parseAbiItem(
-    "event SpiritMinted(address indexed wallet, uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
+    "event AcolyteMinted(address indexed wallet, uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
   ),
   spiritUpgraded: parseAbiItem(
-    "event SpiritUpgraded(uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
+    "event AcolyteUpgraded(uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
   ),
   immolated: parseAbiItem("event Immolated(address indexed account, uint256 burnAmount)"),
   swap: parseAbiItem(
     "event Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)"
   ),
 } as const;
+
+/** Older Sepolia bytecode still emits Spirit*; fetched alongside Acolyte*. */
+const LEGACY_SPIRIT = [
+  parseAbiItem(
+    "event SpiritMinted(address indexed wallet, uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
+  ),
+  parseAbiItem(
+    "event SpiritUpgraded(uint256 indexed tokenId, uint8 stage, uint256 cumulativeBurn)"
+  ),
+] as const;
+
+/** viem returns PascalCase ABI event names; our Row/switch keys are camelCase.
+    Map both, and fold legacy Spirit* → spiritMinted/spiritUpgraded. */
+function rowName(eventName: string): keyof typeof EV | null {
+  switch (eventName) {
+    case "DripClaimed":
+      return "dripClaimed";
+    case "Staked":
+      return "staked";
+    case "Unstaked":
+      return "unstaked";
+    case "RewardAdded":
+      return "rewardAdded";
+    case "RewardPaid":
+      return "rewardPaid";
+    case "AcolyteMinted":
+    case "SpiritMinted":
+      return "spiritMinted";
+    case "AcolyteUpgraded":
+    case "SpiritUpgraded":
+      return "spiritUpgraded";
+    case "Immolated":
+      return "immolated";
+    case "Swap":
+      return "swap";
+    case "Transfer":
+      return "burn";
+    default:
+      return null;
+  }
+}
 
 /* One normalized row for every log we keep. */
 interface Row {
@@ -181,6 +221,7 @@ async function fetchRange(from: bigint, to: bigint): Promise<Row[]> {
           EV.rewardPaid,
           EV.spiritMinted,
           EV.spiritUpgraded,
+          ...LEGACY_SPIRIT,
           EV.immolated,
         ],
         fromBlock: f,
@@ -207,9 +248,11 @@ async function fetchRange(from: bigint, to: bigint): Promise<Row[]> {
   for (const l of protocol) {
     // token also emits its own Staked/Unstaked (different topics, filtered out
     // above); the staking contract's pair is the one we keep, so no dedupe needed.
+    const name = rowName(l.eventName);
+    if (!name) continue;
     const a = l.args as Record<string, unknown>;
     rows.push({
-      name: l.eventName as keyof typeof EV,
+      name,
       address: l.address as Address,
       block: l.blockNumber!,
       logIndex: l.logIndex!,

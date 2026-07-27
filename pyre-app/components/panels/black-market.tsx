@@ -26,6 +26,7 @@ import { ImageButton, ImageArt, type ImageButtonName } from "@/components/ui/ima
 import { GameIcon, tierCrest } from "@/components/ui/game-icon";
 import { formatEth, formatAgo, shortAddress, formatToken } from "@/lib/format";
 import { STAGES, acolyteName, type Stage } from "@/lib/constants";
+import { canHover } from "@/lib/can-hover";
 import type { MarketFilter, MarketSort } from "@/lib/datasource";
 import type { Acolyte, MarketActivityKind } from "@/lib/types";
 
@@ -405,6 +406,7 @@ function ActivityTab({ filter, filterActive }: { filter: MarketFilter; filterAct
    link out to list it on the wrapped marketplace. */
 function YourAcolyteTab() {
   const acolyte = useAcolyte();
+  const [sellHover, setSellHover] = useState(false);
   return (
     <RequireWallet message="Connect your wallet to see the Acolyte you own.">
       <StateView query={acolyte}>
@@ -450,10 +452,14 @@ function YourAcolyteTab() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Sell on the Black Market (opens OpenSea)"
-                  className="group block"
+                  /* Mouse only: lighting art on mouseenter made Safari swallow the first tap. */
+                  onMouseEnter={() => canHover() && setSellHover(true)}
+                  onMouseLeave={() => setSellHover(false)}
+                  onFocus={() => setSellHover(true)}
+                  onBlur={() => setSellHover(false)}
+                  className="block transition-transform duration-fast hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <ImageArt name="sellblackmarket" width="100%" className="group-hover:hidden" />
-                  <ImageArt name="sellblackmarket" width="100%" hover className="hidden group-hover:block" />
+                  <ImageArt name="sellblackmarket" width="100%" hover={sellHover} />
                 </a>
               </div>
             </div>
