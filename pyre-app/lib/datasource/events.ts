@@ -151,6 +151,13 @@ const store = {
   headTsMs: 0,
   txFrom: new Map<Hex, Address>(), // swap tx hash → tx.from
   inflight: null as Promise<void> | null,
+  /** Per-wallet backfill: indexed getLogs from DEPLOY_ANCHOR (global sync only
+      keeps a recent window so feeds stay fast; personal history needs the full
+      lifetime). */
+  userHistory: new Map<
+    string,
+    { syncedTo: bigint; rows: Row[]; inflight: Promise<void> | null }
+  >(),
 };
 
 function client() {
@@ -386,7 +393,7 @@ function toActivity(r: Row, spiritOwner: Map<bigint, Address>): ActivityEvent | 
         note: `${STAGES[appStage(r.stage)].name} minted`,
       };
     case "spiritUpgraded": {
-      const owner = spiritOwner.get(r.tokenId);
+      const owner = r.account ?? spiritOwner.get(r.tokenId);
       if (!owner) return null;
       return {
         ...base,
@@ -432,14 +439,309 @@ export async function getChainActivity(): Promise<ActivityEvent[]> {
   return out;
 }
 
+/** Address-filtered logs for one wallet, from deploy → head. Indexed topics
+    keep this cheap even across millions of blocks (unlike the unfiltered feed
+    sync, which only keeps the last MAX_FIRST_SYNC_SPAN). */
+async function fetchUserRange(wallet: Address, from: bigint, to: bigint): Promise<Row[]> {
+  const c = client();
+  const token = CONTRACTS.token!;
+  const staking = CONTRACTS.staking;
+  const nft = CONTRACTS.nft;
+  const immolated = CONTRACTS.immolated;
+  const rows: Row[] = [];
+
+  const burns = await getLogsAdaptive(
+    (f, t) =>
+      c.getLogs({
+        address: token,
+        event: EV.burn,
+        args: { from: wallet, to: zeroAddress },
+        fromBlock: f,
+        toBlock: t,
+      }),
+    from,
+    to
+  );
+  for (const l of burns) {
+    rows.push({
+      name: "burn",
+      address: l.address as Address,
+      block: l.blockNumber!,
+      logIndex: l.logIndex!,
+      txHash: l.transactionHash!,
+      account: l.args.from as Address,
+      amount: l.args.value as bigint,
+      weight: 0n,
+      stage: 0,
+      tokenId: 0n,
+      amount0: 0n,
+    });
+  }
+
+  // DripClaimed lives on the token, not staking.
+  const drips = await getLogsAdaptive(
+    (f, t) =>
+      c.getLogs({
+        address: token,
+        event: EV.dripClaimed,
+        args: { account: wallet },
+        fromBlock: f,
+        toBlock: t,
+      }),
+    from,
+    to
+  );
+  for (const l of drips) {
+    rows.push({
+      name: "dripClaimed",
+      address: l.address as Address,
+      block: l.blockNumber!,
+      logIndex: l.logIndex!,
+      txHash: l.transactionHash!,
+      account: wallet,
+      amount: l.args.amount as bigint,
+      weight: 0n,
+      stage: 0,
+      tokenId: 0n,
+      amount0: 0n,
+    });
+  }
+
+  if (staking) {
+    const pushStaking = (
+      name: keyof typeof EV,
+      l: {
+        address: Address;
+        blockNumber: bigint | null;
+        logIndex: number | null;
+        transactionHash: Hex | null;
+        args: Record<string, unknown>;
+      }
+    ) => {
+      rows.push({
+        name,
+        address: l.address,
+        block: l.blockNumber!,
+        logIndex: l.logIndex!,
+        txHash: l.transactionHash!,
+        account: wallet,
+        amount: (l.args.amount ?? l.args.reward ?? 0n) as bigint,
+        weight: (l.args.weight ?? 0n) as bigint,
+        stage: 0,
+        tokenId: 0n,
+        amount0: 0n,
+      });
+    };
+    for (const l of await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({ address: staking, event: EV.staked, args: { account: wallet }, fromBlock: f, toBlock: t }),
+      from,
+      to
+    )) {
+      pushStaking("staked", l as never);
+    }
+    for (const l of await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({ address: staking, event: EV.unstaked, args: { account: wallet }, fromBlock: f, toBlock: t }),
+      from,
+      to
+    )) {
+      pushStaking("unstaked", l as never);
+    }
+    for (const l of await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({ address: staking, event: EV.rewardPaid, args: { account: wallet }, fromBlock: f, toBlock: t }),
+      from,
+      to
+    )) {
+      pushStaking("rewardPaid", l as never);
+    }
+  }
+
+  if (nft) {
+    const tokenIds: bigint[] = [];
+    const pushMint = (l: {
+      address: Address;
+      blockNumber: bigint | null;
+      logIndex: number | null;
+      transactionHash: Hex | null;
+      args: { wallet?: Address; tokenId?: bigint; stage?: number; cumulativeBurn?: bigint };
+    }) => {
+      const tokenId = l.args.tokenId ?? 0n;
+      tokenIds.push(tokenId);
+      rows.push({
+        name: "spiritMinted",
+        address: l.address,
+        block: l.blockNumber!,
+        logIndex: l.logIndex!,
+        txHash: l.transactionHash!,
+        account: wallet,
+        amount: (l.args.cumulativeBurn ?? 0n) as bigint,
+        weight: 0n,
+        stage: Number(l.args.stage ?? 0),
+        tokenId,
+        amount0: 0n,
+      });
+    };
+    for (const l of await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({ address: nft, event: EV.spiritMinted, args: { wallet }, fromBlock: f, toBlock: t }),
+      from,
+      to
+    )) {
+      pushMint(l as never);
+    }
+    for (const l of await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({ address: nft, event: LEGACY_SPIRIT[0], args: { wallet }, fromBlock: f, toBlock: t }),
+      from,
+      to
+    )) {
+      pushMint(l as never);
+    }
+
+    // Upgrades are keyed by tokenId, not wallet — pull each minted id.
+    for (const tokenId of tokenIds) {
+      const pushUpgrade = (l: {
+        address: Address;
+        blockNumber: bigint | null;
+        logIndex: number | null;
+        transactionHash: Hex | null;
+        args: { tokenId?: bigint; stage?: number; cumulativeBurn?: bigint };
+      }) => {
+        rows.push({
+          name: "spiritUpgraded",
+          address: l.address,
+          block: l.blockNumber!,
+          logIndex: l.logIndex!,
+          txHash: l.transactionHash!,
+          account: wallet,
+          amount: (l.args.cumulativeBurn ?? 0n) as bigint,
+          weight: 0n,
+          stage: Number(l.args.stage ?? 0),
+          tokenId: l.args.tokenId ?? tokenId,
+          amount0: 0n,
+        });
+      };
+      for (const l of await getLogsAdaptive(
+        (f, t) =>
+          c.getLogs({ address: nft, event: EV.spiritUpgraded, args: { tokenId }, fromBlock: f, toBlock: t }),
+        from,
+        to
+      )) {
+        pushUpgrade(l as never);
+      }
+      for (const l of await getLogsAdaptive(
+        (f, t) =>
+          c.getLogs({ address: nft, event: LEGACY_SPIRIT[1], args: { tokenId }, fromBlock: f, toBlock: t }),
+        from,
+        to
+      )) {
+        pushUpgrade(l as never);
+      }
+    }
+  }
+
+  if (immolated) {
+    const imm = await getLogsAdaptive(
+      (f, t) =>
+        c.getLogs({
+          address: immolated,
+          event: EV.immolated,
+          args: { account: wallet },
+          fromBlock: f,
+          toBlock: t,
+        }),
+      from,
+      to
+    );
+    for (const l of imm) {
+      rows.push({
+        name: "immolated",
+        address: l.address as Address,
+        block: l.blockNumber!,
+        logIndex: l.logIndex!,
+        txHash: l.transactionHash!,
+        account: wallet,
+        amount: l.args.burnAmount as bigint,
+        weight: 0n,
+        stage: 0,
+        tokenId: 0n,
+        amount0: 0n,
+      });
+    }
+  }
+
+  return rows;
+}
+
+async function syncUserHistory(wallet: Address): Promise<void> {
+  if (!DEPLOY_ANCHOR || !CONTRACTS.token) return;
+  const key = wallet.toLowerCase();
+  let entry = store.userHistory.get(key);
+  if (!entry) {
+    entry = { syncedTo: 0n, rows: [], inflight: null };
+    store.userHistory.set(key, entry);
+  }
+  if (entry.inflight) return entry.inflight;
+
+  entry.inflight = (async () => {
+    const c = client();
+    const head = await c.getBlock();
+    store.headBlock = head.number;
+    store.headTsMs = Number(head.timestamp) * 1000;
+    let from = entry!.syncedTo === 0n ? DEPLOY_ANCHOR!.block : entry!.syncedTo + 1n;
+    if (from > head.number) return;
+    const seen = new Set(entry!.rows.map(rowKey));
+    // Larger chunks: address-filtered logs are sparse.
+    const USER_CHUNK = 100_000n;
+    while (from <= head.number) {
+      const to = from + USER_CHUNK - 1n > head.number ? head.number : from + USER_CHUNK - 1n;
+      const batch = await fetchUserRange(wallet, from, to);
+      for (const r of batch) if (!seen.has(rowKey(r))) entry!.rows.push(r);
+      entry!.syncedTo = to;
+      from = to + 1n;
+    }
+    entry!.rows.sort((x, y) =>
+      x.block === y.block ? x.logIndex - y.logIndex : x.block < y.block ? -1 : 1
+    );
+  })();
+
+  try {
+    await entry.inflight;
+  } finally {
+    entry.inflight = null;
+  }
+}
+
 export async function getChainHistory(address: Address): Promise<ActivityEvent[]> {
-  await sync();
+  // Warm the recent global window (swaps live here) + full wallet backfill.
+  await Promise.all([sync(), syncUserHistory(address)]);
   await resolveSwapSenders();
-  const owners = spiritOwners();
+
   const me = address.toLowerCase();
+  const owners = spiritOwners();
+  const entry = store.userHistory.get(me);
+  const merged = new Map<string, Row>();
+  for (const r of entry?.rows ?? []) merged.set(rowKey(r), r);
+  for (const r of store.rows) {
+    // Swaps need tx.from resolution; stake/burn/mint already covered by backfill.
+    if (r.name === "swap") merged.set(rowKey(r), r);
+  }
+
+  const rows = [...merged.values()].sort((x, y) =>
+    x.block === y.block ? x.logIndex - y.logIndex : x.block < y.block ? -1 : 1
+  );
+
+  // Upgrades in the user backfill already carry account=wallet; still seed
+  // spiritOwners from mint rows so any store-sourced upgrades resolve.
+  for (const r of rows) {
+    if (r.name === "spiritMinted" && r.account) owners.set(r.tokenId, r.account);
+  }
+
   const out: ActivityEvent[] = [];
-  for (let i = store.rows.length - 1; i >= 0; i--) {
-    const evt = toActivity(store.rows[i], owners);
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const evt = toActivity(rows[i], owners);
     if (evt && evt.address.toLowerCase() === me) out.push(evt);
   }
   return out;
