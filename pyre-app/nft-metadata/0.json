@@ -1,0 +1,14 @@
+{
+  "name": "Ember Acolyte",
+  "description": "The first mark of the fire. Forged when cumulative burns reach the Ember threshold — proof you gave something to the flame.\n\nPyre Acolytes are soulbound progression NFTs earned by burning $PYRE.\nTier rises with cumulative burn and never falls. LP burners and Immolated\nmembers carry additional yield marks on top of their stage.",
+  "image": "ipfs://PENDING_ACOLYTE_ART",
+  "external_url": "https://pyreprotocol.com",
+  "background_color": "1a0f0a",
+  "attributes": [
+    { "trait_type": "Stage", "value": "EMBER" },
+    { "trait_type": "Stage Rank", "value": 1, "display_type": "number" },
+    { "trait_type": "Yield Multiplier", "value": "1x" },
+    { "trait_type": "Burn Threshold", "value": "10,000 PYRE" },
+    { "trait_type": "Collection", "value": "Pyre Acolyte" }
+  ]
+}

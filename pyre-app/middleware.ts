@@ -78,5 +78,5 @@ export const config = {
   // assets (world art/audio/video, fonts, token logos), stays open and cacheable.
   // The kingdom's own static assets live at the top level (/world, /tokens), not
   // under /kingdom, so they are not caught here.
-  matcher: ["/kingdom", "/kingdom/:path*", "/api/quests/:path*"],
+  matcher: ["/kingdom", "/kingdom/:path*", "/api/quests/:path*", "/admin", "/admin/:path*", "/api/nft/:path*"],
 };

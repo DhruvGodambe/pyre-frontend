@@ -249,6 +249,17 @@ export const useApproveToken = () =>
 export const useSwap = () =>
   useTx<SwapParams>((a, params) => ds().swap(a, params), SWAP_KEYS);
 
+/** Admin: set Acolyte metadata baseURI after pinning stage JSON to Pinata. */
+export const useSetAcolyteBaseURI = () =>
+  useTx<string>((a, baseURI) => ds().setAcolyteBaseURI(a, baseURI), () => [["acolyte-base-uri"]]);
+
+export function useAcolyteBaseURI() {
+  return useQuery({
+    queryKey: ["acolyte-base-uri"],
+    queryFn: () => ds().getAcolyteBaseURI(),
+  });
+}
+
 /* --- Quest funnel (no wallet required, uses an anonymous session) -------- */
 
 /** Generic quest mutation: no connected wallet needed; refreshes the task list

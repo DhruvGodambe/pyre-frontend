@@ -986,6 +986,45 @@ export class ChainDataSource implements DataSource {
       return { ok: false, error: errMsg(e) };
     }
   }
+
+  async getAcolyteBaseURI(): Promise<string> {
+    const nft = CONTRACTS.nft;
+    if (!nft) return "";
+    try {
+      return await readContract(wagmiConfig, {
+        chainId: CHAIN,
+        address: nft,
+        abi: ACOLYTE_ABI,
+        functionName: "baseURI",
+      });
+    } catch {
+      // Pre-upgrade deployments have no baseURI selector yet.
+      return "";
+    }
+  }
+
+  async setAcolyteBaseURI(address: Address, baseURI: string): Promise<TxResult> {
+    const nft = CONTRACTS.nft;
+    if (!nft) return { ok: false, error: "Acolyte (NFT) address not configured." };
+    const uri = baseURI.trim();
+    if (!uri) return { ok: false, error: "baseURI is empty." };
+    try {
+      await this.ensureChain();
+      const hash = await writeContract(wagmiConfig, {
+        chainId: CHAIN,
+        account: address,
+        address: nft,
+        abi: ACOLYTE_ABI,
+        functionName: "setBaseURI",
+        args: [uri],
+      });
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+      return { ok: receipt.status === "success", hash };
+    } catch (e) {
+      return { ok: false, error: errMsg(e) };
+    }
+  }
+
   completeQuestTask(id: string): Promise<TxResult> { return completeQuestTaskApi(id); }
   submitWallet(t: string): Promise<TxResult> { return submitWalletApi(t); }
 }

@@ -780,6 +780,18 @@ export class MockDataSource implements DataSource {
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 
+  private mockBaseURI = "";
+
+  async getAcolyteBaseURI(): Promise<string> {
+    return this.mockBaseURI;
+  }
+
+  async setAcolyteBaseURI(_address: Address, baseURI: string): Promise<TxResult> {
+    await wait(TX_MS);
+    this.mockBaseURI = baseURI.trim();
+    return { ok: true, hash: `0x${randHex(64)}` };
+  }
+
   completeQuestTask(taskId: string): Promise<TxResult> {
     return completeQuestTaskApi(taskId);
   }

@@ -82,6 +82,15 @@ export const ACOLYTE_ABI = [
   { type: "function", name: "nftStageMultiplier", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "lpBurners", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "bool" }] },
   { type: "function", name: "pendingBurn", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  // Metadata: admin sets IPFS folder prefix; tokenURI = baseURI + stage (0-3) + ".json"
+  { type: "function", name: "baseURI", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { type: "function", name: "tokenURI", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "string" }] },
+  { type: "function", name: "setBaseURI", stateMutability: "nonpayable", inputs: [{ name: "newBaseURI", type: "string" }], outputs: [] },
+  {
+    type: "event",
+    name: "BaseURISet",
+    inputs: [{ name: "baseURI", type: "string", indexed: false }],
+  },
 ] as const;
 
 /* --- PyreHookDiamond (CONTRACTS.hook): fee getters + the LP-burn rite -------

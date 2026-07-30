@@ -103,6 +103,10 @@ export interface DataSource {
   /** Approve PYRE to Permit2 (sell side). No-op/native on the buy side. */
   approveToken(address: Address): Promise<TxResult>;
   swap(address: Address, params: SwapParams): Promise<TxResult>;
+  /** Admin-only: set Acolyte metadata base URI (`ipfs://<dirCid>/`). */
+  setAcolyteBaseURI(address: Address, baseURI: string): Promise<TxResult>;
+  /** Current on-chain Acolyte baseURI (empty if unset). */
+  getAcolyteBaseURI(): Promise<string>;
 
   /* --- Quest funnel ---------------------------------------------------- */
   completeQuestTask(taskId: string): Promise<TxResult>;
