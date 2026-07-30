@@ -19,7 +19,7 @@ import { useWallet } from "./wallet";
 import { CHAIN_ID } from "./config";
 import { useTargetChain } from "./target-chain";
 import { fetchQuestLeaderboard, fetchReferral } from "./quests/client";
-import type { MarketFilter, SwapParams } from "./datasource";
+import type { MarketFilter, SwapParams, CreateLpParams } from "./datasource";
 import type { Address, SwapDirection, SwapQuoteParams, QuestTask } from "./types";
 
 const ds = () => getDataSource();
@@ -248,6 +248,10 @@ export const useApproveToken = () =>
 // mutate(SwapParams)
 export const useSwap = () =>
   useTx<SwapParams>((a, params) => ds().swap(a, params), SWAP_KEYS);
+
+/** Mint a full-range LP NFT in the Pyre Uniswap v4 pool (PositionManager). */
+export const useCreateLp = () =>
+  useTx<CreateLpParams>((a, params) => ds().createLpPosition(a, params), SWAP_KEYS);
 
 /** Admin: set Acolyte metadata baseURI after pinning stage JSON to Pinata. */
 export const useSetAcolyteBaseURI = () =>

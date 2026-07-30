@@ -63,6 +63,13 @@ export interface SwapParams extends SwapQuoteParams {
   deadlineMinutes: number;
 }
 
+/** Create a full-range Uniswap v4 LP NFT in the Pyre pool (PositionManager). */
+export interface CreateLpParams {
+  ethAmount: bigint;
+  pyreAmount: bigint;
+  deadlineMinutes?: number;
+}
+
 export interface DataSource {
   /* --- Reads ----------------------------------------------------------- */
   getProtocolStats(): Promise<ProtocolStats>;
@@ -103,6 +110,8 @@ export interface DataSource {
   /** Approve PYRE to Permit2 (sell side). No-op/native on the buy side. */
   approveToken(address: Address): Promise<TxResult>;
   swap(address: Address, params: SwapParams): Promise<TxResult>;
+  /** Mint a full-range LP position NFT in the Pyre Uniswap v4 pool. */
+  createLpPosition(address: Address, params: CreateLpParams): Promise<TxResult>;
   /** Admin-only: set Acolyte metadata base URI (`ipfs://<dirCid>/`). */
   setAcolyteBaseURI(address: Address, baseURI: string): Promise<TxResult>;
   /** Current on-chain Acolyte baseURI (empty if unset). */

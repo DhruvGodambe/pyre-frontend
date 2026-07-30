@@ -1,6 +1,7 @@
 "use client";
 
-/* THE GRAND EXCHANGE, the full Uniswap-v4 swap experience for PYRE↔ETH.
+/* THE GRAND EXCHANGE, the full Uniswap-v4 swap experience for PYRE↔ETH,
+   plus Create LP (PositionManager mint into the Pyre pool).
    Spec: 05-ui-screens.md. Drives the same data a real Uniswap swap shows
    (rate, price impact, slippage floor, fee breakdown, route, gas, Permit2
    approval) through the DataSource seam, so it runs on the mock today and on
@@ -24,12 +25,15 @@ import { TokenRow, fmtTokenAmount } from "./grand-exchange/token-row";
 import { SwapDetails } from "./grand-exchange/swap-details";
 import { SettingsPopover } from "./grand-exchange/settings-popover";
 import { ReviewSwap } from "./grand-exchange/review-swap";
+import { CreateLpPanel } from "./grand-exchange/create-lp";
 import { TOKENS } from "@/lib/config";
 import { parseToken, toNumber, formatUsd, formatAgo, shortAddress } from "@/lib/format";
 import type { SwapDirection, SwapKind } from "@/lib/types";
 import type { SwapParams } from "@/lib/datasource";
 
 const ETH_GAS_RESERVE = 0.01; // leave a little ETH for gas on "Max" (buy side)
+
+type ExchangeTab = "swap" | "lp";
 
 /* The refresh glyph (no bespoke art for it); stroke = currentColor so it
    inherits the button's text color + hover. The direction flip and settings
@@ -44,6 +48,7 @@ function IconRefresh({ className = "" }: { className?: string }) {
 }
 
 export function GrandExchangePanel() {
+  const [tab, setTab] = useState<ExchangeTab>("swap");
   const [direction, setDirection] = useState<SwapDirection>("buy");
   const [kind, setKind] = useState<SwapKind>("exactIn");
   const [typed, setTyped] = useState("");
@@ -159,7 +164,7 @@ export function GrandExchangePanel() {
   return (
     <Panel
       title="The Grand Exchange"
-      tagline="Buy & sell $PYRE"
+      tagline={tab === "swap" ? "Buy & sell $PYRE" : "Provide liquidity"}
       frame="forged"
       bg="stone"
       action={
@@ -171,124 +176,140 @@ export function GrandExchangePanel() {
         )
       }
     >
-      <RequireWallet message="Connect to swap.">
-        <div id="exchange-swap" className="space-y-3 scroll-mt-24">
-          {/* Direction + tools */}
-          <div className="flex items-center justify-between">
-            <SegmentedControl<SwapDirection>
-              ariaLabel="Buy or sell $PYRE"
-              value={direction}
-              onChange={(d) => {
-                setDirection(d);
-                setKind("exactIn");
-              }}
-              options={[
-                { value: "buy", label: "Buy" },
-                { value: "sell", label: "Sell" },
-              ]}
-            />
-            <div className="relative flex items-center gap-1.5">
-              <button
-                onClick={() => quote.refetch()}
-                title="Refresh price"
-                aria-label="Refresh price"
-                className="grid h-8 w-8 place-items-center rounded-md text-text-3 hover:text-brand hover:bg-surface-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
-              >
-                <IconRefresh className={quote.isFetching ? "animate-spin" : ""} />
-              </button>
-              <button
-                onClick={() => setShowSettings((v) => !v)}
-                title="Settings"
-                aria-label="Swap settings"
-                className="grid h-8 w-8 place-items-center rounded-md transition-transform hover:scale-110 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
-              >
-                <ImageArt name="settings" width={20} hover={showSettings} />
-              </button>
-              {showSettings && (
-                <SettingsPopover
-                  settings={settings.settings}
-                  setSlippageMode={settings.setSlippageMode}
-                  setCustomSlippageBps={settings.setCustomSlippageBps}
-                  setDeadlineMinutes={settings.setDeadlineMinutes}
-                  onClose={() => setShowSettings(false)}
+      <RequireWallet message="Connect to trade.">
+        <div className="space-y-3">
+          <SegmentedControl<ExchangeTab>
+            ariaLabel="Swap or provide liquidity"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "swap", label: "Swap" },
+              { value: "lp", label: "Create LP" },
+            ]}
+          />
+
+          {tab === "lp" ? (
+            <CreateLpPanel />
+          ) : (
+            <div id="exchange-swap" className="space-y-3 scroll-mt-24">
+              {/* Direction + tools */}
+              <div className="flex items-center justify-between">
+                <SegmentedControl<SwapDirection>
+                  ariaLabel="Buy or sell $PYRE"
+                  value={direction}
+                  onChange={(d) => {
+                    setDirection(d);
+                    setKind("exactIn");
+                  }}
+                  options={[
+                    { value: "buy", label: "Buy" },
+                    { value: "sell", label: "Sell" },
+                  ]}
+                />
+                <div className="relative flex items-center gap-1.5">
+                  <button
+                    onClick={() => quote.refetch()}
+                    title="Refresh price"
+                    aria-label="Refresh price"
+                    className="grid h-8 w-8 place-items-center rounded-md text-text-3 hover:text-brand hover:bg-surface-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
+                  >
+                    <IconRefresh className={quote.isFetching ? "animate-spin" : ""} />
+                  </button>
+                  <button
+                    onClick={() => setShowSettings((v) => !v)}
+                    title="Settings"
+                    aria-label="Swap settings"
+                    className="grid h-8 w-8 place-items-center rounded-md transition-transform hover:scale-110 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 focus-visible:ring-offset-bg"
+                  >
+                    <ImageArt name="settings" width={20} hover={showSettings} />
+                  </button>
+                  {showSettings && (
+                    <SettingsPopover
+                      settings={settings.settings}
+                      setSlippageMode={settings.setSlippageMode}
+                      setCustomSlippageBps={settings.setCustomSlippageBps}
+                      setDeadlineMinutes={settings.setDeadlineMinutes}
+                      onClose={() => setShowSettings(false)}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Pay row + flip + receive row */}
+              <div className="relative space-y-1">
+                <TokenRow
+                  label="You pay"
+                  token={payToken}
+                  valueText={payText}
+                  onChange={editPay}
+                  onFocus={() => setKind("exactIn")}
+                  usd={quote.data?.input.usd}
+                  balance={payBalance}
+                  onMax={() => setPayFraction(1)}
+                  onHalf={() => setPayFraction(0.5)}
+                  loading={kind === "exactOut" && quote.isFetching}
+                  insufficient={insufficient}
+                />
+                <div className="flex justify-center">
+                  <button
+                    onClick={flip}
+                    title="Switch direction"
+                    aria-label="Switch direction"
+                    className="group absolute -my-3 grid h-10 w-10 place-items-center rounded-full bg-bg ring-1 ring-frame/50 transition-transform duration-base ease-warm hover:scale-110 hover:ring-brand/60 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  >
+                    <ImageArt
+                      name="swapicon"
+                      width={32}
+                      className="transition-transform duration-base ease-warm group-hover:rotate-180"
+                    />
+                  </button>
+                </div>
+                <TokenRow
+                  label="You receive"
+                  token={receiveToken}
+                  valueText={receiveText}
+                  onChange={editReceive}
+                  onFocus={() => setKind("exactOut")}
+                  usd={quote.data?.output.usd}
+                  loading={kind === "exactIn" && quote.isFetching}
+                />
+              </div>
+
+              {/* Trade details */}
+              {quote.data && (
+                <SwapDetails
+                  quote={quote.data}
+                  slippageLabel={slippageLabel}
+                  onOpenSettings={() => setShowSettings(true)}
                 />
               )}
-            </div>
-          </div>
 
-          {/* Pay row + flip + receive row */}
-          <div className="relative space-y-1">
-            <TokenRow
-              label="You pay"
-              token={payToken}
-              valueText={payText}
-              onChange={editPay}
-              onFocus={() => setKind("exactIn")}
-              usd={quote.data?.input.usd}
-              balance={payBalance}
-              onMax={() => setPayFraction(1)}
-              onHalf={() => setPayFraction(0.5)}
-              loading={kind === "exactOut" && quote.isFetching}
-              insufficient={insufficient}
-            />
-            <div className="flex justify-center">
-              <button
-                onClick={flip}
-                title="Switch direction"
-                aria-label="Switch direction"
-                className="group absolute -my-3 grid h-10 w-10 place-items-center rounded-full bg-bg ring-1 ring-frame/50 transition-transform duration-base ease-warm hover:scale-110 hover:ring-brand/60 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              >
-                <ImageArt
-                  name="swapicon"
-                  width={32}
-                  className="transition-transform duration-base ease-warm group-hover:rotate-180"
-                />
-              </button>
-            </div>
-            <TokenRow
-              label="You receive"
-              token={receiveToken}
-              valueText={receiveText}
-              onChange={editReceive}
-              onFocus={() => setKind("exactOut")}
-              usd={quote.data?.output.usd}
-              loading={kind === "exactIn" && quote.isFetching}
-            />
-          </div>
+              {/* Primary action */}
+              <div className="flex flex-col gap-1.5">
+                <Button
+                  onClick={onCta}
+                  disabled={("disabled" in cta && cta.disabled) || approveTx.isPending}
+                  variant={"danger" in cta && cta.danger ? "danger" : "primary"}
+                  className="w-full"
+                >
+                  {approveTx.isPending
+                    ? approval.data?.status === "needs-permit"
+                      ? "Signing…"
+                      : "Approving…"
+                    : cta.label}
+                </Button>
+                {approveTx.isError && (
+                  <p className="text-danger text-xs">{approveTx.error?.message}</p>
+                )}
+              </div>
 
-          {/* Trade details */}
-          {quote.data && (
-            <SwapDetails
-              quote={quote.data}
-              slippageLabel={slippageLabel}
-              onOpenSettings={() => setShowSettings(true)}
-            />
+              <p className="text-text-3 text-xs text-center">
+                Sell fees are burned permanently · buy fees flow to the reward pool
+              </p>
+
+              <RecentSwaps />
+            </div>
           )}
-
-          {/* Primary action */}
-          <div className="flex flex-col gap-1.5">
-            <Button
-              onClick={onCta}
-              disabled={("disabled" in cta && cta.disabled) || approveTx.isPending}
-              variant={"danger" in cta && cta.danger ? "danger" : "primary"}
-              className="w-full"
-            >
-              {approveTx.isPending
-                ? approval.data?.status === "needs-permit"
-                  ? "Signing…"
-                  : "Approving…"
-                : cta.label}
-            </Button>
-            {approveTx.isError && (
-              <p className="text-danger text-xs">{approveTx.error?.message}</p>
-            )}
-          </div>
-
-          <p className="text-text-3 text-xs text-center">
-            Sell fees are burned permanently · buy fees flow to the reward pool
-          </p>
-
-          <RecentSwaps />
         </div>
       </RequireWallet>
 

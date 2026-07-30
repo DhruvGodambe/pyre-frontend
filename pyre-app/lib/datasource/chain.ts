@@ -71,7 +71,7 @@ import type {
   ApprovalState,
   QuestTask,
 } from "../types";
-import type { DataSource, TxResult, MarketFilter, SwapParams } from "./types";
+import type { DataSource, TxResult, MarketFilter, SwapParams, CreateLpParams } from "./types";
 import {
   fetchQuestTasks,
   completeQuestTask as completeQuestTaskApi,
@@ -127,6 +127,7 @@ import {
   type PoolKey,
 } from "./abis";
 import { buildV4SwapExecuteArgs } from "./universal-router";
+import { encodeMintLpUnlock, liquidityForAmounts } from "./lp-mint";
 import {
   getChainActivity,
   getChainHistory,
@@ -980,6 +981,122 @@ export class ChainDataSource implements DataSource {
           value: isBuy ? p.limitAmount : 0n,
         });
       }
+      const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
+      return { ok: receipt.status === "success", hash };
+    } catch (e) {
+      return { ok: false, error: errMsg(e) };
+    }
+  }
+
+  /** Mint a full-range Pyre-pool LP NFT via Uniswap v4 PositionManager
+      (same path as CreateLpPosition.s.sol — not a Pyre contract call). */
+  async createLpPosition(address: Address, params: CreateLpParams): Promise<TxResult> {
+    const token = CONTRACTS.token;
+    if (!token || !V4) {
+      return { ok: false, error: "Pool not configured: missing PYRE token / v4 addresses." };
+    }
+    if (params.ethAmount <= 0n || params.pyreAmount <= 0n) {
+      return { ok: false, error: "Enter both $ETH and $PYRE amounts." };
+    }
+
+    try {
+      await this.ensureChain();
+      const { key, poolId } = requirePool();
+      const pm = V4.positionManager;
+      const permit2 = V4.permit2;
+
+      const [sqrtPriceX96] = await readContract(wagmiConfig, {
+        chainId: CHAIN,
+        address: V4.stateView,
+        abi: STATE_VIEW_ABI,
+        functionName: "getSlot0",
+        args: [poolId],
+      });
+      if (sqrtPriceX96 === 0n) {
+        return { ok: false, error: "Pool is not initialized yet." };
+      }
+
+      const liquidity = liquidityForAmounts(
+        sqrtPriceX96,
+        params.ethAmount,
+        params.pyreAmount
+      );
+      if (liquidity <= 0n) {
+        return { ok: false, error: "Amounts too small to mint liquidity at the current price." };
+      }
+
+      // 1) ERC-20 approve Permit2
+      const erc20Allowance = await readContract(wagmiConfig, {
+        chainId: CHAIN,
+        address: token,
+        abi: ERC20_ABI,
+        functionName: "allowance",
+        args: [address, permit2],
+      });
+      if (erc20Allowance < params.pyreAmount) {
+        const approveHash = await writeContract(wagmiConfig, {
+          chainId: CHAIN,
+          account: address,
+          address: token,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [permit2, maxUint256],
+        });
+        const approveReceipt = await waitForTransactionReceipt(wagmiConfig, {
+          chainId: CHAIN,
+          hash: approveHash,
+        });
+        if (approveReceipt.status !== "success") {
+          return { ok: false, error: "Approving $PYRE for Permit2 failed." };
+        }
+      }
+
+      // 2) Permit2 allowance for PositionManager
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const [p2Amount, p2Expiration] = await readContract(wagmiConfig, {
+        chainId: CHAIN,
+        address: permit2,
+        abi: PERMIT2_ABI,
+        functionName: "allowance",
+        args: [address, token, pm],
+      });
+      if (p2Amount < params.pyreAmount || BigInt(p2Expiration) < now + 600n) {
+        const p2Hash = await writeContract(wagmiConfig, {
+          chainId: CHAIN,
+          account: address,
+          address: permit2,
+          abi: PERMIT2_ABI,
+          functionName: "approve",
+          args: [token, pm, MAX_UINT160, MAX_UINT48],
+        });
+        const p2Receipt = await waitForTransactionReceipt(wagmiConfig, {
+          chainId: CHAIN,
+          hash: p2Hash,
+        });
+        if (p2Receipt.status !== "success") {
+          return { ok: false, error: "Permit2 approval for the position manager failed." };
+        }
+      }
+
+      const minutes = params.deadlineMinutes ?? 20;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + minutes * 60);
+      const { unlockData, ethValue } = encodeMintLpUnlock({
+        key,
+        recipient: address,
+        liquidity,
+        amount0Max: params.ethAmount,
+        amount1Max: params.pyreAmount,
+      });
+
+      const hash = await writeContract(wagmiConfig, {
+        chainId: CHAIN,
+        account: address,
+        address: pm,
+        abi: POSITION_MANAGER_ABI,
+        functionName: "modifyLiquidities",
+        args: [unlockData, deadline],
+        value: ethValue,
+      });
       const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: CHAIN, hash });
       return { ok: receipt.status === "success", hash };
     } catch (e) {

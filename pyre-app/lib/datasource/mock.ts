@@ -49,7 +49,7 @@ import type {
   QuestTask,
   SeriesPoint,
 } from "../types";
-import type { DataSource, TxResult, MarketFilter, SwapParams } from "./types";
+import type { DataSource, TxResult, MarketFilter, SwapParams, CreateLpParams } from "./types";
 import {
   fetchQuestTasks,
   completeQuestTask as completeQuestTaskApi,
@@ -777,6 +777,22 @@ export class MockDataSource implements DataSource {
       this.world.liquid -= payIn;
       this.world.ethBalance += getOut;
     }
+    return { ok: true, hash: `0x${randHex(64)}` };
+  }
+
+  async createLpPosition(_address: Address, params: CreateLpParams): Promise<TxResult> {
+    await wait(TX_MS);
+    if (params.ethAmount <= 0n || params.pyreAmount <= 0n) {
+      return { ok: false, error: "Enter both $ETH and $PYRE amounts." };
+    }
+    if (params.ethAmount > this.world.ethBalance) {
+      return { ok: false, error: "Insufficient $ETH balance" };
+    }
+    if (params.pyreAmount > this.world.liquid) {
+      return { ok: false, error: "Insufficient $PYRE balance" };
+    }
+    this.world.ethBalance -= params.ethAmount;
+    this.world.liquid -= params.pyreAmount;
     return { ok: true, hash: `0x${randHex(64)}` };
   }
 

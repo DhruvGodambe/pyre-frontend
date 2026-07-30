@@ -130,12 +130,22 @@ export const DIAMOND_ABI = [
 ] as const;
 
 /* --- Uniswap v4 PositionManager (V4.positionManager) ------------------------
-   Just enough ERC-721 + v4 surface to find the user's LP position in OUR pool
-   and hand it to the diamond's burnLpPosition. */
+   ERC-721 + v4 surface to mint / find / approve Pyre-pool LP NFTs. */
 export const POSITION_MANAGER_ABI = [
   { type: "function", name: "ownerOf", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
   { type: "function", name: "getApproved", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }] },
   { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
+  { type: "function", name: "nextTokenId", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function",
+    name: "modifyLiquidities",
+    stateMutability: "payable",
+    inputs: [
+      { name: "unlockData", type: "bytes" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
   {
     type: "function",
     name: "getPoolAndPositionInfo",
