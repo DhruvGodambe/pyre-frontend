@@ -32,32 +32,39 @@ export const runtime = "nodejs"; // FileStore (dev) needs the Node fs APIs.
 export const dynamic = "force-dynamic"; // per-visitor, never cached.
 
 export async function GET() {
-  const sessionId = await getOrCreateSessionId();
-  const store = getQuestStore();
+  try {
+    const sessionId = await getOrCreateSessionId();
+    const store = getQuestStore();
 
-  const [own, submission, identity] = await Promise.all([
-    store.getCompletions(sessionId),
-    store.getSubmission(sessionId),
-    store.getIdentity(sessionId),
-  ]);
+    const [own, submission, identity] = await Promise.all([
+      store.getCompletions(sessionId),
+      store.getSubmission(sessionId),
+      store.getIdentity(sessionId),
+    ]);
 
-  // The address this visitor is known by: the one they submitted at the gate, or, on a
-  // device that has never submitted anything, the one they connected.
-  const wallet = submission?.wallet ?? (identity?.mode === "wallet" ? identity.wallet : null);
+    // The address this visitor is known by: the one they submitted at the gate, or, on a
+    // device that has never submitted anything, the one they connected.
+    const wallet = submission?.wallet ?? (identity?.mode === "wallet" ? identity.wallet : null);
 
-  const completed = new Set(own);
-  let hasWallet = submission !== null;
+    const completed = new Set(own);
+    let hasWallet = submission !== null;
 
-  if (wallet) {
-    const sessions = await store.getSessionsByWallet(wallet);
-    const others = await Promise.all(
-      sessions.filter((s) => s !== sessionId).map((s) => store.getCompletions(s))
-    );
-    for (const ids of others) for (const id of ids) completed.add(id);
-    // We have been given this address before, so the wallet rite is done, even if it was
-    // done from a device this browser has never been.
-    hasWallet = hasWallet || sessions.length > 0;
+    if (wallet) {
+      const sessions = await store.getSessionsByWallet(wallet);
+      const others = await Promise.all(
+        sessions.filter((s) => s !== sessionId).map((s) => store.getCompletions(s))
+      );
+      for (const ids of others) for (const id of ids) completed.add(id);
+      // We have been given this address before, so the wallet rite is done, even if it was
+      // done from a device this browser has never been.
+      hasWallet = hasWallet || sessions.length > 0;
+    }
+
+    return NextResponse.json({ tasks: buildQuestTasks(completed, hasWallet) });
+  } catch (err) {
+    // Never blank the Claim Embers plate for a DB blip: return the catalog with
+    // nothing completed so the visitor can still walk the rite (writes may still fail).
+    console.error("[quests] GET failed:", err);
+    return NextResponse.json({ tasks: buildQuestTasks(new Set(), false) });
   }
-
-  return NextResponse.json({ tasks: buildQuestTasks(completed, hasWallet) });
 }

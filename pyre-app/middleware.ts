@@ -43,7 +43,18 @@ const PUBLIC_QUEST_ROUTES = new Set([
 ]);
 
 export async function middleware(request: NextRequest) {
-  if (PUBLIC_QUEST_ROUTES.has(request.nextUrl.pathname)) {
+  const path = request.nextUrl.pathname;
+
+  if (PUBLIC_QUEST_ROUTES.has(path)) {
+    return NextResponse.next();
+  }
+
+  const launched = process.env.NEXT_PUBLIC_LAUNCHED === "true";
+  const isAdmin =
+    path === "/admin" || path.startsWith("/admin/") || path.startsWith("/api/nft");
+
+  // After launch the kingdom (+ remaining quest APIs) is public. Admin stays locked.
+  if (launched && !isAdmin) {
     return NextResponse.next();
   }
 
@@ -61,7 +72,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to /login, carrying where they were headed as ?next so a deep-link
   // (e.g. /ashencup) survives the gate and lands on the right building afterward.
-  const dest = request.nextUrl.pathname; // basePath-relative, e.g. "/ashencup"
+  const dest = path; // basePath-relative, e.g. "/ashencup"
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
   loginUrl.search = "";

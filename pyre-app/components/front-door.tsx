@@ -80,7 +80,8 @@ const KEEPER_VOICE = "/voice-previews/mystic-callum-gate.mp3";
    scrapes the spoken script by matching quoted strings out of this file, so a quoted
    phrase in a comment gets read as a LINE and silently corrupts every word timing (it
    cost exactly that once). */
-const GREETING_LINES = [
+/* Pre-launch greeting (sealed gate). Voice alignment scrapes these quoted strings. */
+const SEALED_GREETING_LINES = [
   "Welcome, stranger. The gate is currently closed. The kingdom still slumbers behind these doors, and I keep the fire while it dreams.",
   /* One clean sentence, no nested clauses. An earlier take wrapped a clause in commas
      (the Ember Codex, or claim your first embers, while you wait) and ElevenLabs reads
@@ -88,6 +89,14 @@ const GREETING_LINES = [
      this line free of comma-wrapped clauses. */
   "Study the Ember Codex and claim your first Embers while you wait.",
 ];
+
+/* Post-launch greeting: doors open, Enter is live for everyone. */
+const OPEN_GREETING_LINES = [
+  "Welcome, stranger. The doors stand open. The kingdom waits beyond this gate.",
+  "Enter Pyre when you are ready, or study the Ember Codex first.",
+];
+
+const GREETING_LINES = LAUNCHED ? OPEN_GREETING_LINES : SEALED_GREETING_LINES;
 
 /* His answer to a hand on the sealed door (same voice, same recipe as the
    gate clip; regenerate via ElevenLabs if the lines change). */
@@ -262,10 +271,11 @@ export function FrontDoor() {
     return <div className="fixed inset-0 z-[70] bg-black" aria-hidden />;
   }
 
-  // Team member pressing Enter: the same door + push-through as the in-kingdom
-  // gate, then navigate into the world.
+  // Team member (pre-launch) or anyone (post-launch) pressing Enter: door SFX
+  // then navigate into the world. Middleware opens /kingdom when LAUNCHED.
+  const canEnter = LAUNCHED || !!isTeam;
   const enter = () => {
-    if (entering || !isTeam) return;
+    if (entering || !canEnter) return;
     playDoor("gate");
     setEntering(true);
     setTimeout(() => router.push(KINGDOM_PATH), 1050);
@@ -467,10 +477,10 @@ export function FrontDoor() {
                 <div className="contents">
                   <PlateButton
                     label="Enter Pyre"
-                    locked={!isTeam}
+                    locked={!canEnter}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isTeam) {
+                      if (!canEnter) {
                         sealedTap();
                         return;
                       }
@@ -481,13 +491,13 @@ export function FrontDoor() {
                     label="Read the Codex"
                     /* The same book the in-app Codex button carries (its glyph, cut
                        out of that baked plate), so the tome means the Codex here and
-                       inside the kingdom alike. */
+                       inside the kingdom alike. Same-tab: newTab was often blocked and
+                       felt like a dead control for new visitors. */
                     icon="codex"
-                    href="/codex"
-                    newTab
                     onClick={(e) => {
                       e.stopPropagation();
                       track("codex_open", { source: "front_door" });
+                      router.push("/codex");
                     }}
                   />
                 </div>
