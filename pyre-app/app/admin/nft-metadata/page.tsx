@@ -9,7 +9,7 @@ import {
   useAcolyteBaseURI,
   useSetAcolyteBaseURI,
 } from "@/lib/hooks";
-import { CONTRACTS } from "@/lib/config";
+import { CONTRACTS, REAL_WALLET } from "@/lib/config";
 import { acolyteName, type Stage } from "@/lib/constants";
 import { type OnChainStageIndex } from "@/lib/nft/metadata";
 
@@ -55,7 +55,7 @@ const STAGE_SLOTS: { index: OnChainStageIndex; stage: Stage }[] = [
   { index: 3, stage: 4 },
 ];
 
-export default function NftMetadataAdminPage() {
+function NftMetadataAdminPageRealWallet() {
   const [slots, setSlots] = useState<StageFile[]>(
     STAGE_SLOTS.map(({ index, stage }) => ({
       index,
@@ -304,4 +304,23 @@ export default function NftMetadataAdminPage() {
       </section>
     </main>
   );
+}
+
+export default function NftMetadataAdminPage() {
+  if (!REAL_WALLET) {
+    return (
+      <main className="min-h-screen bg-bg text-text-1 p-8 max-w-2xl mx-auto space-y-4">
+        <p className="text-text-3 text-xs tracking-widest uppercase">Admin</p>
+        <h1 className="text-2xl font-semibold">Acolyte NFT metadata</h1>
+        <p className="text-text-2 text-sm leading-relaxed">
+          This page requires the real wallet stack. Set{" "}
+          <code className="text-text-1">NEXT_PUBLIC_REAL_WALLET=true</code> or{" "}
+          <code className="text-text-1">NEXT_PUBLIC_USE_MOCK=false</code> to enable
+          wallet-backed admin actions.
+        </p>
+      </main>
+    );
+  }
+
+  return <NftMetadataAdminPageRealWallet />;
 }
