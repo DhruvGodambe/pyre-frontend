@@ -5,6 +5,8 @@
 
 import { AppShell } from "@/components/shells/app-shell";
 
+export const dynamic = "force-dynamic";
+
 export default function Kingdom() {
   return <AppShell />;
 }
