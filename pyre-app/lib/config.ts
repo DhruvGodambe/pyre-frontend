@@ -67,13 +67,13 @@ const SEPOLIA_CONTRACTS = {
   hook: "0xce9cd7eff1156d566cfebada4c025597cf51bff8",
 } as const satisfies Record<string, Address>;
 
-/* Robinhood Chain mainnet (4663) — pyre-protocol broadcast/DeployAll.s.sol/4663 */
+/* Robinhood Chain mainnet (4663) — pyre-protocol broadcast/DeployAll.s.sol/4663 (2026-08-22) */
 const ROBINHOOD_CONTRACTS = {
-  token: "0xd4225c96dc8dec8db33ff0a13b002d4e184e7ebd",
-  nft: "0x4c1d8f5926d2c20ee0897fd6456b96b80bfed1e3",
-  staking: "0xb14d834fb60baf4e7053bbe8fd3a09165d802432",
-  immolated: "0x04fd8c3d616e33f1d19d6cbe71142c32784a23a1",
-  hook: "0xb4f5ae432599b986f6cab182f0b94263ae243ff8",
+  token: "0x614B3Cbb1A00270fa3189bF43E5a840F7f8CB172",
+  nft: "0xAC0B0390C31c3eC6d003470cD0D365c56A1287aB",
+  staking: "0xF63fb8C69B3bA6d036A07f1b94D6d4DC487DC85F",
+  immolated: "0xE9F3EEbFF22593c61b846c6730BF14Cb673Cf760",
+  hook: "0xE78b4AA885A266Aa1DD1167703C862f966B97ff8",
 } as const satisfies Record<string, Address>;
 
 const onSepolia = CHAIN_ID === 11155111;
@@ -106,7 +106,7 @@ export const DEPLOY_ANCHOR: { block: bigint; tsMs: number } | null =
         tsMs: Number(process.env.NEXT_PUBLIC_DEPLOY_TS) * 1000,
       }
     : onRobinhood
-      ? { block: 42568706n, tsMs: 1787344093_000 }
+      ? { block: 42979561n, tsMs: 1787385289_000 }
       : onSepolia
         ? { block: 11103396n, tsMs: 1781982147_000 }
         : null;
