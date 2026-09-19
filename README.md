@@ -14,6 +14,8 @@ Monorepo for Pyre Protocol's frontend and internal docs.
 ```bash
 cd pyre-app
 npm install
+
+
 ```
 
 Create `pyre-app/.env.local` from `.env.example`:

@@ -53,12 +53,12 @@ export function tweetIntent(text: string, url?: string): string {
 /** One-click repost (X web-intent) of a tweet by id. Opens X's "Repost?"
     confirmation directly, the frictionless way to amplify a specific post. */
 export function repostIntent(tweetId: string): string {
-  return `https://twitter.com/intent/retweet?tweet_id=${tweetId}`;
+  return `https://x.com/intent/retweet?tweet_id=${tweetId}`;
 }
 
 /** One-click like (X web-intent) of a tweet by id. */
 export function likeIntent(tweetId: string): string {
-  return `https://twitter.com/intent/like?tweet_id=${tweetId}`;
+  return `https://x.com/intent/like?tweet_id=${tweetId}`;
 }
 
 /** A visitor's shareable referral link into the app. Follows BASE_PATH so it

@@ -6,7 +6,7 @@
 
    So the funnel works on your machine with zero setup, and goes live the moment
    the two Supabase env vars are set (locally in .env.local, in prod via the
-   Vercel project's environment variables). Nothing else changes.
+   Vercel project's environment variables). Nothing else changes
    ========================================================================== */
 
 import type { QuestStore } from "./store";

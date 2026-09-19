@@ -77,7 +77,7 @@ export const HOOK_FEE_BPS = 400; // 4%
 export const POOL_FEE_BPS = 100; // 1%
 export const TOTAL_FEE_BPS = HOOK_FEE_BPS + POOL_FEE_BPS; // 5% each way
 export const LAUNCH_FEE_MAX_BPS = 2000; // +20% buy-side at hour 0
-export const LAUNCH_WINDOW_HOURS = 24;
+export const LAUNCH_WINDOW_HOURS = 2; // DiamondInit anti-snipe window (23% → 5%)
 export const TEAM_CUT_BPS = 2000; // 20% of buy-side ETH (base fee only)
 
 /* --- Yield multipliers (Model B, mirrors the deployed contracts) ----------

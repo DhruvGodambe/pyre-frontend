@@ -130,6 +130,8 @@ function Count({ to }: { to: number }) {
 
 interface GateCrystalApi {
   ready: boolean;
+  loadError: boolean;
+  retryLoad: () => void;
   open: boolean;
   setOpen: (v: boolean) => void;
   /** mid-surge: the crystals are giving up their fire right now. */
@@ -182,6 +184,7 @@ export function GateCrystalProvider({
   onOpenChange: (v: boolean) => void;
 }) {
   const [tasks, setTasks] = useState<QuestTask[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const setOpen = onOpenChange;
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
@@ -198,6 +201,7 @@ export function GateCrystalProvider({
     // Retry a few times before giving up: a single transient 500 on GET /api/quests
     // used to leave tasks null forever, which hides the entire earn surface (no Claim
     // plate, no crystal) with no feedback and no reason for a visitor to reload.
+    setLoadError(false);
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         setTasks(await fetchQuestTasks());
@@ -206,6 +210,9 @@ export function GateCrystalProvider({
         await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
       }
     }
+    // Keep the Claim plate visible with a retry path instead of vanishing.
+    setTasks([]);
+    setLoadError(true);
   }, []);
 
   useEffect(() => {
@@ -271,7 +278,11 @@ export function GateCrystalProvider({
   };
 
   const api: GateCrystalApi = {
-    ready: !!tasks,
+    ready: tasks !== null,
+    loadError,
+    retryLoad: () => {
+      void refresh();
+    },
     open,
     setOpen,
     flaring,
@@ -340,7 +351,28 @@ export function GateCrystalProvider({
    ------------------------------------------------------------------------- */
 export function GateCrystalPlate() {
   const gate = useGate();
-  if (!gate?.ready) return null;
+  if (!gate) return null;
+  if (!gate.ready) {
+    return (
+      <PlateButton
+        label="Loading Embers…"
+        icon="emberCrystal"
+        disabled
+      />
+    );
+  }
+  if (gate.loadError) {
+    return (
+      <PlateButton
+        label="Retry Embers"
+        icon="emberCrystal"
+        onClick={(e) => {
+          e.stopPropagation();
+          gate.retryLoad();
+        }}
+      />
+    );
+  }
   return (
     <PlateButton
       label="Claim Embers"
@@ -683,11 +715,10 @@ export function GateCrystalActions() {
           <PlateButton
             label="Like the decree"
             symbol={LikeMark}
-            href={likeIntent(DECREE_TWEET_ID)}
-            newTab
             onClick={(e) => {
               e.stopPropagation();
               gate.markLiked();
+              window.open(likeIntent(DECREE_TWEET_ID), "_blank", "noopener,noreferrer");
             }}
           />
         );
@@ -697,11 +728,10 @@ export function GateCrystalActions() {
           <PlateButton
             label="Share the decree"
             symbol={RetweetMark}
-            href={repostIntent(DECREE_TWEET_ID)}
-            newTab
             onClick={(e) => {
               e.stopPropagation();
               gate.markReposted();
+              window.open(repostIntent(DECREE_TWEET_ID), "_blank", "noopener,noreferrer");
             }}
           />
         );
@@ -756,12 +786,12 @@ export function GateCrystalActions() {
         <PlateButton
           label={gate.followed ? "Followed ✓" : "Follow Pyre"}
           symbol={gate.followed ? undefined : XMark}
-          href={gate.followed ? undefined : X_PROFILE_URL}
-          newTab
           disabled={gate.followed}
           onClick={(e) => {
             e.stopPropagation();
+            if (gate.followed) return;
             gate.follow();
+            window.open(X_PROFILE_URL, "_blank", "noopener,noreferrer");
           }}
         />
         {gate.walletDone && back}

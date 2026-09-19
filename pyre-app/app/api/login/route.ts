@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { authToken, AUTH_COOKIE } from "@/lib/auth";
 
+
+
 export async function POST(request: Request) {
   const { password } = await request.json();
   const expected = process.env.DESIGNER_PASSWORD;
