@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
+const productionAssetHost =
+  process.env.NEXT_PUBLIC_ASSET_HOST ?? process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "";
+const normalizedProductionAssetHost = productionAssetHost
+  .trim()
+  .replace(/^https?:\/\//, "")
+  .replace(/\/+$/, "");
+
 const nextConfig = {
   // Pin the workspace root (the machine has multiple lockfiles).
   outputFileTracingRoot: import.meta.dirname,
@@ -13,7 +20,12 @@ const nextConfig = {
   // answers missing /_next/static files before rewrites run, so proxied pages
   // can't fall through for chunks; absolute asset URLs sidestep that entirely.
   // Production only: previews must load their own (differently hashed) chunks.
-  assetPrefix: process.env.VERCEL_ENV === "production" ? "https://app.pyreprotocol.com" : undefined,
+  // Resolve the host dynamically from Vercel or NEXT_PUBLIC_ASSET_HOST so deploys
+  // on non-app.pyreprotocol.com domains do not 404 CSS/chunks.
+  assetPrefix:
+    process.env.VERCEL_ENV === "production" && normalizedProductionAssetHost
+      ? `https://${normalizedProductionAssetHost}`
+      : undefined,
   webpack: (config) => {
     // wagmi v3's @wagmi/connectors barrel references a pile of OPTIONAL wallet
     // SDKs (for connectors we don't use, we ship injected() only). webpack can't
